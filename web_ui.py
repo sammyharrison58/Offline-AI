@@ -68,10 +68,40 @@ st.sidebar.markdown(f"**Treasury Balance:** `{wallet_bal['balance']} AETH`")
 voice_enabled = st.sidebar.checkbox("🔊 Speak Responses Aloud (SAPI Voice)", value=True)
 
 # -----------------------------------------------------------------
-# Main Navigation Tabs
+# Main Navigation Tabs & Master Power Switch
 # -----------------------------------------------------------------
 st.markdown('<div class="main-header">⚡ NEXUS-226 Offline Autonomous AI</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">Unlimited Open-Source Local Agent | Machine Control | 226 AI Paradigms | Verifiable Ledger</div>', unsafe_allow_html=True)
+
+# Master Start/Stop System State
+if "system_active" not in st.session_state:
+    st.session_state.system_active = True
+
+# Prominent Start / Stop Control Banner
+st.markdown("---")
+col_status, col_btn_start, col_btn_stop = st.columns([2, 1, 1])
+
+with col_status:
+    if st.session_state.system_active:
+        st.markdown("### 🟢 **SYSTEM STATUS: ONLINE**\n*All 226 AI modules, OS tools, and Voice listening active.*")
+    else:
+        st.markdown("### 🔴 **SYSTEM STATUS: STOPPED**\n*All autonomous agent loops and voice execution paused.*")
+
+with col_btn_start:
+    if st.button("▶ START SYSTEM", type="primary", use_container_width=True):
+        st.session_state.system_active = True
+        st.success("Nexus-226 activated! All subsystems online.")
+        voice.speak("Nexus-226 system activated and online.", block=False)
+        st.rerun()
+
+with col_btn_stop:
+    if st.button("⏹ STOP SYSTEM", use_container_width=True):
+        st.session_state.system_active = False
+        st.warning("Nexus-226 paused! Subsystems stopped.")
+        voice.speak("Nexus-226 system stopped.", block=False)
+        st.rerun()
+
+st.markdown("---")
 
 tab_chat, tab_knowledge, tab_system, tab_blockchain = st.tabs([
     "💬 Voice & Text Call Console",
@@ -125,13 +155,18 @@ with tab_chat:
             st.markdown(user_input)
 
         with st.chat_message("assistant"):
-            with st.spinner("Processing request and orchestrating tools..."):
-                response = agent.process_request(user_input)
-                st.markdown(response)
+            if not st.session_state.system_active:
+                response = "🛑 Nexus-226 is currently STOPPED. Click the green '▶ START SYSTEM' button above to reactivate autonomous operations."
+                st.warning(response)
                 st.session_state.messages.append({"role": "assistant", "content": response})
+            else:
+                with st.spinner("Processing request and orchestrating tools..."):
+                    response = agent.process_request(user_input)
+                    st.markdown(response)
+                    st.session_state.messages.append({"role": "assistant", "content": response})
 
-                if voice_enabled:
-                    voice.speak(response, block=False)
+                    if voice_enabled:
+                        voice.speak(response, block=False)
 
 # -----------------------------------------------------------------
 # Tab 2: 226 AI Knowledge Core
