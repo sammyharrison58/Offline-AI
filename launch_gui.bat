@@ -5,3 +5,4 @@ echo Starting Nexus-226 Streamlit Cockpit...
 start "" "http://localhost:8501"
 python -m streamlit run web_ui.py --server.port 8501
 pause
+
