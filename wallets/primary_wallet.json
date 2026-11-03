@@ -1,0 +1,13 @@
+{
+  "label": "primary",
+  "address": "0xb36776312bbe0add2b43e986efe15ddc93530592",
+  "created_at": 1793741293.3262022,
+  "chain_compatibility": [
+    "Ethereum",
+    "Polygon",
+    "Arbitrum",
+    "LocalChain"
+  ],
+  "private_key": "9157e7c153703308eb09076bdfc58cf7f005b7dec01865b766bb12dd2e362e7c",
+  "encrypted": false
+}

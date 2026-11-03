@@ -1,0 +1,13 @@
+# Dependencies for Nexus-226 Autonomous Offline AI
+# Core OS & Telemetry
+psutil>=5.9.0
+pywin32>=306
+pillow>=9.0.0
+requests>=2.28.0
+numpy>=1.22.0
+
+# Optional GUI & Speech
+pyautogui>=0.9.54
+speechrecognition>=3.10.0
+streamlit>=1.30.0
+
