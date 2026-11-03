@@ -10,3 +10,4 @@ if %ERRORLEVEL% NEQ 0 (
     echo Control panel closed with exit code %ERRORLEVEL%.
     pause
 )
+

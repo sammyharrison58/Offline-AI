@@ -12,3 +12,4 @@ echo    python test_nexus_suite.py      (Run all unit tests)
 echo ========================================================
 call .venv\Scripts\activate.bat
 cmd /k
+
