@@ -161,18 +161,42 @@ class SystemController:
             return {"success": False, "error": str(e)}
 
     def capture_screenshot(self, save_path: str = "screenshot.png") -> Dict[str, Any]:
-        """Captures a screenshot of the desktop screen."""
-        try:
-            if PIL_AVAILABLE:
+        """Captures a screenshot of the desktop screen via PIL, PyAutoGUI, or native .NET."""
+        abs_path = os.path.abspath(save_path)
+        # Attempt 1: PIL ImageGrab
+        if PIL_AVAILABLE:
+            try:
                 im = ImageGrab.grab()
-                im.save(save_path)
-                return {"success": True, "path": os.path.abspath(save_path)}
-            elif PYAUTOGUI_AVAILABLE:
+                im.save(abs_path)
+                return {"success": True, "path": abs_path}
+            except Exception:
+                pass
+
+        # Attempt 2: PyAutoGUI
+        if PYAUTOGUI_AVAILABLE:
+            try:
                 im = pyautogui.screenshot()
-                im.save(save_path)
-                return {"success": True, "path": os.path.abspath(save_path)}
-            else:
-                return {"success": False, "error": "Neither PIL nor PyAutoGUI available"}
+                im.save(abs_path)
+                return {"success": True, "path": abs_path}
+            except Exception:
+                pass
+
+        # Attempt 3: Native .NET CopyFromScreen via PowerShell
+        try:
+            ps_script = (
+                f'Add-Type -AssemblyName System.Windows.Forms; '
+                f'Add-Type -AssemblyName System.Drawing; '
+                f'$bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds; '
+                f'$bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height; '
+                f'$graphics = [System.Drawing.Graphics]::FromImage($bmp); '
+                f'$graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size); '
+                f'$bmp.Save("{abs_path.replace(chr(92), chr(47))}"); '
+                f'$graphics.Dispose(); $bmp.Dispose();'
+            )
+            res = self.run_powershell(ps_script)
+            if os.path.exists(abs_path) and os.path.getsize(abs_path) > 0:
+                return {"success": True, "path": abs_path}
+            return {"success": False, "error": res.get("stderr") or "Failed to capture display"}
         except Exception as e:
             return {"success": False, "error": str(e)}
 
