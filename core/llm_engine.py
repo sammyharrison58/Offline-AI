@@ -17,7 +17,7 @@ class OfflineLLMEngine:
         if self.backend != "auto":
             return self.backend
         try:
-            r = requests.get(f"{self.ollama_url}/api/tags", timeout=0.8)
+            r = requests.get(f"{self.ollama_url}/api/tags", timeout=1.0)
             if r.status_code == 200:
                 models = [m.get("name") for m in r.json().get("models", [])]
                 if models:
@@ -29,14 +29,14 @@ class OfflineLLMEngine:
         except Exception:
             pass
         try:
-            r = requests.get(f"{self.openai_compatible_url}/models", timeout=0.8)
+            r = requests.get(f"{self.openai_compatible_url}/models", timeout=1.0)
             if r.status_code == 200:
                 return "openai_compatible"
         except Exception:
             pass
         return "builtin_synthesizer"
 
-    def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 150, temperature: float = 0.7) -> str:
+    def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 100, temperature: float = 0.7) -> str:
         backend = self.active_backend
         if backend == "ollama":
             return self._call_ollama(prompt, system_prompt, max_tokens, temperature)
@@ -51,16 +51,16 @@ class OfflineLLMEngine:
             payload = {
                 "model": self.ollama_model,
                 "prompt": prompt,
-                "system": system_prompt,
+                "system": system_prompt or "You are Grok, an ultra-fast, intelligent, direct AI assistant.",
                 "stream": False,
                 "options": {
-                    "num_predict": min(max_tokens, 120),
+                    "num_predict": min(max_tokens, 90),
                     "temperature": temperature,
-                    "top_k": 20,
-                    "top_p": 0.8
+                    "top_k": 30,
+                    "top_p": 0.85
                 }
             }
-            res = requests.post(url, json=payload, timeout=10)
+            res = requests.post(url, json=payload, timeout=35)
             if res.status_code == 200:
                 return res.json().get("response", "").strip()
             return f"[Ollama Error] HTTP {res.status_code}"
@@ -74,8 +74,8 @@ class OfflineLLMEngine:
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
-            payload = {"messages": messages, "max_tokens": min(max_tokens, 120), "temperature": temperature}
-            res = requests.post(url, json=payload, timeout=10)
+            payload = {"messages": messages, "max_tokens": min(max_tokens, 90), "temperature": temperature}
+            res = requests.post(url, json=payload, timeout=30)
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"].strip()
             return f"[OpenAI Error] HTTP {res.status_code}"
@@ -83,9 +83,9 @@ class OfflineLLMEngine:
             return f"[Local Server Error]: {e}"
 
     def _call_builtin(self, prompt: str, system_prompt: str) -> str:
-        return "Nexus-Grok fast neural reasoning engine ready. Operating system, live web, code execution, and 226 AI domains active."
+        return "Nexus-Grok neural engine active."
 
 if __name__ == "__main__":
     engine = OfflineLLMEngine()
     print("Backend:", engine.active_backend)
-    print("Test:", engine.generate("Explain Mamba"))
+    print("Test:", engine.generate("Explain Mamba in one sentence"))

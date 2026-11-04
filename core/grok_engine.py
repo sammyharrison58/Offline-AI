@@ -97,3 +97,4 @@ class GrokEngine:
             persona = "You are Grok, an ultra-fast, intelligent, direct AI assistant."
         
         return f"{persona}\nContext: {context}\nUser: {query}\nGrok:"
+

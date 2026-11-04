@@ -115,15 +115,16 @@ class ConversationalCallLoop:
     def _listen_or_prompt(self) -> Optional[str]:
         if self.recognizer and self.mic:
             try:
-                print('>> [Listening... speak now or press Enter to type] ', end='', flush=True)
+                print('>> [Listening to microphone... speak now] ', end='', flush=True)
                 with self.mic as source:
-                    self.recognizer.adjust_for_ambient_noise(source, duration=0.2)
-                    audio = self.recognizer.listen(source, timeout=3, phrase_time_limit=8)
-                print('\n[Processing voice input...]')
-                text = self.recognizer.recognize_sphinx(audio) if hasattr(self.recognizer, 'recognize_sphinx') else None
+                    self.recognizer.adjust_for_ambient_noise(source, duration=0.3)
+                    audio = self.recognizer.listen(source, timeout=4, phrase_time_limit=10)
+                print('\n[Transcribing voice input...]')
+                text = self.recognizer.recognize_google(audio)
                 if text:
+                    print(f'Recognized: "{text}"')
                     return text
-            except Exception:
+            except Exception as e:
                 pass
 
         try:

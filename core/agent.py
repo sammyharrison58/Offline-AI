@@ -31,14 +31,14 @@ class Nexus226Agent:
             m = ql.replace("set mode to ", "").replace("switch mode to ", "").strip()
             if m in ["fun", "think", "normal"]:
                 self.grok.set_mode(m)
-                return f"Grok operating mode updated to: {m.upper()} mode."
+                return f"Grok mode set to {m.upper()}."
 
         if ql.startswith("run code:") or ql.startswith("python:") or ql.startswith("execute code:"):
             code = q.split(":", 1)[1].strip()
             res = self.grok.execute_python_code(code)
             if res.get("success"):
-                return f"Code Executed Successfully:\n{res.get('output')}"
-            return f"Code Execution Error:\n{res.get('error')}"
+                return f"Output:\n{res.get('output')}"
+            return f"Error:\n{res.get('error')}"
 
         if any(w in ql for w in ["generate image", "create graphic", "draw ", "render image"]):
             prompt = q
@@ -47,7 +47,7 @@ class Nexus226Agent:
                     prompt = ql.split(prefix, 1)[1].strip()
                     break
             img_path = self.grok.generate_visual_graphic(prompt)
-            return f"Graphic generated and rendered: {img_path}"
+            return f"Graphic rendered: {img_path}"
 
         if any(w in ql for w in ["search web", "look up", "google ", "browse web", "latest news"]):
             search_query = q
@@ -57,7 +57,7 @@ class Nexus226Agent:
                     break
             web_res = self.grok.search_web_or_feed(search_query)
             snippets = "\n".join([f"- {s}" for s in web_res.get("results", [])[:3]])
-            return f"Live Web Intel for '{search_query}':\n{snippets}"
+            return f"Live Intel for '{search_query}':\n{snippets}"
 
         if any((w in ql for w in ["wake on lan", "wol", "open computer", "open the computer", "wake computer", "power on"])):
             mac_match = re.search("([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})", q)
@@ -65,7 +65,7 @@ class Nexus226Agent:
                 mac = mac_match.group(0)
                 res = self.sys_controller.send_wake_on_lan(mac)
                 return f"Wake-on-LAN Signal Broadcasted: {res.get('message', res)}"
-            return "Provide MAC address (e.g., 'Wake computer 00:1A:2B:3C:4D:5E'). Magic Packet primed."
+            return "Provide target MAC address (e.g. 'Wake computer 00:1A:2B:3C:4D:5E')."
 
         if "schedule wake" in ql or "wake at" in ql:
             time_match = re.search("(\\d{1,2}:\\d{2})", q)
@@ -129,15 +129,26 @@ class Nexus226Agent:
         k_ctx = ""
         if matched_domains and any(tok in ql for tok in matched_domains[0].get("name").lower().split()[:2]):
             d = matched_domains[0]
-            k_ctx = f"Domain: {d['name']}. Concept: {d['concept']}. Math: {d['mathematical_basis']}. Edge: {d['obscure_insights']}"
+            k_ctx = f"Domain reference: {d['name']}. {d['concept']} Math: {d['mathematical_basis']}."
 
-        prompt = f"Grok Mode: {self.grok.mode}. Query: {q}. {k_ctx}"
+        system_instruction = (
+            f"You are Grok. Mode: {self.grok.mode}. "
+            "Give a direct, witty, intelligent, and accurate answer in 2-3 sentences. No fluff."
+        )
+        user_prompt = f"{k_ctx}\nUser Question: {q}\nAnswer:" if k_ctx else q
+
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
-            res = self.llm.generate(prompt, max_tokens=100)
+            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=100)
             if res and not res.startswith("[Ollama") and not res.startswith("[Local"):
                 return res
 
         if k_ctx:
             return f"{matched_domains[0]['name']}: {matched_domains[0]['concept']}\nFormulation: {matched_domains[0]['mathematical_basis']}"
 
-        return "Nexus-Grok operational. All 226 AI domains, machine controls, blockchain, and live web query engines online."
+        if "who are you" in ql or "what are you" in ql:
+            return "I am Nexus-Grok, your uncensored offline autonomous AI agent equipped with 226 AI architecture paradigms, OS machine controls, blockchain treasury, and voice duplex."
+
+        if "hello" in ql or "hi" in ql or "hey" in ql:
+            return "Greetings! Nexus-Grok online and listening. Ask me any question, run code, or command machine actions."
+
+        return f"Query analyzed: '{q}'. All systems active. Ask technical questions, request code execution with 'python: ...', or command machine automation."

@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import streamlit as st
+import streamlit.components.v1 as components
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
 if root_dir not in sys.path:
@@ -55,15 +56,6 @@ st.markdown("""
         font-weight: 700;
         display: inline-block;
     }
-    .call-active-badge {
-        background: rgba(99, 102, 241, 0.2);
-        color: #A5B4FC;
-        border: 1px solid #6366F1;
-        padding: 8px 18px;
-        border-radius: 24px;
-        font-weight: 700;
-        animation: pulse 1.5s infinite;
-    }
     .stButton>button {
         border-radius: 8px;
         font-weight: 600;
@@ -85,15 +77,11 @@ voice = get_voice()
 if "ai_open" not in st.session_state:
     st.session_state.ai_open = True
 
-if "call_active" not in st.session_state:
-    st.session_state.call_active = False
-
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Nexus-Grok online. Audio responses active. Tap the mic or type to begin."}
+        {"role": "assistant", "content": "Nexus-Grok online. Audio responses active. Speak into the mic or type any question below."}
     ]
 
-# Header Row
 col_hdr, col_pwr = st.columns([3, 1])
 with col_hdr:
     st.markdown('<div class="main-title">⚡ NEXUS-GROK AI</div>', unsafe_allow_html=True)
@@ -104,7 +92,6 @@ with col_pwr:
         st.markdown('<div class="status-badge-on">● AI OPEN & ACTIVE</div>', unsafe_allow_html=True)
         if st.button("🔴 CLOSE AI", use_container_width=True):
             st.session_state.ai_open = False
-            st.session_state.call_active = False
             voice.speak("AI power closed. Entering standby.", block=False)
             st.rerun()
     else:
@@ -120,37 +107,97 @@ if not st.session_state.ai_open:
     st.warning("⚡ The AI is currently CLOSED. Click the green '🟢 OPEN AI' button above to activate voice, reasoning, and machine control.")
     st.stop()
 
-# Grok Persona & Call Controls Row
-col_mode, col_call = st.columns([2, 2])
+# Intelligence Mode
+selected_mode = st.radio(
+    "Grok Intelligence Mode:",
+    ["😎 Fun / Witty Mode", "🤔 Deep Think Mode", "⚡ Fast / Normal Mode"],
+    horizontal=True
+)
+if "Fun" in selected_mode:
+    agent.grok.set_mode("fun")
+elif "Think" in selected_mode:
+    agent.grok.set_mode("think")
+else:
+    agent.grok.set_mode("normal")
 
-with col_mode:
-    selected_mode = st.radio(
-        "Grok Intelligence Mode:",
-        ["😎 Fun / Witty Mode", "🤔 Deep Think Mode", "⚡ Fast / Normal Mode"],
-        horizontal=True
-    )
-    if "Fun" in selected_mode:
-        agent.grok.set_mode("fun")
-    elif "Think" in selected_mode:
-        agent.grok.set_mode("think")
-    else:
-        agent.grok.set_mode("normal")
+# Live Browser Microphone Widget
+mic_html = """
+<div style="background: #1E293B; border: 1px solid #334155; border-radius: 12px; padding: 14px; text-align: center; margin: 10px 0;">
+    <button id="micBtn" onclick="toggleMic()" style="background: #6366F1; color: white; border: none; padding: 12px 28px; border-radius: 25px; font-size: 15px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
+        🎙️ <span id="btnText">CLICK TO SPEAK (MICROPHONE ACTIVE)</span>
+    </button>
+    <div id="statusText" style="color: #94A3B8; font-size: 13px; margin-top: 8px;">Click the mic button, grant browser permission, and speak your question.</div>
+</div>
+<script>
+let recognition = null;
+let isRecording = false;
 
-with col_call:
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-    if not st.session_state.call_active:
-        if st.button("🎙️ START CALL CONVERSATION", type="primary", use_container_width=True):
-            st.session_state.call_active = True
-            voice.speak("Call connected. Voice channel open.", block=False)
-            st.rerun()
-    else:
-        if st.button("🔴 END CALL CONVERSATION", use_container_width=True):
-            st.session_state.call_active = False
-            voice.speak("Call disconnected.", block=False)
-            st.rerun()
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRec();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
 
-if st.session_state.call_active:
-    st.markdown('<div class="call-active-badge">📞 ONE-ON-ONE CALL IN PROGRESS — Audio is broadcasting in real-time.</div>', unsafe_allow_html=True)
+    recognition.onstart = function() {
+        isRecording = true;
+        document.getElementById('micBtn').style.background = '#EF4444';
+        document.getElementById('btnText').innerText = '🔴 LISTENING... SPEAK NOW';
+        document.getElementById('statusText').innerText = 'Listening to your microphone...';
+    };
+
+    recognition.onresult = function(event) {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                const finalTranscript = event.results[i][0].transcript;
+                document.getElementById('statusText').innerText = 'Recognized: "' + finalTranscript + '" - Sending to AI...';
+                
+                const parentDoc = window.parent.document;
+                const textarea = parentDoc.querySelector('textarea[data-testid="stChatInputTextArea"]');
+                if (textarea) {
+                    textarea.value = finalTranscript;
+                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    setTimeout(() => {
+                        const submitBtn = parentDoc.querySelector('button[data-testid="stChatInputSubmitButton"]');
+                        if (submitBtn) submitBtn.click();
+                    }, 250);
+                }
+            } else {
+                interim += event.results[i][0].transcript;
+                document.getElementById('statusText').innerText = 'Hearing: ' + interim;
+            }
+        }
+    };
+
+    recognition.onerror = function(event) {
+        isRecording = false;
+        document.getElementById('micBtn').style.background = '#6366F1';
+        document.getElementById('btnText').innerText = '🎙️ CLICK TO SPEAK (MICROPHONE ACTIVE)';
+        document.getElementById('statusText').innerText = 'Mic status: ' + event.error;
+    };
+
+    recognition.onend = function() {
+        isRecording = false;
+        document.getElementById('micBtn').style.background = '#6366F1';
+        document.getElementById('btnText').innerText = '🎙️ CLICK TO SPEAK (MICROPHONE ACTIVE)';
+    };
+}
+
+function toggleMic() {
+    if (!recognition) {
+        document.getElementById('statusText').innerText = 'Web Speech not supported in this browser. Please use Google Chrome or Microsoft Edge.';
+        return;
+    }
+    if (isRecording) {
+        recognition.stop();
+    } else {
+        recognition.start();
+    }
+}
+</script>
+"""
+components.html(mic_html, height=110)
 
 # Quick Action Chips
 c1, c2, c3, c4, c5 = st.columns(5)
@@ -168,7 +215,7 @@ with c4:
         st.session_state.quick_query = "python: import math; print('Euler constant:', math.e, 'Pi squared:', math.pi**2)"
 with c5:
     if st.button("🎨 Generate Graphic"):
-        st.session_state.quick_query = "generate image of Neural Matrix Architecture"
+        st.session_state.quick_query = "generate image of Quantum Neural Network"
 
 # Conversation Feed
 chat_container = st.container()
@@ -194,13 +241,13 @@ if user_input:
             st.markdown("<small style='color: #818CF8;'>🔊 Spoken aloud through audio system.</small>", unsafe_allow_html=True)
             st.session_state.messages.append({"role": "assistant", "content": response})
 
-            # Every single AI response speaks audio automatically
+            # Every response plays aloud
             voice.speak(response, block=False)
 
             if "generated_graphic.png" in response and os.path.exists("generated_graphic.png"):
                 st.image("generated_graphic.png", caption="Nexus-Grok Rendered Graphic", use_column_width=True)
 
-# Single Page Collapsible Tools (No tabs needed)
+# Single Page Collapsible Tools
 st.markdown("---")
 with st.expander("🛠️ Advanced Machine, WoL Power & Blockchain Operations"):
     col_t1, col_t2 = st.columns(2)
