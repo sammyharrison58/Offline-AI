@@ -152,16 +152,10 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             if (event.results[i].isFinal) {
                 const finalTranscript = event.results[i][0].transcript;
                 document.getElementById('statusText').innerText = 'Recognized: "' + finalTranscript + '" - Sending to AI...';
-                
-                const parentDoc = window.parent.document;
-                const textarea = parentDoc.querySelector('textarea[data-testid="stChatInputTextArea"]');
-                if (textarea) {
-                    textarea.value = finalTranscript;
-                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-                    setTimeout(() => {
-                        const submitBtn = parentDoc.querySelector('button[data-testid="stChatInputSubmitButton"]');
-                        if (submitBtn) submitBtn.click();
-                    }, 250);
+                try {
+                    window.parent.location.search = '?speech=' + encodeURIComponent(finalTranscript);
+                } catch(e) {
+                    window.location.search = '?speech=' + encodeURIComponent(finalTranscript);
                 }
             } else {
                 interim += event.results[i][0].transcript;
@@ -229,6 +223,11 @@ if "quick_query" in st.session_state and st.session_state.quick_query:
     user_input = st.session_state.quick_query
     st.session_state.quick_query = None
 
+speech_param = st.query_params.get("speech", None)
+if speech_param:
+    user_input = speech_param
+    st.query_params.clear()
+
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
@@ -243,6 +242,19 @@ if user_input:
 
             # Every response plays aloud
             voice.speak(response, block=False)
+
+            safe_text = response.replace('"', '\\"').replace("'", "\\'").replace('\n', ' ')
+            browser_audio = f"""
+            <script>
+            if ('speechSynthesis' in window) {{
+                window.speechSynthesis.cancel();
+                const utt = new SpeechSynthesisUtterance("{safe_text[:300]}");
+                utt.rate = 1.15;
+                window.speechSynthesis.speak(utt);
+            }}
+            </script>
+            """
+            components.html(browser_audio, height=0)
 
             if "generated_graphic.png" in response and os.path.exists("generated_graphic.png"):
                 st.image("generated_graphic.png", caption="Nexus-Grok Rendered Graphic", use_column_width=True)
