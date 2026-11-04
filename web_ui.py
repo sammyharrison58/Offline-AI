@@ -1,8 +1,15 @@
 import os
 import sys
 import time
+import io
 import streamlit as st
 import streamlit.components.v1 as components
+
+try:
+    import speech_recognition as sr
+    SR_AVAILABLE = True
+except ImportError:
+    SR_AVAILABLE = False
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
 if root_dir not in sys.path:
@@ -107,7 +114,6 @@ if not st.session_state.ai_open:
     st.warning("⚡ The AI is currently CLOSED. Click the green '🟢 OPEN AI' button above to activate voice, reasoning, and machine control.")
     st.stop()
 
-# Intelligence Mode
 selected_mode = st.radio(
     "Grok Intelligence Mode:",
     ["😎 Fun / Witty Mode", "🤔 Deep Think Mode", "⚡ Fast / Normal Mode"],
@@ -120,80 +126,13 @@ elif "Think" in selected_mode:
 else:
     agent.grok.set_mode("normal")
 
-# Live Browser Microphone Widget
-mic_html = """
-<div style="background: #1E293B; border: 1px solid #334155; border-radius: 12px; padding: 14px; text-align: center; margin: 10px 0;">
-    <button id="micBtn" onclick="toggleMic()" style="background: #6366F1; color: white; border: none; padding: 12px 28px; border-radius: 25px; font-size: 15px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
-        🎙️ <span id="btnText">CLICK TO SPEAK (MICROPHONE ACTIVE)</span>
-    </button>
-    <div id="statusText" style="color: #94A3B8; font-size: 13px; margin-top: 8px;">Click the mic button, grant browser permission, and speak your question.</div>
-</div>
-<script>
-let recognition = null;
-let isRecording = false;
+st.markdown("##### 🎙️ Voice Call Conversation Line (Live Microphone)")
+col_mic, col_desc = st.columns([1, 2])
+with col_mic:
+    recorded_audio = st.audio_input("Record Voice", label_visibility="collapsed")
+with col_desc:
+    st.markdown("<div style='color: #94A3B8; padding-top: 10px; font-size: 14px;'>🎙️ <b>Click the red circle</b> to record your speech, and click it again to finish. The AI will transcribe your words and speak the answer immediately!</div>", unsafe_allow_html=True)
 
-if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SpeechRec();
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = function() {
-        isRecording = true;
-        document.getElementById('micBtn').style.background = '#EF4444';
-        document.getElementById('btnText').innerText = '🔴 LISTENING... SPEAK NOW';
-        document.getElementById('statusText').innerText = 'Listening to your microphone...';
-    };
-
-    recognition.onresult = function(event) {
-        let interim = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-                const finalTranscript = event.results[i][0].transcript;
-                document.getElementById('statusText').innerText = 'Recognized: "' + finalTranscript + '" - Sending to AI...';
-                try {
-                    window.parent.location.search = '?speech=' + encodeURIComponent(finalTranscript);
-                } catch(e) {
-                    window.location.search = '?speech=' + encodeURIComponent(finalTranscript);
-                }
-            } else {
-                interim += event.results[i][0].transcript;
-                document.getElementById('statusText').innerText = 'Hearing: ' + interim;
-            }
-        }
-    };
-
-    recognition.onerror = function(event) {
-        isRecording = false;
-        document.getElementById('micBtn').style.background = '#6366F1';
-        document.getElementById('btnText').innerText = '🎙️ CLICK TO SPEAK (MICROPHONE ACTIVE)';
-        document.getElementById('statusText').innerText = 'Mic status: ' + event.error;
-    };
-
-    recognition.onend = function() {
-        isRecording = false;
-        document.getElementById('micBtn').style.background = '#6366F1';
-        document.getElementById('btnText').innerText = '🎙️ CLICK TO SPEAK (MICROPHONE ACTIVE)';
-    };
-}
-
-function toggleMic() {
-    if (!recognition) {
-        document.getElementById('statusText').innerText = 'Web Speech not supported in this browser. Please use Google Chrome or Microsoft Edge.';
-        return;
-    }
-    if (isRecording) {
-        recognition.stop();
-    } else {
-        recognition.start();
-    }
-}
-</script>
-"""
-components.html(mic_html, height=110)
-
-# Quick Action Chips
 c1, c2, c3, c4, c5 = st.columns(5)
 with c1:
     if st.button("📊 Hardware Telemetry"):
@@ -211,55 +150,64 @@ with c5:
     if st.button("🎨 Generate Graphic"):
         st.session_state.quick_query = "generate image of Quantum Neural Network"
 
-# Conversation Feed
 chat_container = st.container()
 with chat_container:
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-user_input = st.chat_input("Speak or type a command to Nexus-Grok...")
+user_input = st.chat_input("Speak via microphone above or type a command...")
 if "quick_query" in st.session_state and st.session_state.quick_query:
     user_input = st.session_state.quick_query
     st.session_state.quick_query = None
 
-speech_param = st.query_params.get("speech", None)
-if speech_param:
-    user_input = speech_param
-    st.query_params.clear()
+if recorded_audio is not None:
+    audio_bytes = recorded_audio.getvalue()
+    audio_hash = hash(audio_bytes)
+    if st.session_state.get("last_processed_audio_hash") != audio_hash:
+        st.session_state["last_processed_audio_hash"] = audio_hash
+        if SR_AVAILABLE:
+            with st.spinner("🎙️ Transcribing voice from microphone..."):
+                try:
+                    r = sr.Recognizer()
+                    with sr.AudioFile(io.BytesIO(audio_bytes)) as source:
+                        audio_data = r.record(source)
+                    transcribed = r.recognize_google(audio_data)
+                    if transcribed:
+                        user_input = transcribed
+                        st.success(f"🗣️ Heard: \"{transcribed}\"")
+                except sr.UnknownValueError:
+                    st.warning("Could not detect words clearly. Please speak closer to your microphone.")
+                except Exception as e:
+                    st.error(f"Speech transcription error: {e}")
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
-    with st.chat_message("user"):
-        st.markdown(user_input)
+    with chat_container:
+        with st.chat_message("user"):
+            st.markdown(user_input)
+        with st.chat_message("assistant"):
+            with st.spinner("Processing request..."):
+                response = agent.process_request(user_input)
+                st.markdown(response)
+                st.markdown("<small style='color: #818CF8;'>🔊 Spoken aloud through audio system.</small>", unsafe_allow_html=True)
+                if "generated_graphic.png" in response and os.path.exists("generated_graphic.png"):
+                    st.image("generated_graphic.png", caption="Nexus-Grok Rendered Graphic", use_column_width=True)
+                voice.speak(response, block=False)
+                safe_text = response.replace('"', '\\"').replace("'", "\\'").replace('\n', ' ')
+                browser_audio = f"""
+                <script>
+                if ('speechSynthesis' in window) {{
+                    window.speechSynthesis.cancel();
+                    const utt = new SpeechSynthesisUtterance("{safe_text[:300]}");
+                    utt.rate = 1.15;
+                    window.speechSynthesis.speak(utt);
+                }}
+                </script>
+                """
+                components.html(browser_audio, height=0)
+    st.session_state.messages.append({"role": "assistant", "content": response})
 
-    with st.chat_message("assistant"):
-        with st.spinner("Processing request..."):
-            response = agent.process_request(user_input)
-            st.markdown(response)
-            st.markdown("<small style='color: #818CF8;'>🔊 Spoken aloud through audio system.</small>", unsafe_allow_html=True)
-            st.session_state.messages.append({"role": "assistant", "content": response})
-
-            # Every response plays aloud
-            voice.speak(response, block=False)
-
-            safe_text = response.replace('"', '\\"').replace("'", "\\'").replace('\n', ' ')
-            browser_audio = f"""
-            <script>
-            if ('speechSynthesis' in window) {{
-                window.speechSynthesis.cancel();
-                const utt = new SpeechSynthesisUtterance("{safe_text[:300]}");
-                utt.rate = 1.15;
-                window.speechSynthesis.speak(utt);
-            }}
-            </script>
-            """
-            components.html(browser_audio, height=0)
-
-            if "generated_graphic.png" in response and os.path.exists("generated_graphic.png"):
-                st.image("generated_graphic.png", caption="Nexus-Grok Rendered Graphic", use_column_width=True)
-
-# Single Page Collapsible Tools
 st.markdown("---")
 with st.expander("🛠️ Advanced Machine, WoL Power & Blockchain Operations"):
     col_t1, col_t2 = st.columns(2)
