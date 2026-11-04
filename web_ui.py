@@ -187,25 +187,23 @@ if user_input:
         with st.chat_message("user"):
             st.markdown(user_input)
         with st.chat_message("assistant"):
-            with st.spinner("Processing request..."):
-                response = agent.process_request(user_input)
-                st.markdown(response)
-                st.markdown("<small style='color: #818CF8;'>🔊 Spoken aloud through audio system.</small>", unsafe_allow_html=True)
-                if "generated_graphic.png" in response and os.path.exists("generated_graphic.png"):
-                    st.image("generated_graphic.png", caption="Nexus-Grok Rendered Graphic", use_column_width=True)
-                voice.speak(response, block=False)
-                safe_text = response.replace('"', '\\"').replace("'", "\\'").replace('\n', ' ')
-                browser_audio = f"""
-                <script>
-                if ('speechSynthesis' in window) {{
-                    window.speechSynthesis.cancel();
-                    const utt = new SpeechSynthesisUtterance("{safe_text[:300]}");
-                    utt.rate = 1.15;
-                    window.speechSynthesis.speak(utt);
-                }}
-                </script>
-                """
-                components.html(browser_audio, height=0)
+            response = st.write_stream(agent.process_request_stream(user_input))
+            st.markdown("<small style='color: #818CF8;'>🔊 Spoken aloud through audio system.</small>", unsafe_allow_html=True)
+            if "generated_graphic.png" in response and os.path.exists("generated_graphic.png"):
+                st.image("generated_graphic.png", caption="Nexus-Grok Rendered Graphic", use_column_width=True)
+            voice.speak(response, block=False)
+            safe_text = response.replace('"', '\\"').replace("'", "\\'").replace('\n', ' ')
+            browser_audio = f"""
+            <script>
+            if ('speechSynthesis' in window) {{
+                window.speechSynthesis.cancel();
+                const utt = new SpeechSynthesisUtterance("{safe_text[:300]}");
+                utt.rate = 1.15;
+                window.speechSynthesis.speak(utt);
+            }}
+            </script>
+            """
+            components.html(browser_audio, height=0)
     st.session_state.messages.append({"role": "assistant", "content": response})
 
 st.markdown("---")

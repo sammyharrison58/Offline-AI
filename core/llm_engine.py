@@ -1,7 +1,8 @@
 import os
 import json
+import threading
 import requests
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Generator
 
 class OfflineLLMEngine:
 
@@ -12,6 +13,8 @@ class OfflineLLMEngine:
         self.openai_compatible_url = openai_compatible_url
         self.gguf_path = gguf_path
         self.active_backend = self._detect_backend()
+        self.warmup_thread = threading.Thread(target=self.warmup, daemon=True)
+        self.warmup_thread.start()
 
     def _detect_backend(self) -> str:
         if self.backend != "auto":
@@ -36,7 +39,24 @@ class OfflineLLMEngine:
             pass
         return "builtin_synthesizer"
 
-    def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 100, temperature: float = 0.7) -> str:
+    def warmup(self):
+        if self.active_backend == "ollama":
+            try:
+                requests.post(
+                    f"{self.ollama_url}/api/generate",
+                    json={
+                        "model": self.ollama_model,
+                        "prompt": "ok",
+                        "options": {"num_predict": 1, "num_thread": 4, "num_ctx": 512},
+                        "keep_alive": -1,
+                        "stream": False
+                    },
+                    timeout=25
+                )
+            except Exception:
+                pass
+
+    def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 40, temperature: float = 0.5) -> str:
         backend = self.active_backend
         if backend == "ollama":
             return self._call_ollama(prompt, system_prompt, max_tokens, temperature)
@@ -44,6 +64,40 @@ class OfflineLLMEngine:
             return self._call_openai(prompt, system_prompt, max_tokens, temperature)
         else:
             return self._call_builtin(prompt, system_prompt)
+
+    def generate_stream(self, prompt: str, system_prompt: str = "", max_tokens: int = 40, temperature: float = 0.5) -> Generator[str, None, None]:
+        if self.active_backend == "ollama":
+            url = f"{self.ollama_url}/api/generate"
+            payload = {
+                "model": self.ollama_model,
+                "prompt": prompt,
+                "system": system_prompt or "You are Grok, an ultra-fast, intelligent, direct AI assistant.",
+                "stream": True,
+                "keep_alive": -1,
+                "options": {
+                    "num_predict": min(max_tokens, 40),
+                    "num_thread": 4,
+                    "num_ctx": 512,
+                    "temperature": temperature,
+                    "top_k": 25,
+                    "top_p": 0.85,
+                    "stop": ["\n\n", "User:", "\nUser", "Question:"]
+                }
+            }
+            try:
+                with requests.post(url, json=payload, stream=True, timeout=25) as resp:
+                    for line in resp.iter_lines():
+                        if line:
+                            data = json.loads(line)
+                            tok = data.get("response", "")
+                            if tok:
+                                yield tok
+                            if data.get("done"):
+                                break
+            except Exception as e:
+                yield f"[Ollama Connection Error]: {e}"
+        else:
+            yield self.generate(prompt, system_prompt, max_tokens, temperature)
 
     def _call_ollama(self, prompt: str, system_prompt: str, max_tokens: int, temperature: float) -> str:
         try:
@@ -53,14 +107,18 @@ class OfflineLLMEngine:
                 "prompt": prompt,
                 "system": system_prompt or "You are Grok, an ultra-fast, intelligent, direct AI assistant.",
                 "stream": False,
+                "keep_alive": -1,
                 "options": {
-                    "num_predict": min(max_tokens, 90),
+                    "num_predict": min(max_tokens, 40),
+                    "num_thread": 4,
+                    "num_ctx": 512,
                     "temperature": temperature,
-                    "top_k": 30,
-                    "top_p": 0.85
+                    "top_k": 25,
+                    "top_p": 0.85,
+                    "stop": ["\n\n", "User:", "\nUser", "Question:"]
                 }
             }
-            res = requests.post(url, json=payload, timeout=35)
+            res = requests.post(url, json=payload, timeout=25)
             if res.status_code == 200:
                 return res.json().get("response", "").strip()
             return f"[Ollama Error] HTTP {res.status_code}"
@@ -74,8 +132,8 @@ class OfflineLLMEngine:
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
-            payload = {"messages": messages, "max_tokens": min(max_tokens, 90), "temperature": temperature}
-            res = requests.post(url, json=payload, timeout=30)
+            payload = {"messages": messages, "max_tokens": min(max_tokens, 40), "temperature": temperature}
+            res = requests.post(url, json=payload, timeout=20)
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"].strip()
             return f"[OpenAI Error] HTTP {res.status_code}"

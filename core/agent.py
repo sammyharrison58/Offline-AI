@@ -2,7 +2,7 @@ import os
 import sys
 import re
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Generator
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if root_dir not in sys.path:
@@ -26,6 +26,24 @@ class Nexus226Agent:
     def process_request(self, user_query: str) -> str:
         q = user_query.strip()
         ql = q.lower()
+
+        if not ql:
+            return "Listening. Say or type a command."
+
+        if ql in ["hello", "hi", "hey", "good morning", "good evening", "howdy", "greetings"]:
+            return "Greetings! Nexus-Grok online and listening. Ask me any question, run code, or command machine actions."
+
+        if any(ql == w or ql == f"{w} grok" or ql == f"{w} nexus" for w in ["who are you", "what are you", "what is your name"]):
+            return "I am Nexus-Grok, your uncensored offline autonomous AI agent equipped with 226 AI architecture paradigms, OS machine controls, blockchain treasury, and voice duplex."
+
+        if any(ql.startswith(w) for w in ["how are you", "are you ready", "are you online", "status", "are you working"]):
+            return "All systems operational and hot in memory. Ready for commands or complex inquiries."
+
+        if ql in ["thank you", "thanks", "thanks grok", "appreciate it"]:
+            return "You're welcome! Ready for the next command."
+
+        if ql in ["help", "what can you do", "commands", "menu"]:
+            return "Capabilities: 226 AI paradigms, live web intelligence, python sandbox ('python: ...'), Wake-on-LAN, screenshots, hardware telemetry, crypto wallet, and voice interaction."
 
         if ql.startswith("set mode to ") or ql.startswith("switch mode to "):
             m = ql.replace("set mode to ", "").replace("switch mode to ", "").strip()
@@ -129,26 +147,76 @@ class Nexus226Agent:
         k_ctx = ""
         if matched_domains and any(tok in ql for tok in matched_domains[0].get("name").lower().split()[:2]):
             d = matched_domains[0]
-            k_ctx = f"Domain reference: {d['name']}. {d['concept']} Math: {d['mathematical_basis']}."
+            k_ctx = f"Domain reference: {d['name']}. {d['concept']}"
 
-        system_instruction = (
-            f"You are Grok. Mode: {self.grok.mode}. "
-            "Give a direct, witty, intelligent, and accurate answer in 2-3 sentences. No fluff."
-        )
-        user_prompt = f"{k_ctx}\nUser Question: {q}\nAnswer:" if k_ctx else q
+        system_instruction = f"You are Grok ({self.grok.mode} mode). Reply concisely in 1-2 sharp sentences."
+        user_prompt = f"{k_ctx}\n{q}" if k_ctx else q
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
-            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=100)
+            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=40)
             if res and not res.startswith("[Ollama") and not res.startswith("[Local"):
                 return res
 
         if k_ctx:
             return f"{matched_domains[0]['name']}: {matched_domains[0]['concept']}\nFormulation: {matched_domains[0]['mathematical_basis']}"
 
-        if "who are you" in ql or "what are you" in ql:
-            return "I am Nexus-Grok, your uncensored offline autonomous AI agent equipped with 226 AI architecture paradigms, OS machine controls, blockchain treasury, and voice duplex."
-
-        if "hello" in ql or "hi" in ql or "hey" in ql:
-            return "Greetings! Nexus-Grok online and listening. Ask me any question, run code, or command machine actions."
-
         return f"Query analyzed: '{q}'. All systems active. Ask technical questions, request code execution with 'python: ...', or command machine automation."
+
+    def process_request_stream(self, user_query: str) -> Generator[str, None, None]:
+        q = user_query.strip()
+        ql = q.lower()
+
+        if not ql:
+            yield "Listening. Say or type a command."
+            return
+
+        if ql in ["hello", "hi", "hey", "good morning", "good evening", "howdy", "greetings"]:
+            yield "Greetings! Nexus-Grok online and listening. Ask me any question, run code, or command machine actions."
+            return
+
+        if any(ql == w or ql == f"{w} grok" or ql == f"{w} nexus" for w in ["who are you", "what are you", "what is your name"]):
+            yield "I am Nexus-Grok, your uncensored offline autonomous AI agent equipped with 226 AI architecture paradigms, OS machine controls, blockchain treasury, and voice duplex."
+            return
+
+        if any(ql.startswith(w) for w in ["how are you", "are you ready", "are you online", "status", "are you working"]):
+            yield "All systems operational and hot in memory. Ready for commands or complex inquiries."
+            return
+
+        if ql in ["thank you", "thanks", "thanks grok", "appreciate it"]:
+            yield "You're welcome! Ready for the next command."
+            return
+
+        if ql in ["help", "what can you do", "commands", "menu"]:
+            yield "Capabilities: 226 AI paradigms, live web intelligence, python sandbox ('python: ...'), Wake-on-LAN, screenshots, hardware telemetry, crypto wallet, and voice interaction."
+            return
+
+        fast_keywords = [
+            "set mode to ", "switch mode to ", "run code:", "python:", "execute code:",
+            "generate image", "create graphic", "draw ", "render image",
+            "search web", "look up", "google ", "browse web", "latest news",
+            "wake on lan", "wol", "open computer", "open the computer", "wake computer", "power on",
+            "schedule wake", "wake at", "sleep computer", "suspend machine",
+            "system status", "telemetry", "hardware status", "pc specs", "ram usage", "battery",
+            "screenshot", "run powershell ", "powershell ", "launch ", "open app ",
+            "list processes", "wallet", "balance", "crypto balance", "my address",
+            "send ", "transfer ", "pay ", "transaction history", "ledger"
+        ]
+        if any(w in ql for w in fast_keywords):
+            yield self.process_request(user_query)
+            return
+
+        matched_domains = self.knowledge.query(q, top_k=1)
+        k_ctx = ""
+        if matched_domains and any(tok in ql for tok in matched_domains[0].get("name").lower().split()[:2]):
+            d = matched_domains[0]
+            k_ctx = f"Domain reference: {d['name']}. {d['concept']}"
+
+        system_instruction = f"You are Grok ({self.grok.mode} mode). Reply concisely in 1-2 sharp sentences."
+        user_prompt = f"{k_ctx}\n{q}" if k_ctx else q
+
+        if self.llm.active_backend in ["ollama", "openai_compatible"]:
+            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=40):
+                yield chunk
+            return
+
+        yield self.process_request(user_query)
