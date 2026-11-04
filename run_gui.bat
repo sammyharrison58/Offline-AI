@@ -1,10 +1,7 @@
 @echo off
-title Nexus-226 Web Cockpit (Virtual Environment)
+title Nexus-Grok Web Cockpit
 cd /d "%~dp0"
-echo [Nexus-226] Activating virtual environment (.venv)...
-call .venv\Scripts\activate.bat
-echo [Nexus-226] Opening browser GUI...
+echo Starting Nexus-Grok Web Cockpit...
 start "" "http://localhost:8501"
-python -m streamlit run web_ui.py --server.port 8501
+"%~dp0.venv\Scripts\python.exe" -m streamlit run "%~dp0web_ui.py" --server.port 8501
 pause
-

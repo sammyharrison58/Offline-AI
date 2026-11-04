@@ -1,13 +1,6 @@
 @echo off
-title Nexus-226 Master Control Panel (Virtual Environment)
+title Nexus-Grok Master Controller
 cd /d "%~dp0"
-echo [Nexus-226] Activating virtual environment (.venv)...
-call .venv\Scripts\activate.bat
-echo [Nexus-226] Launching Master Control Panel Window...
-python control_panel.py
-if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo Control panel closed with exit code %ERRORLEVEL%.
-    pause
-)
-
+echo Launching Master Control Panel...
+"%~dp0.venv\Scripts\python.exe" "%~dp0control_panel.py"
+pause
