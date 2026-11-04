@@ -2,12 +2,15 @@ import sys
 import time
 import threading
 import queue
+import re
 from typing import Optional, Callable
+
 try:
     import win32com.client
     SAPI_AVAILABLE = True
 except ImportError:
     SAPI_AVAILABLE = False
+
 try:
     import speech_recognition as sr
     SR_AVAILABLE = True
@@ -16,7 +19,7 @@ except ImportError:
 
 class OfflineVoiceEngine:
 
-    def __init__(self, voice_speed: int=1):
+    def __init__(self, voice_speed: int = 3):
         self.sapi_voice = None
         self.lock = threading.Lock()
         if SAPI_AVAILABLE:
@@ -26,21 +29,37 @@ class OfflineVoiceEngine:
             except Exception as e:
                 print(f'[VoiceEngine] Warning: SAPI initialization failed: {e}')
 
-    def speak(self, text: str, block: bool=True):
-        clean_text = text.replace('*', '').replace('#', '').replace('`', '')
-        if not self.sapi_voice:
-            print(f'[AI Voice Output]: {clean_text}')
+    def clean_text_for_speech(self, text: str) -> str:
+        t = re.sub(r'```.*?```', 'code block executed.', text, flags=re.DOTALL)
+        t = re.sub(r'https?://\S+', 'link', t)
+        t = re.sub(r'[#*`_~>\-]', ' ', t)
+        t = re.sub(r'\s+', ' ', t).strip()
+        if len(t) > 350:
+            sentences = t.split('. ')
+            if len(sentences) > 2:
+                t = '. '.join(sentences[:2]) + '.'
+        return t
+
+    def speak(self, text: str, block: bool = False):
+        clean_text = self.clean_text_for_speech(text)
+        if not self.sapi_voice or not clean_text:
+            if clean_text:
+                print(f'[AI Voice Output]: {clean_text}')
             return
 
         def _run_speak():
             with self.lock:
                 try:
-                    flags = 0 if block else 1
-                    self.sapi_voice.Speak(clean_text, flags)
+                    self.sapi_voice.Speak(clean_text, 1)
                 except Exception as e:
                     print(f'[VoiceEngine Error] {e}')
+
         if block:
-            _run_speak()
+            with self.lock:
+                try:
+                    self.sapi_voice.Speak(clean_text, 0)
+                except Exception as e:
+                    print(f'[VoiceEngine Error] {e}')
         else:
             threading.Thread(target=_run_speak, daemon=True).start()
 
@@ -55,7 +74,7 @@ class ConversationalCallLoop:
 
     def __init__(self, agent_responder: Callable[[str], str]):
         self.agent_responder = agent_responder
-        self.voice = OfflineVoiceEngine(voice_speed=1)
+        self.voice = OfflineVoiceEngine(voice_speed=3)
         self.is_active = False
         self.recognizer = sr.Recognizer() if SR_AVAILABLE else None
         self.mic = None
@@ -67,32 +86,29 @@ class ConversationalCallLoop:
 
     def start_call(self):
         self.is_active = True
-        print('\n' + '=' * 65)
-        print(' [NEXUS-226] DUPLEX VOICE CALL CONNECTED (ALWAYS ON)')
-        print(' Mode: Real-Life One-on-One Voice Conversation')
-        print(' Speak freely into your mic or type text below.')
-        print(" Say or type 'hang up', 'goodbye', or 'shut down' to end call.")
-        print('=' * 65 + '\n')
-        greeting = 'Nexus online. I am connected and listening. How can I assist you with the machine, transactions, or any AI architecture?'
+        greeting = 'Nexus online. Real time call active. Listening.'
         print(f'\nAI: {greeting}\n')
         self.voice.speak(greeting, block=True)
+
         while self.is_active:
             user_input = self._listen_or_prompt()
             if not user_input:
                 continue
+
             clean_input = user_input.strip().lower()
             if clean_input in ['hang up', 'end call', 'disconnect', 'shut down', 'exit', 'quit']:
-                farewell = 'Call ended. Entering standby mode.'
+                farewell = 'Call ended. Standby.'
                 print(f'\nAI: {farewell}\n')
                 self.voice.speak(farewell, block=True)
                 self.is_active = False
                 break
+
             print(f'\n[User]: {user_input}')
-            print('[Nexus-226]: Thinking & Processing...')
             try:
                 response = self.agent_responder(user_input)
             except Exception as e:
-                response = f'I encountered an error executing that request: {str(e)}'
+                response = f'Error executing request: {str(e)}'
+
             print(f'[AI]: {response}\n')
             self.voice.speak(response, block=True)
 
@@ -101,24 +117,23 @@ class ConversationalCallLoop:
             try:
                 print('>> [Listening... speak now or press Enter to type] ', end='', flush=True)
                 with self.mic as source:
-                    self.recognizer.adjust_for_ambient_noise(source, duration=0.3)
-                    audio = self.recognizer.listen(source, timeout=3, phrase_time_limit=10)
+                    self.recognizer.adjust_for_ambient_noise(source, duration=0.2)
+                    audio = self.recognizer.listen(source, timeout=3, phrase_time_limit=8)
                 print('\n[Processing voice input...]')
                 text = self.recognizer.recognize_sphinx(audio) if hasattr(self.recognizer, 'recognize_sphinx') else None
                 if text:
                     return text
             except Exception:
                 pass
+
         try:
-            val = input('>> [Speak/Type]: ')
-            return val
+            return input('>> [Speak/Type]: ')
         except (EOFError, KeyboardInterrupt):
             self.is_active = False
             return 'hang up'
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     def dummy_responder(query: str) -> str:
-        return f"Acknowledged query regarding '{query}'. All subsystems operational."
+        return f'Acknowledged query {query}. Operational.'
     call = ConversationalCallLoop(agent_responder=dummy_responder)
-    print('Testing Voice Engine directly...')
-    call.voice.speak('Offline voice engine initialized successfully.', block=True)
+    call.voice.speak('Offline voice engine tested.', block=True)
