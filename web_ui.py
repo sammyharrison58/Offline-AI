@@ -19,7 +19,7 @@ from core.agent import Nexus226Agent
 from core.voice_loop import OfflineVoiceEngine
 
 st.set_page_config(
-    page_title="Nexus-Grok AI",
+    page_title="Nexus-Grok AI | Jarvis Edition",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -33,26 +33,27 @@ st.markdown("""
         font-family: 'Segoe UI', system-ui, sans-serif;
     }
     .main-title {
-        font-size: 2.4rem;
+        font-size: 2.2rem;
         font-weight: 800;
-        background: linear-gradient(90deg, #6366F1, #EC4899);
+        background: linear-gradient(90deg, #00f0ff, #6366F1, #EC4899);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin-bottom: 2px;
     }
     .sub-title {
         color: #94A3B8;
-        font-size: 1rem;
-        margin-bottom: 18px;
+        font-size: 0.95rem;
+        margin-bottom: 12px;
     }
     .status-badge-on {
-        background: rgba(16, 185, 129, 0.15);
-        color: #34D399;
-        border: 1px solid #059669;
+        background: rgba(0, 240, 255, 0.15);
+        color: #00f0ff;
+        border: 1px solid #00f0ff;
         padding: 6px 14px;
         border-radius: 20px;
         font-weight: 700;
         display: inline-block;
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
     }
     .status-badge-off {
         background: rgba(239, 68, 68, 0.15);
@@ -66,6 +67,19 @@ st.markdown("""
     .stButton>button {
         border-radius: 8px;
         font-weight: 600;
+    }
+    .bottom-dock {
+        position: sticky;
+        bottom: 72px;
+        z-index: 999;
+        background: rgba(11, 15, 25, 0.95);
+        border: 1px solid rgba(0, 240, 255, 0.4);
+        border-radius: 14px;
+        padding: 6px 14px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 15px rgba(0,240,255,0.15);
+        margin-top: 10px;
+        margin-bottom: 6px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -86,23 +100,23 @@ if "ai_open" not in st.session_state:
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Nexus-Grok online. Audio responses active. Speak into the mic or type any question below."}
+        {"role": "assistant", "content": "Nexus-Jarvis online. Neural core active. Voice and text interface ready below."}
     ]
 
 col_hdr, col_pwr = st.columns([3, 1])
 with col_hdr:
-    st.markdown('<div class="main-title">⚡ NEXUS-GROK AI</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-title">226 AI Paradigms | Code Interpreter | Live Web Intel | Machine & Power Control | Audio Enabled</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">⚡ NEXUS-JARVIS AI COCKPIT</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">226 AI Paradigms | Holographic Core | Direct Voice Duplex | OS Machine Control</div>', unsafe_allow_html=True)
 
 with col_pwr:
     if st.session_state.ai_open:
-        st.markdown('<div class="status-badge-on">● AI OPEN & ACTIVE</div>', unsafe_allow_html=True)
+        st.markdown('<div class="status-badge-on">● JARVIS CORE ACTIVE</div>', unsafe_allow_html=True)
         if st.button("🔴 CLOSE AI", use_container_width=True):
             st.session_state.ai_open = False
             voice.speak("AI power closed. Entering standby.", block=False)
             st.rerun()
     else:
-        st.markdown('<div class="status-badge-off">○ AI CLOSED / STANDBY</div>', unsafe_allow_html=True)
+        st.markdown('<div class="status-badge-off">○ SYSTEM STANDBY</div>', unsafe_allow_html=True)
         if st.button("🟢 OPEN AI", type="primary", use_container_width=True):
             st.session_state.ai_open = True
             voice.speak("AI power online. Ready.", block=False)
@@ -114,8 +128,48 @@ if not st.session_state.ai_open:
     st.warning("⚡ The AI is currently CLOSED. Click the green '🟢 OPEN AI' button above to activate voice, reasoning, and machine control.")
     st.stop()
 
+jarvis_sphere_html = """
+<style>
+body { margin:0; background:transparent; display:flex; justify-content:center; align-items:center; overflow:hidden; font-family:'Segoe UI',sans-serif; }
+.jarvis-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:195px; }
+.jarvis-core { position:relative; width:134px; height:134px; display:flex; align-items:center; justify-content:center; }
+.ring { position:absolute; border-radius:50%; box-sizing:border-box; }
+.outer-ring { width:132px; height:132px; border:1px dashed rgba(0,240,255,0.4); animation:rotCW 18s linear infinite; }
+.tracker-ring { width:118px; height:118px; border:2px solid transparent; border-top:2px solid #00f0ff; border-bottom:2px solid #00f0ff; filter:drop-shadow(0 0 8px #00f0ff); animation:rotCCW 9s linear infinite; }
+.middle-ring { width:98px; height:98px; border:1px solid rgba(0,200,255,0.4); border-left:3px solid #00f0ff; border-right:3px solid #00f0ff; animation:rotCW 5s linear infinite; }
+.dashed-ring { width:78px; height:78px; border:2px dotted rgba(0,240,255,0.7); animation:rotCCW 7s linear infinite; }
+.core-orb { position:absolute; width:52px; height:52px; border-radius:50%; background:radial-gradient(circle, #00f0ff 0%, #0088ff 55%, rgba(0,20,60,0.85) 100%); box-shadow:0 0 22px #00f0ff, inset 0 0 15px #ffffff; animation:pulseOrb 2.2s ease-in-out infinite; }
+.core-center { position:absolute; width:22px; height:22px; border-radius:50%; background:#ffffff; box-shadow:0 0 15px #00f0ff, 0 0 30px #00f0ff; animation:pulseCenter 2.2s ease-in-out infinite; }
+.pulse-wave { position:absolute; width:55px; height:55px; border-radius:50%; border:1px solid #00f0ff; opacity:0; animation:waveOut 2.2s ease-out infinite; }
+@keyframes rotCW { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
+@keyframes rotCCW { 0% { transform:rotate(360deg); } 100% { transform:rotate(0deg); } }
+@keyframes pulseOrb { 0%,100% { transform:scale(0.92); opacity:0.85; filter:drop-shadow(0 0 12px #00f0ff); } 50% { transform:scale(1.08); opacity:1; filter:drop-shadow(0 0 28px #00f0ff); } }
+@keyframes pulseCenter { 0%,100% { transform:scale(0.85); opacity:0.9; } 50% { transform:scale(1.15); opacity:1; } }
+@keyframes waveOut { 0% { width:50px; height:50px; opacity:0.85; } 100% { width:140px; height:140px; opacity:0; } }
+.hud-text { margin-top:8px; display:flex; flex-direction:column; align-items:center; }
+.hud-tag { font-size:11px; font-weight:800; letter-spacing:3px; color:#00f0ff; text-shadow:0 0 8px rgba(0,240,255,0.8); }
+.hud-sub { font-size:9px; font-weight:600; letter-spacing:1.5px; color:#60a5fa; opacity:0.85; margin-top:2px; }
+</style>
+<div class='jarvis-wrap'>
+<div class='jarvis-core'>
+<div class='ring outer-ring'></div>
+<div class='ring tracker-ring'></div>
+<div class='ring middle-ring'></div>
+<div class='ring dashed-ring'></div>
+<div class='pulse-wave'></div>
+<div class='core-orb'></div>
+<div class='core-center'></div>
+</div>
+<div class='hud-text'>
+<div class='hud-tag'>J.A.R.V.I.S. SPHERE ONLINE</div>
+<div class='hud-sub'>226 AI PARADIGMS ● VOICE DUPLEX ACTIVE</div>
+</div>
+</div>
+"""
+components.html(jarvis_sphere_html, height=200)
+
 selected_mode = st.radio(
-    "Grok Intelligence Mode:",
+    "Intelligence Mode:",
     ["😎 Fun / Witty Mode", "🤔 Deep Think Mode", "⚡ Fast / Normal Mode"],
     horizontal=True
 )
@@ -126,28 +180,21 @@ elif "Think" in selected_mode:
 else:
     agent.grok.set_mode("normal")
 
-st.markdown("##### 🎙️ Voice Call Conversation Line (Live Microphone)")
-col_mic, col_desc = st.columns([1, 2])
-with col_mic:
-    recorded_audio = st.audio_input("Record Voice", label_visibility="collapsed")
-with col_desc:
-    st.markdown("<div style='color: #94A3B8; padding-top: 10px; font-size: 14px;'>🎙️ <b>Click the red circle</b> to record your speech, and click it again to finish. The AI will transcribe your words and speak the answer immediately!</div>", unsafe_allow_html=True)
-
 c1, c2, c3, c4, c5 = st.columns(5)
 with c1:
-    if st.button("📊 Hardware Telemetry"):
+    if st.button("📊 Telemetry"):
         st.session_state.quick_query = "What is the current system telemetry and hardware status?"
 with c2:
-    if st.button("💰 Wallet & Balance"):
+    if st.button("💰 Wallet"):
         st.session_state.quick_query = "Check my wallet balance and address"
 with c3:
-    if st.button("🌐 Live Web News"):
+    if st.button("🌐 Live Web"):
         st.session_state.quick_query = "search web for latest AI breakthroughs"
 with c4:
-    if st.button("💻 Execute Python"):
+    if st.button("💻 Python"):
         st.session_state.quick_query = "python: import math; print('Euler constant:', math.e, 'Pi squared:', math.pi**2)"
 with c5:
-    if st.button("🎨 Generate Graphic"):
+    if st.button("🎨 Graphic"):
         st.session_state.quick_query = "generate image of Quantum Neural Network"
 
 chat_container = st.container()
@@ -155,6 +202,14 @@ with chat_container:
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
+
+st.markdown("<div class='bottom-dock'>", unsafe_allow_html=True)
+col_m1, col_m2 = st.columns([1, 3])
+with col_m1:
+    recorded_audio = st.audio_input("Record Voice", key="bottom_mic", label_visibility="collapsed")
+with col_m2:
+    st.markdown("<div style='color:#00f0ff; padding-top:6px; font-size:13px; font-weight:700;'>🎙️ Voice Mic (Click red circle to talk)</div><div style='color:#94A3B8; font-size:11px;'>Transcribes and responds immediately right here at the text bar.</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
 user_input = st.chat_input("Speak via microphone above or type a command...")
 if "quick_query" in st.session_state and st.session_state.quick_query:
@@ -188,9 +243,9 @@ if user_input:
             st.markdown(user_input)
         with st.chat_message("assistant"):
             response = st.write_stream(agent.process_request_stream(user_input))
-            st.markdown("<small style='color: #818CF8;'>🔊 Spoken aloud through audio system.</small>", unsafe_allow_html=True)
+            st.markdown("<small style='color: #00f0ff;'>🔊 Spoken aloud through audio system.</small>", unsafe_allow_html=True)
             if "generated_graphic.png" in response and os.path.exists("generated_graphic.png"):
-                st.image("generated_graphic.png", caption="Nexus-Grok Rendered Graphic", use_column_width=True)
+                st.image("generated_graphic.png", caption="Rendered Graphic", use_column_width=True)
             voice.speak(response, block=False)
             safe_text = response.replace('"', '\\"').replace("'", "\\'").replace('\n', ' ')
             browser_audio = f"""
