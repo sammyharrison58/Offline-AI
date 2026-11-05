@@ -68,18 +68,10 @@ st.markdown("""
         border-radius: 8px;
         font-weight: 600;
     }
-    .bottom-dock {
-        position: sticky;
-        bottom: 72px;
-        z-index: 999;
-        background: rgba(11, 15, 25, 0.95);
-        border: 1px solid rgba(0, 240, 255, 0.4);
-        border-radius: 14px;
-        padding: 6px 14px;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 15px rgba(0,240,255,0.15);
-        margin-top: 10px;
-        margin-bottom: 6px;
+    div[data-testid="stChatInput"] {
+        border: 1px solid rgba(0, 240, 255, 0.4) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 0 15px rgba(0, 240, 255, 0.2) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -100,13 +92,13 @@ if "ai_open" not in st.session_state:
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Nexus-Jarvis online. Neural core active. Voice and text interface ready below."}
+        {"role": "assistant", "content": "Nexus-Jarvis online. Neural core active. Speak or type your command into the bar below."}
     ]
 
 col_hdr, col_pwr = st.columns([3, 1])
 with col_hdr:
     st.markdown('<div class="main-title">⚡ NEXUS-JARVIS AI COCKPIT</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-title">226 AI Paradigms | Holographic Core | Direct Voice Duplex | OS Machine Control</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">226 AI Paradigms | Holographic Core | Integrated Voice Bar | OS Machine Control</div>', unsafe_allow_html=True)
 
 with col_pwr:
     if st.session_state.ai_open:
@@ -162,7 +154,7 @@ body { margin:0; background:transparent; display:flex; justify-content:center; a
 </div>
 <div class='hud-text'>
 <div class='hud-tag'>J.A.R.V.I.S. SPHERE ONLINE</div>
-<div class='hud-sub'>226 AI PARADIGMS ● VOICE DUPLEX ACTIVE</div>
+<div class='hud-sub'>226 AI PARADIGMS ● DIRECT MIC INTEGRATED IN BAR</div>
 </div>
 </div>
 """
@@ -203,38 +195,36 @@ with chat_container:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-st.markdown("<div class='bottom-dock'>", unsafe_allow_html=True)
-col_m1, col_m2 = st.columns([1, 3])
-with col_m1:
-    recorded_audio = st.audio_input("Record Voice", key="bottom_mic", label_visibility="collapsed")
-with col_m2:
-    st.markdown("<div style='color:#00f0ff; padding-top:6px; font-size:13px; font-weight:700;'>🎙️ Voice Mic (Click red circle to talk)</div><div style='color:#94A3B8; font-size:11px;'>Transcribes and responds immediately right here at the text bar.</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+user_input = None
 
-user_input = st.chat_input("Speak via microphone above or type a command...")
+chat_submission = st.chat_input("Type a command or click the mic icon right here to speak...", accept_audio=True)
+
 if "quick_query" in st.session_state and st.session_state.quick_query:
     user_input = st.session_state.quick_query
     st.session_state.quick_query = None
 
-if recorded_audio is not None:
-    audio_bytes = recorded_audio.getvalue()
-    audio_hash = hash(audio_bytes)
-    if st.session_state.get("last_processed_audio_hash") != audio_hash:
-        st.session_state["last_processed_audio_hash"] = audio_hash
-        if SR_AVAILABLE:
-            with st.spinner("🎙️ Transcribing voice from microphone..."):
-                try:
-                    r = sr.Recognizer()
-                    with sr.AudioFile(io.BytesIO(audio_bytes)) as source:
-                        audio_data = r.record(source)
-                    transcribed = r.recognize_google(audio_data)
-                    if transcribed:
-                        user_input = transcribed
-                        st.success(f"🗣️ Heard: \"{transcribed}\"")
-                except sr.UnknownValueError:
-                    st.warning("Could not detect words clearly. Please speak closer to your microphone.")
-                except Exception as e:
-                    st.error(f"Speech transcription error: {e}")
+if chat_submission is not None:
+    if isinstance(chat_submission, str):
+        user_input = chat_submission
+    else:
+        if hasattr(chat_submission, "text") and chat_submission.text:
+            user_input = chat_submission.text
+        if hasattr(chat_submission, "audio") and chat_submission.audio:
+            audio_bytes = chat_submission.audio.getvalue()
+            if SR_AVAILABLE:
+                with st.spinner("🎙️ Transcribing voice from microphone..."):
+                    try:
+                        r = sr.Recognizer()
+                        with sr.AudioFile(io.BytesIO(audio_bytes)) as source:
+                            audio_data = r.record(source)
+                        transcribed = r.recognize_google(audio_data)
+                        if transcribed:
+                            user_input = transcribed
+                            st.success(f"🗣️ Heard: \"{transcribed}\"")
+                    except sr.UnknownValueError:
+                        st.warning("Could not detect words clearly. Please speak closer to your microphone.")
+                    except Exception as e:
+                        st.error(f"Speech transcription error: {e}")
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
