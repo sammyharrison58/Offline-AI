@@ -14,4 +14,6 @@ venv/
 *.png
 *.jpg
 *.log
+!assets/*.png
+!assets/*.jpg
 

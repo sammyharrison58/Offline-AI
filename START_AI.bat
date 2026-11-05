@@ -12,7 +12,4 @@ if %ERRORLEVEL% NEQ 0 (
     echo.
     echo Trying fallback python...
     python -m streamlit run "%~dp0web_ui.py" --server.port 8501
-)
-pause
-
- 
+    

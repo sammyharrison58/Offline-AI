@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import io
+import base64
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -25,54 +26,123 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-st.markdown("""
-<style>
-    .reportview-container, .main, body {
-        background-color: #0B0F19;
+bg_b64 = ""
+bg_path = os.path.join(root_dir, "assets", "jarvis_hud_bg.png")
+if os.path.exists(bg_path):
+    with open(bg_path, "rb") as f:
+        bg_b64 = base64.b64encode(f.read()).decode()
+
+bg_style = f"""
+    [data-testid="stAppViewContainer"], body {{
+        background-image: linear-gradient(rgba(5, 8, 18, 0.82), rgba(5, 8, 18, 0.92)), url("data:image/png;base64,{bg_b64}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        color: #F3F4F6;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }}
+""" if bg_b64 else """
+    [data-testid="stAppViewContainer"], body {
+        background-color: #070B14;
         color: #F3F4F6;
         font-family: 'Segoe UI', system-ui, sans-serif;
     }
-    .main-title {
-        font-size: 2.2rem;
+"""
+
+st.markdown(f"""
+<style>
+    {bg_style}
+    .main-title {{
+        font-size: 2.3rem;
         font-weight: 800;
-        background: linear-gradient(90deg, #00f0ff, #6366F1, #EC4899);
+        background: linear-gradient(90deg, #00f0ff, #60a5fa, #c084fc);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin-bottom: 2px;
-    }
-    .sub-title {
-        color: #94A3B8;
-        font-size: 0.95rem;
+        letter-spacing: 1px;
+    }}
+    .sub-title {{
+        color: #7dd3fc;
+        font-size: 0.92rem;
         margin-bottom: 12px;
-    }
-    .status-badge-on {
-        background: rgba(0, 240, 255, 0.15);
+        letter-spacing: 0.5px;
+    }}
+    .status-badge-on {{
+        background: rgba(0, 240, 255, 0.12);
         color: #00f0ff;
         border: 1px solid #00f0ff;
         padding: 6px 14px;
         border-radius: 20px;
         font-weight: 700;
         display: inline-block;
-        box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-    }
-    .status-badge-off {
-        background: rgba(239, 68, 68, 0.15);
+        box-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+    }}
+    .status-badge-off {{
+        background: rgba(239, 68, 68, 0.12);
         color: #F87171;
         border: 1px solid #DC2626;
         padding: 6px 14px;
         border-radius: 20px;
         font-weight: 700;
         display: inline-block;
-    }
-    .stButton>button {
+    }}
+    .stButton>button {{
         border-radius: 8px;
         font-weight: 600;
-    }
-    div[data-testid="stChatInput"] {
-        border: 1px solid rgba(0, 240, 255, 0.4) !important;
-        border-radius: 24px !important;
-        box-shadow: 0 0 15px rgba(0, 240, 255, 0.2) !important;
-    }
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(0, 240, 255, 0.3);
+        color: #e2e8f0;
+        transition: all 0.25s ease;
+    }}
+    .stButton>button:hover {{
+        border-color: #00f0ff;
+        box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+        transform: translateY(-1px);
+        color: #00f0ff;
+    }}
+    div[data-testid="stChatMessage"] {{
+        background: rgba(15, 23, 42, 0.65) !important;
+        border: 1px solid rgba(0, 240, 255, 0.2) !important;
+        border-radius: 14px !important;
+        margin-bottom: 10px !important;
+        backdrop-filter: blur(8px) !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+    }}
+    div[data-testid="stChatInput"] {{
+        border: 1px solid rgba(0, 240, 255, 0.5) !important;
+        border-radius: 26px !important;
+        box-shadow: 0 0 20px rgba(0, 240, 255, 0.25) !important;
+        background: rgba(11, 17, 32, 0.9) !important;
+        backdrop-filter: blur(12px) !important;
+    }}
+    .hud-metrics-bar {{
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 12px 0 18px 0;
+    }}
+    .hud-card {{
+        flex: 1;
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(0, 240, 255, 0.25);
+        border-radius: 10px;
+        padding: 8px 12px;
+        text-align: center;
+        backdrop-filter: blur(6px);
+    }}
+    .hud-card-lbl {{
+        font-size: 10px;
+        color: #94a3b8;
+        letter-spacing: 1.5px;
+        font-weight: 700;
+    }}
+    .hud-card-val {{
+        font-size: 13px;
+        color: #00f0ff;
+        font-weight: 800;
+        margin-top: 2px;
+        text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -92,13 +162,13 @@ if "ai_open" not in st.session_state:
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Nexus-Jarvis online. Neural core active. Speak or type your command into the bar below."}
+        {"role": "assistant", "content": "Nexus-Jarvis online. Holographic neural core engaged. Speak or type your command into the bar below."}
     ]
 
 col_hdr, col_pwr = st.columns([3, 1])
 with col_hdr:
     st.markdown('<div class="main-title">⚡ NEXUS-JARVIS AI COCKPIT</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-title">226 AI Paradigms | Holographic Core | Integrated Voice Bar | OS Machine Control</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">226 AI Paradigms | Holographic HUD Core | Direct Voice Duplex | OS Machine Control</div>', unsafe_allow_html=True)
 
 with col_pwr:
     if st.session_state.ai_open:
@@ -123,23 +193,41 @@ if not st.session_state.ai_open:
 jarvis_sphere_html = """
 <style>
 body { margin:0; background:transparent; display:flex; justify-content:center; align-items:center; overflow:hidden; font-family:'Segoe UI',sans-serif; }
-.jarvis-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:195px; }
-.jarvis-core { position:relative; width:134px; height:134px; display:flex; align-items:center; justify-content:center; }
+.jarvis-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:230px; }
+.jarvis-core { position:relative; width:144px; height:144px; display:flex; align-items:center; justify-content:center; }
 .ring { position:absolute; border-radius:50%; box-sizing:border-box; }
-.outer-ring { width:132px; height:132px; border:1px dashed rgba(0,240,255,0.4); animation:rotCW 18s linear infinite; }
-.tracker-ring { width:118px; height:118px; border:2px solid transparent; border-top:2px solid #00f0ff; border-bottom:2px solid #00f0ff; filter:drop-shadow(0 0 8px #00f0ff); animation:rotCCW 9s linear infinite; }
-.middle-ring { width:98px; height:98px; border:1px solid rgba(0,200,255,0.4); border-left:3px solid #00f0ff; border-right:3px solid #00f0ff; animation:rotCW 5s linear infinite; }
-.dashed-ring { width:78px; height:78px; border:2px dotted rgba(0,240,255,0.7); animation:rotCCW 7s linear infinite; }
-.core-orb { position:absolute; width:52px; height:52px; border-radius:50%; background:radial-gradient(circle, #00f0ff 0%, #0088ff 55%, rgba(0,20,60,0.85) 100%); box-shadow:0 0 22px #00f0ff, inset 0 0 15px #ffffff; animation:pulseOrb 2.2s ease-in-out infinite; }
-.core-center { position:absolute; width:22px; height:22px; border-radius:50%; background:#ffffff; box-shadow:0 0 15px #00f0ff, 0 0 30px #00f0ff; animation:pulseCenter 2.2s ease-in-out infinite; }
-.pulse-wave { position:absolute; width:55px; height:55px; border-radius:50%; border:1px solid #00f0ff; opacity:0; animation:waveOut 2.2s ease-out infinite; }
+.outer-ring { width:142px; height:142px; border:1px dashed rgba(0,240,255,0.45); animation:rotCW 18s linear infinite; }
+.tracker-ring { width:126px; height:126px; border:2px solid transparent; border-top:2px solid #00f0ff; border-bottom:2px solid #00f0ff; filter:drop-shadow(0 0 8px #00f0ff); animation:rotCCW 9s linear infinite; }
+.middle-ring { width:106px; height:106px; border:1px solid rgba(0,200,255,0.4); border-left:3px solid #00f0ff; border-right:3px solid #00f0ff; animation:rotCW 5s linear infinite; }
+.dashed-ring { width:84px; height:84px; border:2px dotted rgba(0,240,255,0.7); animation:rotCCW 7s linear infinite; }
+.core-orb { position:absolute; width:56px; height:56px; border-radius:50%; background:radial-gradient(circle, #00f0ff 0%, #0088ff 55%, rgba(0,20,60,0.85) 100%); box-shadow:0 0 25px #00f0ff, inset 0 0 16px #ffffff; animation:pulseOrb 2.2s ease-in-out infinite; }
+.core-center { position:absolute; width:24px; height:24px; border-radius:50%; background:#ffffff; box-shadow:0 0 16px #00f0ff, 0 0 32px #00f0ff; animation:pulseCenter 2.2s ease-in-out infinite; }
+.pulse-wave { position:absolute; width:60px; height:60px; border-radius:50%; border:1px solid #00f0ff; opacity:0; animation:waveOut 2.2s ease-out infinite; }
 @keyframes rotCW { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
 @keyframes rotCCW { 0% { transform:rotate(360deg); } 100% { transform:rotate(0deg); } }
 @keyframes pulseOrb { 0%,100% { transform:scale(0.92); opacity:0.85; filter:drop-shadow(0 0 12px #00f0ff); } 50% { transform:scale(1.08); opacity:1; filter:drop-shadow(0 0 28px #00f0ff); } }
 @keyframes pulseCenter { 0%,100% { transform:scale(0.85); opacity:0.9; } 50% { transform:scale(1.15); opacity:1; } }
-@keyframes waveOut { 0% { width:50px; height:50px; opacity:0.85; } 100% { width:140px; height:140px; opacity:0; } }
-.hud-text { margin-top:8px; display:flex; flex-direction:column; align-items:center; }
-.hud-tag { font-size:11px; font-weight:800; letter-spacing:3px; color:#00f0ff; text-shadow:0 0 8px rgba(0,240,255,0.8); }
+@keyframes waveOut { 0% { width:50px; height:50px; opacity:0.85; } 100% { width:155px; height:155px; opacity:0; } }
+.hud-equalizer { display:flex; align-items:flex-end; gap:3px; height:24px; margin-top:10px; }
+.bar { width:3px; background:linear-gradient(180deg, #00f0ff, #3b82f6); border-radius:2px; animation:bounceBar 1.2s ease-in-out infinite alternate; }
+.b1 { height:6px; animation-delay:0.1s; }
+.b2 { height:14px; animation-delay:0.3s; }
+.b3 { height:22px; animation-delay:0.2s; }
+.b4 { height:18px; animation-delay:0.4s; }
+.b5 { height:10px; animation-delay:0.15s; }
+.b6 { height:20px; animation-delay:0.35s; }
+.b7 { height:12px; animation-delay:0.25s; }
+.b8 { height:16px; animation-delay:0.05s; }
+.b9 { height:24px; animation-delay:0.3s; }
+.b10 { height:8px; animation-delay:0.45s; }
+.b11 { height:18px; animation-delay:0.2s; }
+.b12 { height:12px; animation-delay:0.1s; }
+.b13 { height:22px; animation-delay:0.4s; }
+.b14 { height:15px; animation-delay:0.25s; }
+.b15 { height:7px; animation-delay:0.35s; }
+@keyframes bounceBar { 0% { transform:scaleY(0.3); opacity:0.5; } 100% { transform:scaleY(1.1); opacity:1; } }
+.hud-text { margin-top:6px; display:flex; flex-direction:column; align-items:center; }
+.hud-tag { font-size:11px; font-weight:800; letter-spacing:3px; color:#00f0ff; text-shadow:0 0 10px rgba(0,240,255,0.85); }
 .hud-sub { font-size:9px; font-weight:600; letter-spacing:1.5px; color:#60a5fa; opacity:0.85; margin-top:2px; }
 </style>
 <div class='jarvis-wrap'>
@@ -152,13 +240,48 @@ body { margin:0; background:transparent; display:flex; justify-content:center; a
 <div class='core-orb'></div>
 <div class='core-center'></div>
 </div>
+<div class='hud-equalizer'>
+<div class='bar b1'></div><div class='bar b2'></div><div class='bar b3'></div><div class='bar b4'></div><div class='bar b5'></div>
+<div class='bar b6'></div><div class='bar b7'></div><div class='bar b8'></div><div class='bar b9'></div><div class='bar b10'></div>
+<div class='bar b11'></div><div class='bar b12'></div><div class='bar b13'></div><div class='bar b14'></div><div class='bar b15'></div>
+</div>
 <div class='hud-text'>
-<div class='hud-tag'>J.A.R.V.I.S. SPHERE ONLINE</div>
-<div class='hud-sub'>226 AI PARADIGMS ● DIRECT MIC INTEGRATED IN BAR</div>
+<div class='hud-tag'>J.A.R.V.I.S. QUANTUM SPHERE ACTIVE</div>
+<div class='hud-sub'>226 AI PARADIGMS ● AUDIO FREQUENCY EQUALIZER ONLINE</div>
 </div>
 </div>
 """
-components.html(jarvis_sphere_html, height=200)
+components.html(jarvis_sphere_html, height=235)
+
+telemetry = agent.sys_controller.get_telemetry()
+cpu_val = f"{telemetry['cpu_usage_percent']}%"
+ram_val = f"{telemetry['ram_available_gb']} GB Free"
+battery_val = f"{telemetry['battery']['percent']}%" if telemetry['battery']['percent'] != 'N/A' else "AC Power"
+
+st.markdown(f"""
+<div class="hud-metrics-bar">
+    <div class="hud-card">
+        <div class="hud-card-lbl">CPU USAGE</div>
+        <div class="hud-card-val">{cpu_val}</div>
+    </div>
+    <div class="hud-card">
+        <div class="hud-card-lbl">RAM STATUS</div>
+        <div class="hud-card-val">{ram_val}</div>
+    </div>
+    <div class="hud-card">
+        <div class="hud-card-lbl">POWER SOURCE</div>
+        <div class="hud-card-val">{battery_val}</div>
+    </div>
+    <div class="hud-card">
+        <div class="hud-card-lbl">NEURAL CORE</div>
+        <div class="hud-card-val">226 DOMAINS</div>
+    </div>
+    <div class="hud-card">
+        <div class="hud-card-lbl">SEC VAULT</div>
+        <div class="hud-card-val">BLOCKCHAIN OK</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 selected_mode = st.radio(
     "Intelligence Mode:",
