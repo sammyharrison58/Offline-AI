@@ -1,19 +1,15 @@
-# Python bytecode & cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyc
 
-# Environment & Virtualenvs
 .env
 .venv/
 env/
 venv/
 
-# Temporary artifacts & captures
 *.png
 *.jpg
 *.log
 !assets/*.png
 !assets/*.jpg
-

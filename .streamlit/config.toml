@@ -1,0 +1,12 @@
+[browser]
+gatherUsageStats = false
+
+[server]
+fileWatcherType = "none"
+headless = true
+runOnSave = false
+port = 8501
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = "brief"

@@ -26,11 +26,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-bg_b64 = ""
-bg_path = os.path.join(root_dir, "assets", "jarvis_hud_bg.png")
-if os.path.exists(bg_path):
-    with open(bg_path, "rb") as f:
-        bg_b64 = base64.b64encode(f.read()).decode()
+@st.cache_data
+def get_cached_bg():
+    p = os.path.join(root_dir, "assets", "jarvis_hud_bg.png")
+    if os.path.exists(p):
+        with open(p, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return ""
+
+bg_b64 = get_cached_bg()
 
 bg_style = f"""
     [data-testid="stAppViewContainer"], body {{

@@ -2,7 +2,7 @@
 title Nexus-226 Autonomous Offline AI Cockpit
 cd /d "%~dp0"
 echo [Nexus-226] Checking server status on port 8501...
-netstat -ano | findstr :8501 | findstr LISTENING >nul
+netstat -ano | findstr :8501 | findstr LISTENING >nul     
 if %ERRORLEVEL% EQU 0 (
     echo [Nexus-226] Server is already online! Opening browser...
     start "" "http://localhost:8501"

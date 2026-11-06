@@ -162,15 +162,14 @@ class SystemController:
         return self.run_cmd(f'shutdown /r /t {delay_seconds}')
 
     def get_telemetry(self) -> Dict[str, Any]:
-        cpu_usage = psutil.cpu_percent(interval=0.1)
+        cpu_usage = psutil.cpu_percent(interval=None)
         ram = psutil.virtual_memory()
         disks = {}
-        for part in psutil.disk_partitions():
-            try:
-                usage = psutil.disk_usage(part.mountpoint)
-                disks[part.device] = {'total_gb': round(usage.total / 1024 ** 3, 2), 'free_gb': round(usage.free / 1024 ** 3, 2), 'percent_used': usage.percent}
-            except PermissionError:
-                continue
+        try:
+            usage = psutil.disk_usage('.')
+            disks['primary'] = {'total_gb': round(usage.total / 1024 ** 3, 2), 'free_gb': round(usage.free / 1024 ** 3, 2), 'percent_used': usage.percent}
+        except Exception:
+            pass
         battery = psutil.sensors_battery()
         battery_info = {'percent': battery.percent if battery else 'N/A', 'power_plugged': battery.power_plugged if battery else True}
         return {'cpu_usage_percent': cpu_usage, 'ram_total_gb': round(ram.total / 1024 ** 3, 2), 'ram_available_gb': round(ram.available / 1024 ** 3, 2), 'ram_used_percent': ram.percent, 'disks': disks, 'battery': battery_info, 'platform': sys.platform}
