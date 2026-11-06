@@ -147,20 +147,25 @@ class Nexus226Agent:
         k_ctx = ""
         if matched_domains and any(tok in ql for tok in matched_domains[0].get("name").lower().split()[:2]):
             d = matched_domains[0]
-            k_ctx = f"Domain reference: {d['name']}. {d['concept']}"
+            k_ctx = f"Reference: {d['concept']}"
 
-        system_instruction = f"You are Grok ({self.grok.mode} mode). Reply concisely in 1-2 sharp sentences."
-        user_prompt = f"{k_ctx}\n{q}" if k_ctx else q
+        system_instruction = (
+            f"You are Grok ({self.grok.mode} mode). Direct 1-sentence answer only. "
+            "NEVER repeat the question, never say 'You asked', 'According to', or repeat what was read. "
+            "Give only the answer."
+        )
+        user_prompt = f"{k_ctx}\nQuestion: {q}\nDirect Answer:" if k_ctx else f"Question: {q}\nDirect Answer:"
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
-            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=40)
+            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=26)
             if res and not res.startswith("[Ollama") and not res.startswith("[Local"):
-                return res
+                clean = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:)\s*', '', res, flags=re.IGNORECASE).strip()
+                return clean
 
         if k_ctx:
-            return f"{matched_domains[0]['name']}: {matched_domains[0]['concept']}\nFormulation: {matched_domains[0]['mathematical_basis']}"
+            return matched_domains[0]['concept']
 
-        return f"Query analyzed: '{q}'. All systems active. Ask technical questions, request code execution with 'python: ...', or command machine automation."
+        return "Operational. What would you like to explore or execute next?"
 
     def process_request_stream(self, user_query: str) -> Generator[str, None, None]:
         q = user_query.strip()
@@ -209,14 +214,23 @@ class Nexus226Agent:
         k_ctx = ""
         if matched_domains and any(tok in ql for tok in matched_domains[0].get("name").lower().split()[:2]):
             d = matched_domains[0]
-            k_ctx = f"Domain reference: {d['name']}. {d['concept']}"
+            k_ctx = f"Reference: {d['concept']}"
 
-        system_instruction = f"You are Grok ({self.grok.mode} mode). Reply concisely in 1-2 sharp sentences."
-        user_prompt = f"{k_ctx}\n{q}" if k_ctx else q
+        system_instruction = (
+            f"You are Grok ({self.grok.mode} mode). Direct 1-sentence answer only. "
+            "NEVER repeat the question, never say 'You asked', 'According to', or repeat what was read. "
+            "Give only the answer."
+        )
+        user_prompt = f"{k_ctx}\nQuestion: {q}\nDirect Answer:" if k_ctx else f"Question: {q}\nDirect Answer:"
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
-            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=40):
-                yield chunk
+            first_chunk = True
+            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=26):
+                if first_chunk:
+                    chunk = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:)\s*', '', chunk, flags=re.IGNORECASE)
+                    first_chunk = False
+                if chunk:
+                    yield chunk
             return
 
         yield self.process_request(user_query)

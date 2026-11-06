@@ -32,12 +32,13 @@ class OfflineVoiceEngine:
     def clean_text_for_speech(self, text: str) -> str:
         t = re.sub(r'```.*?```', 'code block executed.', text, flags=re.DOTALL)
         t = re.sub(r'https?://\S+', 'link', t)
+        t = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Query analyzed:[^.]*\.\s*)', '', text, flags=re.IGNORECASE)
         t = re.sub(r'[#*`_~>\-]', ' ', t)
         t = re.sub(r'\s+', ' ', t).strip()
-        if len(t) > 350:
+        if len(t) > 220:
             sentences = t.split('. ')
-            if len(sentences) > 2:
-                t = '. '.join(sentences[:2]) + '.'
+            if len(sentences) > 1:
+                t = sentences[0] + '.'
         return t
 
     def speak(self, text: str, block: bool = False):

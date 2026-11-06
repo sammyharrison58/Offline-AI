@@ -20,7 +20,7 @@ class OfflineLLMEngine:
         if self.backend != "auto":
             return self.backend
         try:
-            r = requests.get(f"{self.ollama_url}/api/tags", timeout=1.0)
+            r = requests.get(f"{self.ollama_url}/api/tags", timeout=0.6)
             if r.status_code == 200:
                 models = [m.get("name") for m in r.json().get("models", [])]
                 if models:
@@ -32,7 +32,7 @@ class OfflineLLMEngine:
         except Exception:
             pass
         try:
-            r = requests.get(f"{self.openai_compatible_url}/models", timeout=1.0)
+            r = requests.get(f"{self.openai_compatible_url}/models", timeout=0.4)
             if r.status_code == 200:
                 return "openai_compatible"
         except Exception:
@@ -47,7 +47,7 @@ class OfflineLLMEngine:
                     json={
                         "model": self.ollama_model,
                         "prompt": "ok",
-                        "options": {"num_predict": 1, "num_thread": 4, "num_ctx": 512},
+                        "options": {"num_predict": 1, "num_thread": 4, "num_ctx": 256},
                         "keep_alive": -1,
                         "stream": False
                     },
@@ -56,7 +56,7 @@ class OfflineLLMEngine:
             except Exception:
                 pass
 
-    def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 40, temperature: float = 0.5) -> str:
+    def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 26, temperature: float = 0.3) -> str:
         backend = self.active_backend
         if backend == "ollama":
             return self._call_ollama(prompt, system_prompt, max_tokens, temperature)
@@ -65,27 +65,28 @@ class OfflineLLMEngine:
         else:
             return self._call_builtin(prompt, system_prompt)
 
-    def generate_stream(self, prompt: str, system_prompt: str = "", max_tokens: int = 40, temperature: float = 0.5) -> Generator[str, None, None]:
+    def generate_stream(self, prompt: str, system_prompt: str = "", max_tokens: int = 26, temperature: float = 0.3) -> Generator[str, None, None]:
         if self.active_backend == "ollama":
             url = f"{self.ollama_url}/api/generate"
             payload = {
                 "model": self.ollama_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Grok, an ultra-fast, intelligent, direct AI assistant.",
+                "system": system_prompt or "You are Grok. Direct 1-sentence answer only. Never repeat the question or quote anything.",
                 "stream": True,
                 "keep_alive": -1,
                 "options": {
-                    "num_predict": min(max_tokens, 40),
+                    "num_predict": min(max_tokens, 26),
+                    "repeat_penalty": 1.25,
                     "num_thread": 4,
-                    "num_ctx": 512,
+                    "num_ctx": 256,
                     "temperature": temperature,
                     "top_k": 25,
                     "top_p": 0.85,
-                    "stop": ["\n\n", "User:", "\nUser", "Question:"]
+                    "stop": ["\n\n", "User:", "\nUser", "Question:", "Direct Answer:"]
                 }
             }
             try:
-                with requests.post(url, json=payload, stream=True, timeout=25) as resp:
+                with requests.post(url, json=payload, stream=True, timeout=20) as resp:
                     for line in resp.iter_lines():
                         if line:
                             data = json.loads(line)
@@ -105,20 +106,21 @@ class OfflineLLMEngine:
             payload = {
                 "model": self.ollama_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Grok, an ultra-fast, intelligent, direct AI assistant.",
+                "system": system_prompt or "You are Grok. Direct 1-sentence answer only. Never repeat the question or quote anything.",
                 "stream": False,
                 "keep_alive": -1,
                 "options": {
-                    "num_predict": min(max_tokens, 40),
+                    "num_predict": min(max_tokens, 26),
+                    "repeat_penalty": 1.25,
                     "num_thread": 4,
-                    "num_ctx": 512,
+                    "num_ctx": 256,
                     "temperature": temperature,
                     "top_k": 25,
                     "top_p": 0.85,
-                    "stop": ["\n\n", "User:", "\nUser", "Question:"]
+                    "stop": ["\n\n", "User:", "\nUser", "Question:", "Direct Answer:"]
                 }
             }
-            res = requests.post(url, json=payload, timeout=25)
+            res = requests.post(url, json=payload, timeout=20)
             if res.status_code == 200:
                 return res.json().get("response", "").strip()
             return f"[Ollama Error] HTTP {res.status_code}"
@@ -132,8 +134,8 @@ class OfflineLLMEngine:
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
-            payload = {"messages": messages, "max_tokens": min(max_tokens, 40), "temperature": temperature}
-            res = requests.post(url, json=payload, timeout=20)
+            payload = {"messages": messages, "max_tokens": min(max_tokens, 26), "temperature": temperature}
+            res = requests.post(url, json=payload, timeout=15)
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"].strip()
             return f"[OpenAI Error] HTTP {res.status_code}"
