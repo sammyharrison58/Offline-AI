@@ -380,7 +380,7 @@ if user_input:
 
 st.markdown("---")
 with st.expander("🛠️ Advanced Machine, WoL Power & Blockchain Operations"):
-    col_t1, col_t2 = st.columns(2)
+    col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1:
         st.markdown("##### 🔌 Power & Wake-on-LAN ('Open the Computer')")
         mac = st.text_input("Wake-on-LAN MAC Address:", "00:1A:2B:3C:4D:5E")
@@ -407,3 +407,19 @@ with st.expander("🛠️ Advanced Machine, WoL Power & Blockchain Operations"):
                 voice.speak(f"Transaction mined into block {tx['block_index']}.", block=False)
             else:
                 st.error(tx.get("error"))
+
+    with col_t3:
+        st.markdown("##### 🍃 MongoDB Storage & Sync")
+        m_uri = st.text_input("MongoDB Connection URI:", "mongodb://localhost:27017")
+        if st.button("Sync Files to MongoDB"):
+            with st.spinner("Syncing project files and databases..."):
+                conn = agent.mongo.connect(m_uri)
+                r_files = agent.mongo.sync_all_files(root_dir)
+                r_kb = agent.mongo.sync_knowledge_base(os.path.join(root_dir, "data", "ai_knowledge_226.json"))
+                r_bc = agent.mongo.sync_blockchain_ledger(os.path.join(root_dir, "data", "blockchain_ledger.json"))
+                if conn.get("success"):
+                    st.success(f"Live MongoDB Synced! {r_files.get('count')} files, {r_kb.get('count')} AI domains, {r_bc.get('count')} ledger blocks.")
+                    voice.speak("Files successfully synced to live MongoDB database.", block=False)
+                else:
+                    st.info(f"Offline Export Ready: {r_files.get('count')} files, {r_kb.get('count')} AI domains, {r_bc.get('count')} blocks saved to data/mongodb_export/.")
+                    voice.speak("Files exported to MongoDB collections.", block=False)

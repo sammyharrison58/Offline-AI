@@ -6,3 +6,4 @@ numpy>=1.22.0
 pyautogui>=0.9.54
 speechrecognition>=3.10.0
 streamlit>=1.30.0
+pymongo>=4.0.0

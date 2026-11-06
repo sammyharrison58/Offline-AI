@@ -13,6 +13,7 @@ from core.system_controller import SystemController
 from core.blockchain_manager import BlockchainManager
 from core.llm_engine import OfflineLLMEngine
 from core.grok_engine import GrokEngine
+from core.mongo_manager import MongoDBManager
 
 class Nexus226Agent:
 
@@ -22,6 +23,7 @@ class Nexus226Agent:
         self.blockchain = BlockchainManager()
         self.llm = OfflineLLMEngine()
         self.grok = GrokEngine(mode="fun")
+        self.mongo = MongoDBManager()
 
     def process_request(self, user_query: str) -> str:
         q = user_query.strip()
@@ -143,6 +145,18 @@ class Nexus226Agent:
                 return "No transactions in ledger."
             return "\n".join([f"- Block #{t.get('block_index')}: {t.get('amount')} AETH -> {t.get('to')[:10]}..." for t in txs])
 
+        if any(w in ql for w in ["sync mongodb", "sync to mongodb", "put files in mongodb", "put my files in mongodb", "save to mongodb", "backup to mongodb"]):
+            r1 = self.mongo.sync_all_files(root_dir)
+            r2 = self.mongo.sync_knowledge_base(os.path.join(root_dir, "data", "ai_knowledge_226.json"))
+            r3 = self.mongo.sync_blockchain_ledger(os.path.join(root_dir, "data", "blockchain_ledger.json"))
+            status = "live MongoDB database" if self.mongo.is_connected else "MongoDB export collections"
+            return f"Synced {r1.get('count', 0)} project files, {r2.get('count', 0)} AI knowledge domains, and {r3.get('count', 0)} blockchain blocks into {status}."
+
+        if "mongodb status" in ql or "check mongodb" in ql:
+            st = self.mongo.get_status()
+            c_status = "Connected" if st.get("connected") else "Disconnected (using offline export)"
+            return f"MongoDB: {c_status} | URI: {st.get('uri')} | Collections: {list(st.get('collections', {}).keys()) or ['project_files', 'ai_knowledge_226', 'blockchain_ledger']}"
+
         matched_domains = self.knowledge.query(q, top_k=1)
         k_ctx = ""
         if matched_domains and any(tok in ql for tok in matched_domains[0].get("name").lower().split()[:2]):
@@ -204,7 +218,8 @@ class Nexus226Agent:
             "system status", "telemetry", "hardware status", "pc specs", "ram usage", "battery",
             "screenshot", "run powershell ", "powershell ", "launch ", "open app ",
             "list processes", "wallet", "balance", "crypto balance", "my address",
-            "send ", "transfer ", "pay ", "transaction history", "ledger"
+            "send ", "transfer ", "pay ", "transaction history", "ledger",
+            "sync mongodb", "sync to mongodb", "put files in mongodb", "put my files in mongodb", "save to mongodb", "backup to mongodb", "mongodb status", "check mongodb"
         ]
         if any(w in ql for w in fast_keywords):
             yield self.process_request(user_query)
