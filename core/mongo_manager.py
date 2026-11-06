@@ -162,3 +162,4 @@ if __name__ == "__main__":
     print("Knowledge sync:", mgr.sync_knowledge_base(k_path))
     print("Blockchain sync:", mgr.sync_blockchain_ledger(l_path))
     print("Project files sync:", mgr.sync_all_files(base_dir))
+

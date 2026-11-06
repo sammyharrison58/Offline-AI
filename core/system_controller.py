@@ -4,13 +4,16 @@ import time
 import socket
 import struct
 import subprocess
+import ctypes
 import psutil
 from typing import Dict, Any, List, Optional
+
 try:
     import pyautogui
     PYAUTOGUI_AVAILABLE = True
 except ImportError:
     PYAUTOGUI_AVAILABLE = False
+
 try:
     from PIL import ImageGrab
     PIL_AVAILABLE = True
@@ -55,22 +58,147 @@ class SystemController:
                 continue
         return processes
 
-    def launch_app(self, app_path_or_cmd: str) -> Dict[str, Any]:
+    def launch_app(self, app_name_or_cmd: str) -> Dict[str, Any]:
+        mapping = {
+            'notepad': 'notepad.exe',
+            'calc': 'calc.exe',
+            'calculator': 'calc.exe',
+            'chrome': 'chrome.exe',
+            'google chrome': 'chrome.exe',
+            'edge': 'msedge.exe',
+            'microsoft edge': 'msedge.exe',
+            'task manager': 'taskmgr.exe',
+            'taskmgr': 'taskmgr.exe',
+            'cmd': 'cmd.exe',
+            'terminal': 'powershell.exe',
+            'powershell': 'powershell.exe',
+            'explorer': 'explorer.exe',
+            'file explorer': 'explorer.exe',
+            'settings': 'start ms-settings:',
+            'paint': 'mspaint.exe',
+            'control panel': 'control.exe',
+            'code': 'code',
+            'vscode': 'code'
+        }
+        cmd = mapping.get(app_name_or_cmd.lower().strip(), app_name_or_cmd.strip())
         try:
-            if os.path.exists(app_path_or_cmd):
-                os.startfile(app_path_or_cmd)
-                return {'success': True, 'message': f'Started {app_path_or_cmd}'}
+            if os.path.exists(cmd):
+                os.startfile(cmd)
+                return {'success': True, 'message': f'Started {cmd}'}
             else:
-                proc = subprocess.Popen(app_path_or_cmd, shell=True)
-                return {'success': True, 'pid': proc.pid, 'message': f'Spawned process: {app_path_or_cmd}'}
+                proc = subprocess.Popen(cmd, shell=True)
+                return {'success': True, 'pid': proc.pid, 'message': f'Launched {app_name_or_cmd}'}
         except Exception as e:
             return {'success': False, 'error': str(e)}
+
+    def terminate_by_name(self, app_name: str) -> Dict[str, Any]:
+        target = app_name.lower().replace('.exe', '').strip()
+        killed = []
+        for p in psutil.process_iter(['pid', 'name']):
+            try:
+                pname = p.info['name'].lower()
+                if target in pname:
+                    p.terminate()
+                    killed.append(f"{p.info['name']} (PID {p.info['pid']})")
+            except Exception:
+                pass
+        if killed:
+            return {'success': True, 'message': f"Terminated: {', '.join(killed)}"}
+        return {'success': False, 'error': f"No running process found matching '{app_name}'"}
 
     def terminate_process(self, pid: int) -> Dict[str, Any]:
         try:
             p = psutil.Process(pid)
             p.terminate()
             return {'success': True, 'message': f'Terminated process {pid}'}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def toggle_mute(self) -> Dict[str, Any]:
+        res = self.run_powershell('(New-Object -ComObject WScript.Shell).SendKeys([char]173)')
+        return {'success': res.get('success', False), 'message': 'Audio mute toggled.'}
+
+    def volume_up(self, steps: int = 5) -> Dict[str, Any]:
+        res = self.run_powershell(f'for ($i=0; $i -lt {steps}; $i++) {{ (New-Object -ComObject WScript.Shell).SendKeys([char]175) }}')
+        return {'success': res.get('success', False), 'message': f'Volume increased by {steps*2}%.'}
+
+    def volume_down(self, steps: int = 5) -> Dict[str, Any]:
+        res = self.run_powershell(f'for ($i=0; $i -lt {steps}; $i++) {{ (New-Object -ComObject WScript.Shell).SendKeys([char]174) }}')
+        return {'success': res.get('success', False), 'message': f'Volume decreased by {steps*2}%.'}
+
+    def minimize_all_windows(self) -> Dict[str, Any]:
+        if PYAUTOGUI_AVAILABLE:
+            pyautogui.hotkey('win', 'd')
+            return {'success': True, 'message': 'Minimized all windows to show desktop.'}
+        res = self.run_powershell('(New-Object -ComObject Shell.Application).MinimizeAll()')
+        return {'success': res.get('success', False), 'message': 'Minimized all windows.'}
+
+    def lock_workstation(self) -> Dict[str, Any]:
+        try:
+            ctypes.windll.user32.LockWorkStation()
+            return {'success': True, 'message': 'Workstation locked successfully.'}
+        except Exception as e:
+            return self.run_powershell('rundll32.exe user32.dll,LockWorkStation')
+
+    def empty_recycle_bin(self) -> Dict[str, Any]:
+        res = self.run_powershell('Clear-RecycleBin -Force -ErrorAction SilentlyContinue')
+        return {'success': res.get('success', False), 'message': 'Windows Recycle Bin emptied.'}
+
+    def get_network_info(self) -> Dict[str, Any]:
+        hostname = socket.gethostname()
+        try:
+            ips = socket.gethostbyname_ex(hostname)[2]
+        except Exception:
+            ips = ['127.0.0.1']
+        return {'hostname': hostname, 'ip_addresses': ips}
+
+    def ping_host(self, host: str) -> Dict[str, Any]:
+        try:
+            res = subprocess.run(['ping', '-n', '2', host], capture_output=True, text=True, timeout=8)
+            return {'success': res.returncode == 0, 'output': res.stdout.strip()}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def open_url(self, url: str) -> Dict[str, Any]:
+        if not url.startswith('http://') and not url.startswith('https://'):
+            url = 'https://' + url
+        try:
+            os.startfile(url)
+            return {'success': True, 'message': f'Opened {url}'}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def create_directory(self, path: str) -> Dict[str, Any]:
+        try:
+            os.makedirs(path, exist_ok=True)
+            return {'success': True, 'message': f'Created directory {path}'}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def create_file(self, path: str, content: str = '') -> Dict[str, Any]:
+        try:
+            d = os.path.dirname(path)
+            if d:
+                os.makedirs(d, exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            return {'success': True, 'message': f'Created file {path}'}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def delete_file(self, path: str) -> Dict[str, Any]:
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+                return {'success': True, 'message': f'Deleted {path}'}
+            return {'success': False, 'error': f'File not found: {path}'}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def list_dir(self, path: str = '.') -> Dict[str, Any]:
+        try:
+            items = os.listdir(path)
+            return {'success': True, 'path': os.path.abspath(path), 'items': items[:40]}
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
@@ -173,8 +301,9 @@ class SystemController:
         battery = psutil.sensors_battery()
         battery_info = {'percent': battery.percent if battery else 'N/A', 'power_plugged': battery.power_plugged if battery else True}
         return {'cpu_usage_percent': cpu_usage, 'ram_total_gb': round(ram.total / 1024 ** 3, 2), 'ram_available_gb': round(ram.available / 1024 ** 3, 2), 'ram_used_percent': ram.percent, 'disks': disks, 'battery': battery_info, 'platform': sys.platform}
+
 if __name__ == '__main__':
     controller = SystemController()
     print('Telemetry:', controller.get_telemetry())
     print('Screen:', controller.get_screen_resolution())
-    print('Processes Sample:', controller.list_processes(limit=5))
+    print('Network:', controller.get_network_info())

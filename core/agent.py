@@ -45,7 +45,40 @@ class Nexus226Agent:
             return "You're welcome! Ready for the next command."
 
         if ql in ["help", "what can you do", "commands", "menu"]:
-            return "Capabilities: 226 AI paradigms, live web intelligence, python sandbox ('python: ...'), Wake-on-LAN, screenshots, hardware telemetry, crypto wallet, and voice interaction."
+            return "Capabilities: Full OS control (open/close apps, volume, mute, lock, network, WoL), 226 AI paradigms, live web intelligence, python sandbox, crypto wallet, and MongoDB sync."
+
+        if any(w in ql for w in ["mute", "silence audio", "unmute"]):
+            res = self.sys_controller.toggle_mute()
+            return res.get("message", "Mute toggled.")
+
+        if any(w in ql for w in ["volume up", "increase volume", "louder", "turn up sound"]):
+            res = self.sys_controller.volume_up(steps=5)
+            return res.get("message", "Volume increased.")
+
+        if any(w in ql for w in ["volume down", "decrease volume", "lower volume", "quieter", "turn down sound"]):
+            res = self.sys_controller.volume_down(steps=5)
+            return res.get("message", "Volume decreased.")
+
+        if any(w in ql for w in ["lock computer", "lock pc", "lock screen", "lock workstation"]):
+            res = self.sys_controller.lock_workstation()
+            return res.get("message", "Workstation locked.")
+
+        if any(w in ql for w in ["minimize windows", "minimize all", "show desktop"]):
+            res = self.sys_controller.minimize_all_windows()
+            return res.get("message", "Showing desktop.")
+
+        if any(w in ql for w in ["empty recycle bin", "clean recycle bin", "clear recycle bin"]):
+            res = self.sys_controller.empty_recycle_bin()
+            return res.get("message", "Recycle bin emptied.")
+
+        if any(w in ql for w in ["what is my ip", "my ip", "ip address", "network info", "network status", "show ip"]):
+            net = self.sys_controller.get_network_info()
+            return f"Host: {net['hostname']} | IPs: {', '.join(net['ip_addresses'])}"
+
+        if ql.startswith("ping "):
+            host = ql.replace("ping ", "").strip().split()[0]
+            res = self.sys_controller.ping_host(host)
+            return res.get("output") or res.get("error", "Ping executed.")
 
         if ql.startswith("set mode to ") or ql.startswith("switch mode to "):
             m = ql.replace("set mode to ", "").replace("switch mode to ", "").strip()
@@ -102,7 +135,7 @@ class Nexus226Agent:
             t = self.sys_controller.get_telemetry()
             return f"Hardware: CPU {t['cpu_usage_percent']}% | RAM {t['ram_available_gb']}GB free of {t['ram_total_gb']}GB ({t['ram_used_percent']}% used) | Battery {t['battery']['percent']}%"
 
-        if "screenshot" in ql:
+        if "screenshot" in ql or "capture display" in ql or "capture screen" in ql:
             path = "screenshot.png"
             res = self.sys_controller.capture_screenshot(path)
             if res.get("success"):
@@ -114,10 +147,49 @@ class Nexus226Agent:
             res = self.sys_controller.run_powershell(cmd)
             return res.get("stdout") or res.get("stderr") or "[Executed]"
 
-        if ql.startswith("launch ") or ql.startswith("open app "):
-            app = q.replace("open app", "").replace("launch", "").strip()
+        if ql.startswith("run cmd ") or ql.startswith("cmd "):
+            cmd = q.split("cmd", 1)[1].strip()
+            res = self.sys_controller.run_cmd(cmd)
+            return res.get("stdout") or res.get("stderr") or "[Executed]"
+
+        if any(ql.startswith(p) for p in ["open ", "launch ", "start "]):
+            app = re.sub(r"^(open|launch|start)\s+(app\s+)?", "", q, flags=re.IGNORECASE).strip()
             res = self.sys_controller.launch_app(app)
             return str(res.get("message", res.get("error")))
+
+        if any(ql.startswith(p) for p in ["close ", "kill ", "terminate ", "quit "]):
+            target = re.sub(r"^(close|kill|terminate|quit)\s+(app\s+)?", "", q, flags=re.IGNORECASE).strip()
+            res = self.sys_controller.terminate_by_name(target)
+            return str(res.get("message", res.get("error")))
+
+        if ql.startswith("type "):
+            text_to_type = q[5:].strip()
+            res = self.sys_controller.type_keys(text_to_type)
+            return res.get("message", "Typed.")
+
+        if ql.startswith("create file "):
+            file_cmd = q[12:].strip()
+            if "with content" in file_cmd:
+                f_path, f_content = file_cmd.split("with content", 1)
+            else:
+                f_path, f_content = file_cmd, ""
+            res = self.sys_controller.create_file(f_path.strip(), f_content.strip())
+            return res.get("message", str(res))
+
+        if ql.startswith("delete file ") or ql.startswith("remove file "):
+            f_path = re.sub(r"^(delete file|remove file)\s+", "", q, flags=re.IGNORECASE).strip()
+            res = self.sys_controller.delete_file(f_path)
+            return res.get("message", str(res))
+
+        if ql.startswith("create folder ") or ql.startswith("make folder ") or ql.startswith("create directory "):
+            d_path = re.sub(r"^(create folder|make folder|create directory)\s+", "", q, flags=re.IGNORECASE).strip()
+            res = self.sys_controller.create_directory(d_path)
+            return res.get("message", str(res))
+
+        if ql.startswith("list files") or ql == "dir":
+            res = self.sys_controller.list_dir(".")
+            items = ", ".join(res.get("items", [])[:15])
+            return f"Files: {items}"
 
         if "list processes" in ql:
             procs = self.sys_controller.list_processes(limit=6)
@@ -206,20 +278,28 @@ class Nexus226Agent:
             return
 
         if ql in ["help", "what can you do", "commands", "menu"]:
-            yield "Capabilities: 226 AI paradigms, live web intelligence, python sandbox ('python: ...'), Wake-on-LAN, screenshots, hardware telemetry, crypto wallet, and voice interaction."
+            yield "Capabilities: Full OS control (open/close apps, volume, mute, lock, network, WoL), 226 AI paradigms, live web intelligence, python sandbox, crypto wallet, and MongoDB sync."
             return
 
         fast_keywords = [
+            "mute", "silence audio", "unmute", "volume up", "increase volume", "louder",
+            "volume down", "decrease volume", "lower volume", "quieter", "lock computer",
+            "lock pc", "lock screen", "lock workstation", "minimize windows", "minimize all",
+            "show desktop", "empty recycle bin", "clean recycle bin", "what is my ip",
+            "my ip", "ip address", "network info", "network status", "ping ",
             "set mode to ", "switch mode to ", "run code:", "python:", "execute code:",
             "generate image", "create graphic", "draw ", "render image",
             "search web", "look up", "google ", "browse web", "latest news",
             "wake on lan", "wol", "open computer", "open the computer", "wake computer", "power on",
             "schedule wake", "wake at", "sleep computer", "suspend machine",
             "system status", "telemetry", "hardware status", "pc specs", "ram usage", "battery",
-            "screenshot", "run powershell ", "powershell ", "launch ", "open app ",
-            "list processes", "wallet", "balance", "crypto balance", "my address",
-            "send ", "transfer ", "pay ", "transaction history", "ledger",
-            "sync mongodb", "sync to mongodb", "put files in mongodb", "put my files in mongodb", "save to mongodb", "backup to mongodb", "mongodb status", "check mongodb"
+            "screenshot", "capture display", "capture screen", "run powershell ", "powershell ",
+            "run cmd ", "cmd ", "open ", "launch ", "start ", "close ", "kill ", "terminate ",
+            "type ", "create file ", "delete file ", "remove file ", "create folder ",
+            "list files", "dir", "list processes", "wallet", "balance", "crypto balance",
+            "my address", "send ", "transfer ", "pay ", "transaction history", "ledger",
+            "sync mongodb", "sync to mongodb", "put files in mongodb", "put my files in mongodb",
+            "save to mongodb", "backup to mongodb", "mongodb status", "check mongodb"
         ]
         if any(w in ql for w in fast_keywords):
             yield self.process_request(user_query)

@@ -111,3 +111,4 @@ The knowledge engine contains mathematical models, loss functions, and architect
 - **Starting the AI**: Double-click [`START_AI.bat`](file:///f:/vscode%20projects/offline%20AI/START_AI.bat).
 - **Shutting Down the AI**: Double-click [`stop_gui.bat`](file:///f:/vscode%20projects/offline%20AI/stop_gui.bat) to terminate port 8501 and free hardware resources.
 - **Voice-Only Call**: Double-click [`START_VOICE_CALL.bat`](file:///f:/vscode%20projects/offline%20AI/START_VOICE_CALL.bat).
+
