@@ -74,25 +74,37 @@ class ConversationalCallLoop:
         self.is_active = False
         self.recognizer = sr.Recognizer() if SR_AVAILABLE else None
         self.mic = None
+        self.last_user_speech = ""
+        self.last_ai_response = ""
+        self.call_thread = None
+        self.transcript_history = []
         if SR_AVAILABLE:
             try:
                 self.mic = sr.Microphone()
             except Exception:
                 self.mic = None
 
-    def start_call(self):
+    def start_call(self, on_turn: Optional[Callable[[str, str], None]] = None):
         self.is_active = True
-        greeting = 'Nexus online. Real time call active. Listening.'
+        greeting = 'Call connected. Nexus-Jarvis online and listening. Go ahead.'
         print(f'\nAI: {greeting}\n')
         self.voice.speak(greeting, block=True)
+        if self.recognizer and self.mic:
+            try:
+                with self.mic as source:
+                    self.recognizer.adjust_for_ambient_noise(source, duration=0.6)
+                    self.recognizer.pause_threshold = 0.8
+                    self.recognizer.non_speaking_duration = 0.5
+            except Exception:
+                pass
 
         while self.is_active:
             user_input = self._listen_or_prompt()
-            if not user_input:
+            if not user_input or not self.is_active:
                 continue
 
             clean_input = user_input.strip().lower()
-            if clean_input in ['hang up', 'end call', 'disconnect', 'shut down', 'exit', 'quit']:
+            if any(w in clean_input for w in ['hang up', 'end call', 'close call', 'disconnect', 'goodbye', 'bye jarvis', 'bye', 'terminate call']):
                 farewell = 'Call ended. Standby.'
                 print(f'\nAI: {farewell}\n')
                 self.voice.speak(farewell, block=True)
@@ -100,31 +112,52 @@ class ConversationalCallLoop:
                 break
 
             print(f'\n[User]: {user_input}')
+            self.last_user_speech = user_input
             try:
                 response = self.agent_responder(user_input)
             except Exception as e:
                 response = f'Error executing request: {str(e)}'
 
             print(f'[AI]: {response}\n')
+            self.last_ai_response = response
+            self.transcript_history.append((user_input, response))
+            if on_turn:
+                try:
+                    on_turn(user_input, response)
+                except Exception:
+                    pass
             self.voice.speak(response, block=True)
 
+    def stop_call(self):
+        if self.is_active:
+            self.is_active = False
+            self.voice.speak('Call ended.', block=False)
+
+    def start_call_background(self, on_turn: Optional[Callable[[str, str], None]] = None):
+        if not self.is_active:
+            self.call_thread = threading.Thread(target=self.start_call, args=(on_turn,), daemon=True)
+            self.call_thread.start()
+
     def _listen_or_prompt(self) -> Optional[str]:
+        if not self.is_active:
+            return None
         if self.recognizer and self.mic:
             try:
-                print('>> [Listening to microphone... speak now] ', end='', flush=True)
                 with self.mic as source:
-                    self.recognizer.adjust_for_ambient_noise(source, duration=0.3)
-                    audio = self.recognizer.listen(source, timeout=4, phrase_time_limit=10)
-                print('\n[Transcribing voice input...]')
+                    audio = self.recognizer.listen(source, timeout=4, phrase_time_limit=12)
                 text = self.recognizer.recognize_google(audio)
-                if text:
-                    print(f'Recognized: "{text}"')
-                    return text
-            except Exception as e:
-                pass
+                if text and text.strip():
+                    return text.strip()
+            except sr.WaitTimeoutError:
+                return None
+            except sr.UnknownValueError:
+                return None
+            except Exception:
+                time.sleep(0.05)
+                return None
 
         try:
-            return input('>> [Speak/Type]: ')
+            return input('>> [User Speaking]: ')
         except (EOFError, KeyboardInterrupt):
             self.is_active = False
             return 'hang up'

@@ -29,6 +29,11 @@ def run_text_loop(agent: Nexus226Agent):
             break
 
 def run_voice_loop(agent: Nexus226Agent):
+    print('\n' + '=' * 65)
+    print(' [NEXUS-JARVIS] REAL-TIME PHONE CALL DISCUSSION')
+    print(' Line is open. Speak freely into your microphone.')
+    print(" Say 'hang up', 'end call', or 'goodbye' to disconnect.")
+    print('=' * 65 + '\n')
     call = ConversationalCallLoop(agent_responder=agent.process_request)
     call.start_call()
 

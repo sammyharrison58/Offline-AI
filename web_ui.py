@@ -17,7 +17,7 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
 from core.agent import Nexus226Agent
-from core.voice_loop import OfflineVoiceEngine
+from core.voice_loop import OfflineVoiceEngine, ConversationalCallLoop
 
 st.set_page_config(
     page_title="Nexus-Grok AI | Jarvis Edition",
@@ -188,8 +188,13 @@ def get_agent():
 def get_voice():
     return OfflineVoiceEngine(voice_speed=3)
 
+@st.cache_resource
+def get_call_loop():
+    return ConversationalCallLoop(agent_responder=agent.process_request)
+
 agent = get_agent()
 voice = get_voice()
+call_loop = get_call_loop()
 
 if "ai_open" not in st.session_state:
     st.session_state.ai_open = True
@@ -350,6 +355,39 @@ with c4:
 with c5:
     if st.button("🎨 Graphic"):
         st.session_state.quick_query = "generate image of Quantum Neural Network"
+
+if hasattr(call_loop, "transcript_history") and call_loop.transcript_history:
+    while call_loop.transcript_history:
+        turn = call_loop.transcript_history.pop(0)
+        st.session_state.messages.append({"role": "user", "content": turn[0]})
+        st.session_state.messages.append({"role": "assistant", "content": turn[1]})
+
+call_box = st.container()
+with call_box:
+    if call_loop.is_active:
+        c_act1, c_act2 = st.columns([4, 1])
+        with c_act1:
+            st.markdown("""
+            <div style="background: rgba(16, 185, 129, 0.16); border: 2px solid #10b981; border-radius: 10px; padding: 10px 16px; margin-bottom: 8px;">
+                <div style="color: #10b981; font-weight: 800; font-size: 14px; letter-spacing: 1px;">📞 PHONE CALL ACTIVE — LIVE DISCUSSION</div>
+                <div style="color: #cbd5e1; font-size: 12px; margin-top: 3px;">The line is open. Speak continuously into your microphone; Jarvis will respond aloud and keep listening for your next question. Say 'hang up' or click End Call to close.</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with c_act2:
+            if st.button("🔴 END CALL", type="primary", use_container_width=True):
+                call_loop.stop_call()
+                st.rerun()
+    else:
+        c_btn1, c_btn2 = st.columns([3, 1])
+        with c_btn1:
+            if st.button("📞 START LIVE PHONE CALL DISCUSSION", type="primary", use_container_width=True):
+                call_loop.start_call_background()
+                st.rerun()
+        with c_btn2:
+            if st.button("🪟 CALL WINDOW", use_container_width=True):
+                import subprocess
+                subprocess.Popen([sys.executable, os.path.join(root_dir, "main.py"), "--mode", "voice"], creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0)
+                st.info("Phone call session launched in separate window.")
 
 chat_container = st.container()
 with chat_container:
