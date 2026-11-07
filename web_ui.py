@@ -38,7 +38,7 @@ bg_b64 = get_cached_bg()
 
 bg_style = f"""
     [data-testid="stAppViewContainer"], body {{
-        background-image: linear-gradient(rgba(5, 8, 18, 0.82), rgba(5, 8, 18, 0.92)), url("data:image/png;base64,{bg_b64}");
+        background-image: linear-gradient(rgba(3, 6, 16, 0.40), rgba(3, 6, 16, 0.65)), url("data:image/png;base64,{bg_b64}");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
@@ -47,7 +47,7 @@ bg_style = f"""
     }}
 """ if bg_b64 else """
     [data-testid="stAppViewContainer"], body {
-        background-color: #070B14;
+        background-color: #050814;
         color: #F3F4F6;
         font-family: 'Segoe UI', system-ui, sans-serif;
     }
@@ -56,6 +56,32 @@ bg_style = f"""
 st.markdown(f"""
 <style>
     {bg_style}
+    @keyframes scanline {{
+        0% {{ transform: translateY(-100vh); }}
+        100% {{ transform: translateY(100vh); }}
+    }}
+    .holographic-beam {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+        opacity: 0.35;
+        pointer-events: none;
+        z-index: 9999;
+        animation: scanline 7s linear infinite;
+    }}
+    .cyber-grid-overlay {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 1;
+        background: radial-gradient(circle at 50% 25%, rgba(0, 240, 255, 0.08) 0%, transparent 65%);
+    }}
     .main-title {{
         font-size: 2.3rem;
         font-weight: 800;
@@ -105,19 +131,20 @@ st.markdown(f"""
         color: #00f0ff;
     }}
     div[data-testid="stChatMessage"] {{
-        background: rgba(15, 23, 42, 0.65) !important;
-        border: 1px solid rgba(0, 240, 255, 0.2) !important;
+        background: rgba(10, 18, 36, 0.75) !important;
+        border: 1px solid rgba(0, 240, 255, 0.3) !important;
+        border-left: 3px solid #00f0ff !important;
         border-radius: 14px !important;
         margin-bottom: 10px !important;
-        backdrop-filter: blur(8px) !important;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(12px) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 240, 255, 0.12) !important;
     }}
     div[data-testid="stChatInput"] {{
-        border: 1px solid rgba(0, 240, 255, 0.5) !important;
+        border: 1px solid rgba(0, 240, 255, 0.6) !important;
         border-radius: 26px !important;
-        box-shadow: 0 0 20px rgba(0, 240, 255, 0.25) !important;
-        background: rgba(11, 17, 32, 0.9) !important;
-        backdrop-filter: blur(12px) !important;
+        box-shadow: 0 0 25px rgba(0, 240, 255, 0.3) !important;
+        background: rgba(8, 14, 28, 0.92) !important;
+        backdrop-filter: blur(14px) !important;
     }}
     .hud-metrics-bar {{
         display: flex;
@@ -127,12 +154,13 @@ st.markdown(f"""
     }}
     .hud-card {{
         flex: 1;
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(0, 240, 255, 0.25);
+        background: rgba(10, 20, 38, 0.65);
+        border: 1px solid rgba(0, 240, 255, 0.35);
         border-radius: 10px;
         padding: 8px 12px;
         text-align: center;
-        backdrop-filter: blur(6px);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(0, 240, 255, 0.08);
     }}
     .hud-card-lbl {{
         font-size: 10px;
@@ -148,6 +176,8 @@ st.markdown(f"""
         text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
     }}
 </style>
+<div class="holographic-beam"></div>
+<div class="cyber-grid-overlay"></div>
 """, unsafe_allow_html=True)
 
 @st.cache_resource
@@ -173,6 +203,7 @@ col_hdr, col_pwr = st.columns([3, 1])
 with col_hdr:
     st.markdown('<div class="main-title">⚡ NEXUS-JARVIS AI COCKPIT</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">226 AI Paradigms | Holographic HUD Core | Direct Voice Duplex | OS Machine Control</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:10px; color:#38bdf8; letter-spacing:2px; font-weight:700; margin-top:-6px; margin-bottom:8px;">[ SYSTEM: MK-IV ] // [ QUANTUM FLUX: OPTIMAL ] // [ SEC-GRID: ZERO-TRUST ]</div>', unsafe_allow_html=True)
 
 with col_pwr:
     if st.session_state.ai_open:
