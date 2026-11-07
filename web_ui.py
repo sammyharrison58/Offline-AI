@@ -194,6 +194,10 @@ voice = get_voice()
 if "ai_open" not in st.session_state:
     st.session_state.ai_open = True
 
+if "greeted" not in st.session_state:
+    st.session_state.greeted = True
+    voice.speak("Greetings. Nexus-Jarvis online and ready.", block=False)
+
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "Nexus-Jarvis online. Holographic neural core engaged. Speak or type your command into the bar below."}
@@ -395,18 +399,6 @@ if user_input:
             if "generated_graphic.png" in response and os.path.exists("generated_graphic.png"):
                 st.image("generated_graphic.png", caption="Rendered Graphic", use_column_width=True)
             voice.speak(response, block=False)
-            safe_text = response.replace('"', '\\"').replace("'", "\\'").replace('\n', ' ')
-            browser_audio = f"""
-            <script>
-            if ('speechSynthesis' in window) {{
-                window.speechSynthesis.cancel();
-                const utt = new SpeechSynthesisUtterance("{safe_text[:300]}");
-                utt.rate = 1.15;
-                window.speechSynthesis.speak(utt);
-            }}
-            </script>
-            """
-            components.html(browser_audio, height=0)
     st.session_state.messages.append({"role": "assistant", "content": response})
 
 st.markdown("---")

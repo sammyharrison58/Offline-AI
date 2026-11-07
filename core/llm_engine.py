@@ -56,7 +56,7 @@ class OfflineLLMEngine:
             except Exception:
                 pass
 
-    def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 26, temperature: float = 0.3) -> str:
+    def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 20, temperature: float = 0.3) -> str:
         backend = self.active_backend
         if backend == "ollama":
             return self._call_ollama(prompt, system_prompt, max_tokens, temperature)
@@ -65,7 +65,7 @@ class OfflineLLMEngine:
         else:
             return self._call_builtin(prompt, system_prompt)
 
-    def generate_stream(self, prompt: str, system_prompt: str = "", max_tokens: int = 26, temperature: float = 0.3) -> Generator[str, None, None]:
+    def generate_stream(self, prompt: str, system_prompt: str = "", max_tokens: int = 20, temperature: float = 0.3) -> Generator[str, None, None]:
         if self.active_backend == "ollama":
             url = f"{self.ollama_url}/api/generate"
             payload = {
@@ -75,14 +75,14 @@ class OfflineLLMEngine:
                 "stream": True,
                 "keep_alive": -1,
                 "options": {
-                    "num_predict": min(max_tokens, 26),
+                    "num_predict": min(max_tokens, 20),
                     "repeat_penalty": 1.25,
                     "num_thread": 4,
                     "num_ctx": 256,
                     "temperature": temperature,
                     "top_k": 25,
                     "top_p": 0.85,
-                    "stop": ["\n\n", "User:", "\nUser", "Question:", "Direct Answer:"]
+                    "stop": ["\n", "\n\n", "User:", "\nUser", "Question:", "Direct Answer:"]
                 }
             }
             try:
@@ -110,14 +110,14 @@ class OfflineLLMEngine:
                 "stream": False,
                 "keep_alive": -1,
                 "options": {
-                    "num_predict": min(max_tokens, 26),
+                    "num_predict": min(max_tokens, 20),
                     "repeat_penalty": 1.25,
                     "num_thread": 4,
                     "num_ctx": 256,
                     "temperature": temperature,
                     "top_k": 25,
                     "top_p": 0.85,
-                    "stop": ["\n\n", "User:", "\nUser", "Question:", "Direct Answer:"]
+                    "stop": ["\n", "\n\n", "User:", "\nUser", "Question:", "Direct Answer:"]
                 }
             }
             res = requests.post(url, json=payload, timeout=20)
@@ -134,7 +134,7 @@ class OfflineLLMEngine:
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
-            payload = {"messages": messages, "max_tokens": min(max_tokens, 26), "temperature": temperature}
+            payload = {"messages": messages, "max_tokens": min(max_tokens, 20), "temperature": temperature}
             res = requests.post(url, json=payload, timeout=15)
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"].strip()

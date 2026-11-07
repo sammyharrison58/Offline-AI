@@ -20,14 +20,8 @@ except ImportError:
 class OfflineVoiceEngine:
 
     def __init__(self, voice_speed: int = 3):
-        self.sapi_voice = None
+        self.voice_speed = voice_speed
         self.lock = threading.Lock()
-        if SAPI_AVAILABLE:
-            try:
-                self.sapi_voice = win32com.client.Dispatch('SAPI.SpVoice')
-                self.sapi_voice.Rate = voice_speed
-            except Exception as e:
-                print(f'[VoiceEngine] Warning: SAPI initialization failed: {e}')
 
     def clean_text_for_speech(self, text: str) -> str:
         t = re.sub(r'```.*?```', 'code block executed.', text, flags=re.DOTALL)
@@ -43,24 +37,25 @@ class OfflineVoiceEngine:
 
     def speak(self, text: str, block: bool = False):
         clean_text = self.clean_text_for_speech(text)
-        if not self.sapi_voice or not clean_text:
-            if clean_text:
-                print(f'[AI Voice Output]: {clean_text}')
+        if not clean_text or not SAPI_AVAILABLE:
             return
 
         def _run_speak():
             with self.lock:
                 try:
-                    self.sapi_voice.Speak(clean_text, 1)
+                    try:
+                        import pythoncom
+                        pythoncom.CoInitialize()
+                    except Exception:
+                        pass
+                    v = win32com.client.Dispatch('SAPI.SpVoice')
+                    v.Rate = self.voice_speed
+                    v.Speak(clean_text, 0)
                 except Exception as e:
                     print(f'[VoiceEngine Error] {e}')
 
         if block:
-            with self.lock:
-                try:
-                    self.sapi_voice.Speak(clean_text, 0)
-                except Exception as e:
-                    print(f'[VoiceEngine Error] {e}')
+            _run_speak()
         else:
             threading.Thread(target=_run_speak, daemon=True).start()
 

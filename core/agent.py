@@ -25,6 +25,22 @@ class Nexus226Agent:
         self.grok = GrokEngine(mode="fun")
         self.mongo = MongoDBManager()
 
+    def _is_greeting(self, ql: str) -> bool:
+        clean = re.sub(r'[^a-z0-9\s]', ' ', ql).strip()
+        words = clean.split()
+        if not words:
+            return False
+        greeting_exact = {"hello", "hi", "hey", "howdy", "greetings", "yo", "jarvis", "nexus"}
+        if clean in greeting_exact:
+            return True
+        if any(g in clean for g in ["good morning", "good afternoon", "good evening", "wake up"]):
+            return True
+        if words[0] in {"hello", "hi", "hey", "greetings", "yo"}:
+            return True
+        if len(words) <= 3 and any(w in greeting_exact for w in words):
+            return True
+        return False
+
     def process_request(self, user_query: str) -> str:
         q = user_query.strip()
         ql = q.lower()
@@ -32,8 +48,8 @@ class Nexus226Agent:
         if not ql:
             return "Listening. Say or type a command."
 
-        if ql in ["hello", "hi", "hey", "good morning", "good evening", "howdy", "greetings"]:
-            return "Greetings! Nexus-Grok online and listening. Ask me any question, run code, or command machine actions."
+        if self._is_greeting(ql):
+            return "Greetings! Nexus-Jarvis online and listening. Ready for your command."
 
         if any(ql == w or ql == f"{w} grok" or ql == f"{w} nexus" for w in ["who are you", "what are you", "what is your name"]):
             return "I am Nexus-Grok, your uncensored offline autonomous AI agent equipped with 226 AI architecture paradigms, OS machine controls, blockchain treasury, and voice duplex."
@@ -243,7 +259,7 @@ class Nexus226Agent:
         user_prompt = f"{k_ctx}\nQuestion: {q}\nDirect Answer:" if k_ctx else f"Question: {q}\nDirect Answer:"
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
-            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=26)
+            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=20)
             if res and not res.startswith("[Ollama") and not res.startswith("[Local"):
                 clean = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:)\s*', '', res, flags=re.IGNORECASE).strip()
                 return clean
@@ -261,8 +277,8 @@ class Nexus226Agent:
             yield "Listening. Say or type a command."
             return
 
-        if ql in ["hello", "hi", "hey", "good morning", "good evening", "howdy", "greetings"]:
-            yield "Greetings! Nexus-Grok online and listening. Ask me any question, run code, or command machine actions."
+        if self._is_greeting(ql):
+            yield "Greetings! Nexus-Jarvis online and listening. Ready for your command."
             return
 
         if any(ql == w or ql == f"{w} grok" or ql == f"{w} nexus" for w in ["who are you", "what are you", "what is your name"]):
@@ -320,7 +336,7 @@ class Nexus226Agent:
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
             first_chunk = True
-            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=26):
+            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=20):
                 if first_chunk:
                     chunk = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:)\s*', '', chunk, flags=re.IGNORECASE)
                     first_chunk = False
