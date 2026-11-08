@@ -12,6 +12,10 @@ class OfflineLLMEngine:
         self.ollama_model = ollama_model
         self.openai_compatible_url = openai_compatible_url
         self.gguf_path = gguf_path
+        self.session = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(pool_connections=10, pool_maxsize=10, max_retries=1)
+        self.session.mount("http://", adapter)
+        self.cache: Dict[str, str] = {}
         self.active_backend = self._detect_backend()
         self.warmup_thread = threading.Thread(target=self.warmup, daemon=True)
         self.warmup_thread.start()
@@ -20,7 +24,7 @@ class OfflineLLMEngine:
         if self.backend != "auto":
             return self.backend
         try:
-            r = requests.get(f"{self.ollama_url}/api/tags", timeout=0.6)
+            r = self.session.get(f"{self.ollama_url}/api/tags", timeout=0.6)
             if r.status_code == 200:
                 models = [m.get("name") for m in r.json().get("models", [])]
                 if models:
@@ -32,7 +36,7 @@ class OfflineLLMEngine:
         except Exception:
             pass
         try:
-            r = requests.get(f"{self.openai_compatible_url}/models", timeout=0.4)
+            r = self.session.get(f"{self.openai_compatible_url}/models", timeout=0.4)
             if r.status_code == 200:
                 return "openai_compatible"
         except Exception:
@@ -42,12 +46,12 @@ class OfflineLLMEngine:
     def warmup(self):
         if self.active_backend == "ollama":
             try:
-                requests.post(
+                self.session.post(
                     f"{self.ollama_url}/api/generate",
                     json={
                         "model": self.ollama_model,
                         "prompt": "ok",
-                        "options": {"num_predict": 1, "num_thread": 4, "num_ctx": 256},
+                        "options": {"num_predict": 1, "num_thread": min(4, os.cpu_count() or 4), "num_ctx": 256},
                         "keep_alive": -1,
                         "stream": False
                     },
@@ -57,15 +61,28 @@ class OfflineLLMEngine:
                 pass
 
     def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 20, temperature: float = 0.3) -> str:
+        cache_key = f"{prompt.strip()}|{system_prompt.strip()}|{max_tokens}"
+        if cache_key in self.cache:
+            return self.cache[cache_key]
+
         backend = self.active_backend
         if backend == "ollama":
-            return self._call_ollama(prompt, system_prompt, max_tokens, temperature)
+            res = self._call_ollama(prompt, system_prompt, max_tokens, temperature)
         elif backend == "openai_compatible":
-            return self._call_openai(prompt, system_prompt, max_tokens, temperature)
+            res = self._call_openai(prompt, system_prompt, max_tokens, temperature)
         else:
-            return self._call_builtin(prompt, system_prompt)
+            res = self._call_builtin(prompt, system_prompt)
+
+        if res and not res.startswith("["):
+            self.cache[cache_key] = res
+        return res
 
     def generate_stream(self, prompt: str, system_prompt: str = "", max_tokens: int = 20, temperature: float = 0.3) -> Generator[str, None, None]:
+        cache_key = f"{prompt.strip()}|{system_prompt.strip()}|{max_tokens}"
+        if cache_key in self.cache:
+            yield self.cache[cache_key]
+            return
+
         if self.active_backend == "ollama":
             url = f"{self.ollama_url}/api/generate"
             payload = {
@@ -77,7 +94,7 @@ class OfflineLLMEngine:
                 "options": {
                     "num_predict": min(max_tokens, 20),
                     "repeat_penalty": 1.25,
-                    "num_thread": 4,
+                    "num_thread": min(4, os.cpu_count() or 4),
                     "num_ctx": 256,
                     "temperature": temperature,
                     "top_k": 25,
@@ -85,16 +102,20 @@ class OfflineLLMEngine:
                     "stop": ["\n", "\n\n", "User:", "\nUser", "Question:", "Direct Answer:"]
                 }
             }
+            full_response = []
             try:
-                with requests.post(url, json=payload, stream=True, timeout=20) as resp:
+                with self.session.post(url, json=payload, stream=True, timeout=20) as resp:
                     for line in resp.iter_lines():
                         if line:
                             data = json.loads(line)
                             tok = data.get("response", "")
                             if tok:
+                                full_response.append(tok)
                                 yield tok
                             if data.get("done"):
                                 break
+                if full_response:
+                    self.cache[cache_key] = "".join(full_response).strip()
             except Exception as e:
                 yield f"[Ollama Connection Error]: {e}"
         else:
@@ -112,7 +133,7 @@ class OfflineLLMEngine:
                 "options": {
                     "num_predict": min(max_tokens, 20),
                     "repeat_penalty": 1.25,
-                    "num_thread": 4,
+                    "num_thread": min(4, os.cpu_count() or 4),
                     "num_ctx": 256,
                     "temperature": temperature,
                     "top_k": 25,
@@ -120,7 +141,7 @@ class OfflineLLMEngine:
                     "stop": ["\n", "\n\n", "User:", "\nUser", "Question:", "Direct Answer:"]
                 }
             }
-            res = requests.post(url, json=payload, timeout=20)
+            res = self.session.post(url, json=payload, timeout=20)
             if res.status_code == 200:
                 return res.json().get("response", "").strip()
             return f"[Ollama Error] HTTP {res.status_code}"
@@ -135,7 +156,7 @@ class OfflineLLMEngine:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
             payload = {"messages": messages, "max_tokens": min(max_tokens, 20), "temperature": temperature}
-            res = requests.post(url, json=payload, timeout=15)
+            res = self.session.post(url, json=payload, timeout=15)
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"].strip()
             return f"[OpenAI Error] HTTP {res.status_code}"

@@ -245,11 +245,29 @@ class Nexus226Agent:
             c_status = "Connected" if st.get("connected") else "Disconnected (using offline export)"
             return f"MongoDB: {c_status} | URI: {st.get('uri')} | Collections: {list(st.get('collections', {}).keys()) or ['project_files', 'ai_knowledge_226', 'blockchain_ledger']}"
 
-        matched_domains = self.knowledge.query(q, top_k=1)
+        if any(ql.startswith(p) for p in ["research ", "deep dive into ", "deep dive ", "offline research on ", "offline research ", "analyze paradigm "]):
+            topic = q
+            for p in ["research ", "deep dive into ", "deep dive ", "offline research on ", "offline research ", "analyze paradigm "]:
+                if ql.startswith(p):
+                    topic = q[len(p):].strip()
+                    break
+            res = self.knowledge.deep_research(topic)
+            return res.get("markdown") or res.get("short_summary")
+
+        if ql.startswith("compare ") and " and " in ql:
+            pair = q[8:].split(" and ", 1)
+            return self.knowledge.compare_paradigms(pair[0].strip(), pair[1].strip())
+
+        matched_domains = self.knowledge.query(q, top_k=2)
         k_ctx = ""
-        if matched_domains and any(tok in ql for tok in matched_domains[0].get("name").lower().split()[:2]):
-            d = matched_domains[0]
-            k_ctx = f"Reference: {d['concept']}"
+        if matched_domains:
+            top_d = matched_domains[0]
+            name_tokens = set(self.knowledge._tokenize(top_d.get('name', '')))
+            q_tokens = set(self.knowledge._tokenize(ql))
+            if len(name_tokens.intersection(q_tokens)) >= 1 or any(tok in ql for tok in top_d.get("name").lower().split()[:2]):
+                if any(w in ql for w in ["research", "deep dive", "details", "formula", "math", "dossier"]):
+                    return self.knowledge.deep_research(top_d.get("name"))["markdown"]
+                k_ctx = f"Reference: {top_d['concept']}"
 
         system_instruction = (
             f"You are Grok ({self.grok.mode} mode). Direct 1-sentence answer only. "
@@ -315,7 +333,8 @@ class Nexus226Agent:
             "list files", "dir", "list processes", "wallet", "balance", "crypto balance",
             "my address", "send ", "transfer ", "pay ", "transaction history", "ledger",
             "sync mongodb", "sync to mongodb", "put files in mongodb", "put my files in mongodb",
-            "save to mongodb", "backup to mongodb", "mongodb status", "check mongodb"
+            "save to mongodb", "backup to mongodb", "mongodb status", "check mongodb",
+            "research ", "deep dive", "compare ", "offline research"
         ]
         if any(w in ql for w in fast_keywords):
             yield self.process_request(user_query)
@@ -324,8 +343,7 @@ class Nexus226Agent:
         matched_domains = self.knowledge.query(q, top_k=1)
         k_ctx = ""
         if matched_domains and any(tok in ql for tok in matched_domains[0].get("name").lower().split()[:2]):
-            d = matched_domains[0]
-            k_ctx = f"Reference: {d['concept']}"
+            k_ctx = f"Reference: {matched_domains[0]['concept']}"
 
         system_instruction = (
             f"You are Grok ({self.grok.mode} mode). Direct 1-sentence answer only. "

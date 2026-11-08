@@ -339,7 +339,7 @@ elif "Think" in selected_mode:
 else:
     agent.grok.set_mode("normal")
 
-c1, c2, c3, c4, c5 = st.columns(5)
+c1, c2, c3, c4, c5, c6 = st.columns(6)
 with c1:
     if st.button("📊 Telemetry"):
         st.session_state.quick_query = "What is the current system telemetry and hardware status?"
@@ -355,6 +355,9 @@ with c4:
 with c5:
     if st.button("🎨 Graphic"):
         st.session_state.quick_query = "generate image of Quantum Neural Network"
+with c6:
+    if st.button("🔬 Research"):
+        st.session_state.quick_query = "research State Space Models and Mamba"
 
 if hasattr(call_loop, "transcript_history") and call_loop.transcript_history:
     while call_loop.transcript_history:
@@ -484,3 +487,39 @@ with st.expander("🛠️ Advanced Machine, WoL Power & Blockchain Operations"):
                 else:
                     st.info(f"Offline Export Ready: {r_files.get('count')} files, {r_kb.get('count')} AI domains, {r_bc.get('count')} blocks saved to data/mongodb_export/.")
                     voice.speak("Files exported to MongoDB collections.", block=False)
+
+with st.expander("🔬 Offline AI Research Lab & 226 Architectural Dossiers", expanded=False):
+    r_tab1, r_tab2 = st.tabs(["📚 Paradigm Dossier", "⚖️ Compare Paradigms"])
+    with r_tab1:
+        rc1, rc2 = st.columns([1, 2])
+        with rc1:
+            cats = ["All Categories"] + agent.knowledge.get_all_categories()
+            chosen_cat = st.selectbox("Category Filter:", cats)
+            search_kw = st.text_input("Instant Keyword / Math Search:", "")
+            if search_kw.strip():
+                doms = agent.knowledge.query(search_kw, top_k=15)
+            elif chosen_cat != "All Categories":
+                doms = agent.knowledge.get_category_domains(chosen_cat)
+            else:
+                doms = agent.knowledge.domains[:15]
+            dom_names = [f"#{d.get('id')} {d.get('name')}" for d in doms]
+            selected_dom_name = st.selectbox("Select Paradigm:", dom_names) if dom_names else None
+        with rc2:
+            if selected_dom_name:
+                dom_id = int(selected_dom_name.split()[0].replace("#", ""))
+                dossier = agent.knowledge.get_by_id(dom_id)
+                if dossier:
+                    res_obj = agent.knowledge.deep_research(dossier.get("name", ""))
+                    st.markdown(res_obj.get("markdown", ""))
+                    if st.button("🔊 Read Research Aloud", key="btn_read_res"):
+                        voice.speak(res_obj.get("short_summary", ""), block=False)
+    with r_tab2:
+        cmp1, cmp2 = st.columns(2)
+        all_dom_titles = [d.get("name") for d in agent.knowledge.domains]
+        with cmp1:
+            p1 = st.selectbox("Paradigm A:", all_dom_titles, index=0)
+        with cmp2:
+            p2 = st.selectbox("Paradigm B:", all_dom_titles, index=10)
+        if st.button("⚖️ Run Architectural Comparison", use_container_width=True):
+            cmp_md = agent.knowledge.compare_paradigms(p1, p2)
+            st.markdown(cmp_md)

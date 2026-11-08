@@ -3,15 +3,18 @@ import json
 import math
 import re
 from typing import List, Dict, Any, Optional
+
 KNOWLEDGE_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'ai_knowledge_226.json')
 
 class AIKnowledgeEngine:
 
-    def __init__(self, json_path: str=KNOWLEDGE_FILE):
+    def __init__(self, json_path: str = KNOWLEDGE_FILE):
         self.json_path = os.path.abspath(json_path)
         self.domains: List[Dict[str, Any]] = []
-        self.vocab = {}
-        self.doc_freq = {}
+        self.inverted_index: Dict[str, List[tuple]] = {}
+        self.doc_freq: Dict[str, int] = {}
+        self.categories: Dict[str, List[Dict[str, Any]]] = {}
+        self.query_cache: Dict[str, List[Dict[str, Any]]] = {}
         self.load()
 
     def load(self):
@@ -23,50 +26,123 @@ class AIKnowledgeEngine:
         self._build_index()
 
     def _tokenize(self, text: str) -> List[str]:
-        text = text.lower()
-        tokens = re.findall('[a-z0-9_\\-\\.\\+]+', text)
-        return tokens
+        return re.findall('[a-z0-9_\\-\\.\\+]+', text.lower())
 
     def _build_index(self):
-        self.doc_freq = {}
-        num_docs = len(self.domains)
-        for doc in self.domains:
-            content = f"{doc.get('name', '')} {doc.get('category', '')} {doc.get('concept', '')} {doc.get('mathematical_basis', '')} {doc.get('obscure_insights', '')}"
-            tokens = set(self._tokenize(content))
-            for t in tokens:
-                self.doc_freq[t] = self.doc_freq.get(t, 0) + 1
+        self.inverted_index.clear()
+        self.doc_freq.clear()
+        self.categories.clear()
+        self.query_cache.clear()
 
-    def query(self, query_text: str, top_k: int=3) -> List[Dict[str, Any]]:
-        tokens = self._tokenize(query_text)
+        for idx, doc in enumerate(self.domains):
+            cat = doc.get('category', 'General')
+            if cat not in self.categories:
+                self.categories[cat] = []
+            self.categories[cat].append(doc)
+
+            weights = {}
+            for t in self._tokenize(doc.get('name', '')):
+                weights[t] = weights.get(t, 0.0) + 16.0
+            for t in self._tokenize(doc.get('category', '')):
+                weights[t] = weights.get(t, 0.0) + 7.0
+            for t in self._tokenize(doc.get('concept', '')):
+                weights[t] = weights.get(t, 0.0) + 3.5
+            for t in self._tokenize(doc.get('mathematical_basis', '')):
+                weights[t] = weights.get(t, 0.0) + 4.5
+            for t in self._tokenize(doc.get('obscure_insights', '')):
+                weights[t] = weights.get(t, 0.0) + 5.5
+            for t in self._tokenize(doc.get('open_source_frameworks', '')):
+                weights[t] = weights.get(t, 0.0) + 4.0
+
+            for t, w in weights.items():
+                self.doc_freq[t] = self.doc_freq.get(t, 0) + 1
+                if t not in self.inverted_index:
+                    self.inverted_index[t] = []
+                self.inverted_index[t].append((idx, w))
+
+    def query(self, query_text: str, top_k: int = 3) -> List[Dict[str, Any]]:
+        clean_q = query_text.strip().lower()
+        if not clean_q:
+            return self.domains[:top_k]
+
+        if clean_q in self.query_cache:
+            return self.query_cache[clean_q][:top_k]
+
+        tokens = self._tokenize(clean_q)
         if not tokens:
             return self.domains[:top_k]
-        scores = []
+
+        scores: Dict[int, float] = {}
         num_docs = len(self.domains)
-        for doc in self.domains:
-            score = 0.0
-            name_tokens = self._tokenize(doc.get('name', ''))
-            category_tokens = self._tokenize(doc.get('category', ''))
-            concept_tokens = self._tokenize(doc.get('concept', ''))
-            math_tokens = self._tokenize(doc.get('mathematical_basis', ''))
-            obscure_tokens = self._tokenize(doc.get('obscure_insights', ''))
-            for t in tokens:
+
+        for t in tokens:
+            if t in self.inverted_index:
                 df = self.doc_freq.get(t, 1)
                 idf = math.log((num_docs + 1) / (df + 1)) + 1.0
-                tf = 0
-                if t in name_tokens:
-                    tf += 15.0
-                if t in category_tokens:
-                    tf += 6.0
-                if t in concept_tokens:
-                    tf += 3.0
-                if t in math_tokens:
-                    tf += 4.0
-                if t in obscure_tokens:
-                    tf += 5.0
-                score += tf * idf
-            scores.append((score, doc))
-        scores.sort(key=lambda x: x[0], reverse=True)
-        return [item[1] for item in scores[:top_k]]
+                for doc_idx, weight in self.inverted_index[t]:
+                    scores[doc_idx] = scores.get(doc_idx, 0.0) + (weight * idf)
+
+        if not scores:
+            return self.domains[:top_k]
+
+        ranked_indices = sorted(scores.keys(), key=lambda i: scores[i], reverse=True)
+        results = [self.domains[i] for i in ranked_indices[:max(top_k, 5)]]
+        self.query_cache[clean_q] = results
+        return results[:top_k]
+
+    def deep_research(self, topic_query: str) -> Dict[str, Any]:
+        matches = self.query(topic_query, top_k=2)
+        if not matches:
+            return {
+                "found": False,
+                "summary": f"No direct paradigm match found in 226 offline databases for '{topic_query}'.",
+                "markdown": f"### 🔬 Offline Research: {topic_query}\nNo direct paradigm match found."
+            }
+
+        primary = matches[0]
+        secondary = matches[1] if len(matches) > 1 else None
+
+        md = f"### 🔬 OFFLINE RESEARCH DOSSIER: #{primary.get('id')} {primary.get('name')}\n"
+        md += f"**Category**: `{primary.get('category')}`\n\n"
+        md += f"#### 💡 Core Algorithmic Concept\n{primary.get('concept')}\n\n"
+        md += f"#### 📐 Mathematical & Theoretical Formulation\n```text\n{primary.get('mathematical_basis')}\n```\n\n"
+        md += f"#### 🧬 Obscure Invariants & Latent Insights\n{primary.get('obscure_insights')}\n\n"
+        md += f"#### 🛠️ Production Frameworks & Implementations\n`{primary.get('open_source_frameworks')}`\n"
+
+        if secondary:
+            md += f"\n---\n**🔗 Cross-Domain Correlated Paradigm**: #{secondary.get('id')} {secondary.get('name')} ({secondary.get('category')})\n"
+            md += f"- *Shared Invariant*: {secondary.get('concept')}\n"
+
+        short_summary = f"[{primary.get('name')}]: {primary.get('concept')} Math: {primary.get('mathematical_basis')}"
+
+        return {
+            "found": True,
+            "primary": primary,
+            "secondary": secondary,
+            "short_summary": short_summary,
+            "markdown": md
+        }
+
+    def compare_paradigms(self, topic_a: str, topic_b: str) -> str:
+        matches_a = self.query(topic_a, top_k=1)
+        matches_b = self.query(topic_b, top_k=1)
+
+        if not matches_a or not matches_b:
+            return f"Comparison unavailable: unable to resolve both '{topic_a}' and '{topic_b}' in 226 offline database."
+
+        da = matches_a[0]
+        db = matches_b[0]
+
+        md = f"### ⚖️ ARCHITECTURAL COMPARISON: {da.get('name')} vs {db.get('name')}\n\n"
+        md += f"| Dimension | #{da.get('id')} {da.get('name')} | #{db.get('id')} {db.get('name')} |\n"
+        md += "| :--- | :--- | :--- |\n"
+        md += f"| **Category** | {da.get('category')} | {db.get('category')} |\n"
+        md += f"| **Core Concept** | {da.get('concept')} | {db.get('concept')} |\n"
+        md += f"| **Mathematical Formulation** | `{da.get('mathematical_basis')}` | `{db.get('mathematical_basis')}` |\n"
+        md += f"| **Obscure Edge Insight** | {da.get('obscure_insights')} | {db.get('obscure_insights')} |\n"
+        md += f"| **Framework Stack** | {da.get('open_source_frameworks')} | {db.get('open_source_frameworks')} |\n"
+
+        return md
 
     def get_by_id(self, topic_id: int) -> Optional[Dict[str, Any]]:
         for d in self.domains:
@@ -74,14 +150,16 @@ class AIKnowledgeEngine:
                 return d
         return None
 
-    def get_category_summary(self) -> Dict[str, int]:
-        summary = {}
-        for d in self.domains:
-            cat = d.get('category', 'Uncategorized')
-            summary[cat] = summary.get(cat, 0) + 1
-        return summary
+    def get_all_categories(self) -> List[str]:
+        return list(self.categories.keys())
 
-    def format_knowledge_context(self, user_query: str, max_records: int=3) -> str:
+    def get_category_domains(self, category: str) -> List[Dict[str, Any]]:
+        return self.categories.get(category, [])
+
+    def get_category_summary(self) -> Dict[str, int]:
+        return {cat: len(docs) for cat, docs in self.categories.items()}
+
+    def format_knowledge_context(self, user_query: str, max_records: int = 3) -> str:
         matches = self.query(user_query, top_k=max_records)
         if not matches:
             return ''
@@ -94,10 +172,10 @@ class AIKnowledgeEngine:
             ctx += f"  - Frameworks & Implementations: {m.get('open_source_frameworks')}\n"
         ctx += '========================================================================\n'
         return ctx
+
 if __name__ == '__main__':
     engine = AIKnowledgeEngine()
     print(f'Loaded {len(engine.domains)} AI domain records.')
     print('Categories:', engine.get_category_summary())
-    test_q = 'How do Kolmogorov-Arnold Networks differ from Liquid Neural Networks?'
-    print('\nTest Search:', test_q)
-    print(engine.format_knowledge_context(test_q, max_records=2))
+    res = engine.deep_research('Mamba')
+    print(res['markdown'])
