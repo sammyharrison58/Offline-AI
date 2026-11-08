@@ -3,6 +3,7 @@ import sys
 import json
 import time
 import hashlib
+import threading
 from typing import Dict, Any, List, Optional
 
 try:
@@ -20,13 +21,13 @@ class MongoDBManager:
         self.client = None
         self.db = None
         self.is_connected = False
-        self._init_connection()
+        threading.Thread(target=self._init_connection, daemon=True).start()
 
     def _init_connection(self):
         if not PYMONGO_AVAILABLE:
             return
         try:
-            self.client = MongoClient(self.uri, serverSelectionTimeoutMS=2000)
+            self.client = MongoClient(self.uri, serverSelectionTimeoutMS=800)
             self.client.admin.command('ping')
             self.db = self.client[self.db_name]
             self.is_connected = True

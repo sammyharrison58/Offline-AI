@@ -79,12 +79,17 @@ class ConversationalCallLoop:
         self.call_thread = None
         self.transcript_history = []
         if SR_AVAILABLE:
+            threading.Thread(target=self._init_mic, daemon=True).start()
+
+    def _init_mic(self):
+        if SR_AVAILABLE and not self.mic:
             try:
                 self.mic = sr.Microphone()
             except Exception:
                 self.mic = None
 
     def start_call(self, on_turn: Optional[Callable[[str, str], None]] = None):
+        self._init_mic()
         self.is_active = True
         greeting = 'Call connected. Nexus-Jarvis online and listening. Go ahead.'
         print(f'\nAI: {greeting}\n')

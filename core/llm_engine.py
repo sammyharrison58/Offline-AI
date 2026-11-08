@@ -16,36 +16,21 @@ class OfflineLLMEngine:
         adapter = requests.adapters.HTTPAdapter(pool_connections=10, pool_maxsize=10, max_retries=1)
         self.session.mount("http://", adapter)
         self.cache: Dict[str, str] = {}
-        self.active_backend = self._detect_backend()
-        self.warmup_thread = threading.Thread(target=self.warmup, daemon=True)
+        self.active_backend = self.backend if self.backend != "auto" else "ollama"
+        self.warmup_thread = threading.Thread(target=self._init_and_warmup, daemon=True)
         self.warmup_thread.start()
 
-    def _detect_backend(self) -> str:
-        if self.backend != "auto":
-            return self.backend
+    def _init_and_warmup(self):
         try:
-            r = self.session.get(f"{self.ollama_url}/api/tags", timeout=0.6)
+            r = self.session.get(f"{self.ollama_url}/api/tags", timeout=0.5)
             if r.status_code == 200:
+                self.active_backend = "ollama"
                 models = [m.get("name") for m in r.json().get("models", [])]
                 if models:
                     if any("1b" in m.lower() for m in models):
                         self.ollama_model = next((m for m in models if "1b" in m.lower()))
                     else:
                         self.ollama_model = models[0]
-                return "ollama"
-        except Exception:
-            pass
-        try:
-            r = self.session.get(f"{self.openai_compatible_url}/models", timeout=0.4)
-            if r.status_code == 200:
-                return "openai_compatible"
-        except Exception:
-            pass
-        return "builtin_synthesizer"
-
-    def warmup(self):
-        if self.active_backend == "ollama":
-            try:
                 self.session.post(
                     f"{self.ollama_url}/api/generate",
                     json={
@@ -55,10 +40,19 @@ class OfflineLLMEngine:
                         "keep_alive": -1,
                         "stream": False
                     },
-                    timeout=25
+                    timeout=20
                 )
-            except Exception:
-                pass
+                return
+        except Exception:
+            pass
+        try:
+            r = self.session.get(f"{self.openai_compatible_url}/models", timeout=0.3)
+            if r.status_code == 200:
+                self.active_backend = "openai_compatible"
+                return
+        except Exception:
+            pass
+        self.active_backend = "builtin_synthesizer"
 
     def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 20, temperature: float = 0.3) -> str:
         cache_key = f"{prompt.strip()}|{system_prompt.strip()}|{max_tokens}"
