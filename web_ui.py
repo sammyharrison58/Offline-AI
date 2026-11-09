@@ -23,7 +23,7 @@ st.set_page_config(
     page_title="Nexus-Grok AI | Jarvis Edition",
     page_icon="⚡",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="auto"
 )
 
 @st.cache_data
@@ -175,9 +175,52 @@ st.markdown(f"""
         margin-top: 2px;
         text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
     }}
+    .floating-hud-dock {{
+        position: fixed;
+        bottom: 85px;
+        right: 25px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: rgba(8, 14, 28, 0.88);
+        border: 1px solid rgba(0, 240, 255, 0.45);
+        border-radius: 12px;
+        padding: 6px 8px;
+        backdrop-filter: blur(14px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 240, 255, 0.25);
+    }}
+    .hud-dock-link {{
+        color: #00f0ff;
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 6px;
+        background: rgba(0, 240, 255, 0.08);
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.2s ease;
+    }}
+    .hud-dock-link:hover {{
+        background: rgba(0, 240, 255, 0.3);
+        color: #ffffff;
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }}
 </style>
+<div id="top-anchor"></div>
 <div class="holographic-beam"></div>
 <div class="cyber-grid-overlay"></div>
+<div class="floating-hud-dock">
+    <a href="#top-anchor" class="hud-dock-link">⬆️ TOP</a>
+    <a href="#call-anchor" class="hud-dock-link">📞 CALL</a>
+    <a href="#chat-anchor" class="hud-dock-link">💬 CHAT</a>
+    <a href="#research-anchor" class="hud-dock-link">🔬 LAB</a>
+    <a href="#tools-anchor" class="hud-dock-link">🛠️ TOOLS</a>
+    <a href="#bottom-anchor" class="hud-dock-link">⬇️ END</a>
+</div>
 """, unsafe_allow_html=True)
 
 @st.cache_resource
@@ -207,6 +250,55 @@ if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "Nexus-Jarvis online. Holographic neural core engaged. Speak or type your command into the bar below."}
     ]
+
+with st.sidebar:
+    st.markdown('<div class="main-title" style="font-size:1.35rem;">⚡ JARVIS DOCK</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:10px; color:#38bdf8; font-weight:700; margin-bottom:10px;">[ PERSISTENT HUD CONTROLS ]</div>', unsafe_allow_html=True)
+
+    if st.session_state.ai_open:
+        st.markdown('<div class="status-badge-on" style="text-align:center; margin-bottom:6px;">● CORE ACTIVE</div>', unsafe_allow_html=True)
+        if st.button("🔴 STOP / CLOSE AI", key="sb_stop_ai", type="primary", use_container_width=True):
+            st.session_state.ai_open = False
+            voice.speak("AI power closed. Entering standby.", block=False)
+            st.rerun()
+    else:
+        st.markdown('<div class="status-badge-off" style="text-align:center; margin-bottom:6px;">○ STANDBY</div>', unsafe_allow_html=True)
+        if st.button("🟢 OPEN AI", key="sb_open_ai", type="primary", use_container_width=True):
+            st.session_state.ai_open = True
+            voice.speak("AI power online. Ready.", block=False)
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("##### 📞 Phone Call Station")
+    if call_loop.is_active:
+        st.success("🟢 Call Active")
+        if st.button("🔴 END CALL NOW", key="sb_end_call", type="primary", use_container_width=True):
+            call_loop.stop_call()
+            st.rerun()
+    else:
+        if st.button("📞 START CALL", key="sb_start_call", use_container_width=True):
+            call_loop.start_call_background()
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("##### 🧭 Instant Navigation")
+    st.markdown("""
+    <div style="display:flex; flex-direction:column; gap:6px;">
+        <a href="#top-anchor" class="hud-dock-link">⬆️ Top of Cockpit</a>
+        <a href="#call-anchor" class="hud-dock-link">📞 Phone Call Station</a>
+        <a href="#chat-anchor" class="hud-dock-link">💬 Chat & Terminal</a>
+        <a href="#research-anchor" class="hud-dock-link">🔬 Research Lab</a>
+        <a href="#tools-anchor" class="hud-dock-link">🛠️ Machine Controls</a>
+        <a href="#bottom-anchor" class="hud-dock-link">⬇️ Bottom / Input</a>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    if st.button("🗑️ Clear Chat History", key="sb_clear_chat", use_container_width=True):
+        st.session_state.messages = [
+            {"role": "assistant", "content": "Chat history cleared. System ready."}
+        ]
+        st.rerun()
 
 col_hdr, col_pwr = st.columns([3, 1])
 with col_hdr:
@@ -365,6 +457,7 @@ if hasattr(call_loop, "transcript_history") and call_loop.transcript_history:
         st.session_state.messages.append({"role": "user", "content": turn[0]})
         st.session_state.messages.append({"role": "assistant", "content": turn[1]})
 
+st.markdown('<div id="call-anchor"></div>', unsafe_allow_html=True)
 call_box = st.container()
 with call_box:
     if call_loop.is_active:
@@ -392,11 +485,43 @@ with call_box:
                 subprocess.Popen([sys.executable, os.path.join(root_dir, "main.py"), "--mode", "voice"], creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0)
                 st.info("Phone call session launched in separate window.")
 
+st.markdown('<div id="chat-anchor"></div>', unsafe_allow_html=True)
 chat_container = st.container()
 with chat_container:
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
+
+st.markdown('<div id="bottom-anchor"></div>', unsafe_allow_html=True)
+c_bot1, c_bot2, c_bot3, c_bot4 = st.columns([2, 2, 2, 1])
+with c_bot1:
+    if st.session_state.ai_open:
+        if st.button("🔴 STOP AI", key="bot_stop_ai", use_container_width=True):
+            st.session_state.ai_open = False
+            voice.speak("AI power closed. Entering standby.", block=False)
+            st.rerun()
+    else:
+        if st.button("🟢 OPEN AI", key="bot_open_ai", type="primary", use_container_width=True):
+            st.session_state.ai_open = True
+            voice.speak("AI power online. Ready.", block=False)
+            st.rerun()
+with c_bot2:
+    if call_loop.is_active:
+        if st.button("🔴 END CALL", key="bot_end_call", type="primary", use_container_width=True):
+            call_loop.stop_call()
+            st.rerun()
+    else:
+        if st.button("📞 CALL AI", key="bot_call_ai", use_container_width=True):
+            call_loop.start_call_background()
+            st.rerun()
+with c_bot3:
+    if st.button("🗑️ Clear Chat", key="bot_clear_chat", use_container_width=True):
+        st.session_state.messages = [
+            {"role": "assistant", "content": "Chat cleared. Standing by."}
+        ]
+        st.rerun()
+with c_bot4:
+    st.markdown('<a href="#top-anchor" style="text-decoration:none;"><button style="width:100%; height:38px; background:rgba(0,240,255,0.15); border:1px solid #00f0ff; color:#00f0ff; border-radius:8px; font-weight:700; cursor:pointer;">⬆️ TOP</button></a>', unsafe_allow_html=True)
 
 user_input = None
 
@@ -443,6 +568,7 @@ if user_input:
     st.session_state.messages.append({"role": "assistant", "content": response})
 
 st.markdown("---")
+st.markdown('<div id="tools-anchor"></div>', unsafe_allow_html=True)
 with st.expander("🛠️ Advanced Machine, WoL Power & Blockchain Operations"):
     col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1:
@@ -488,6 +614,7 @@ with st.expander("🛠️ Advanced Machine, WoL Power & Blockchain Operations"):
                     st.info(f"Offline Export Ready: {r_files.get('count')} files, {r_kb.get('count')} AI domains, {r_bc.get('count')} blocks saved to data/mongodb_export/.")
                     voice.speak("Files exported to MongoDB collections.", block=False)
 
+st.markdown('<div id="research-anchor"></div>', unsafe_allow_html=True)
 with st.expander("🔬 Offline AI Research Lab & 226 Architectural Dossiers", expanded=False):
     r_tab1, r_tab2 = st.tabs(["📚 Paradigm Dossier", "⚖️ Compare Paradigms"])
     with r_tab1:
