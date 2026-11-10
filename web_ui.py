@@ -18,6 +18,8 @@ if root_dir not in sys.path:
 
 from core.agent import Nexus226Agent
 from core.voice_loop import OfflineVoiceEngine, ConversationalCallLoop
+from core.call_server import CallBridgeServer
+from core.phone_hud import get_phone_call_component
 
 st.set_page_config(
     page_title="Nexus-Grok AI | Jarvis Edition",
@@ -238,9 +240,13 @@ def get_call_loop():
 agent = get_agent()
 voice = get_voice()
 call_loop = get_call_loop()
+bridge_port = CallBridgeServer.start(agent, host="127.0.0.1", port=8502)
 
 if "ai_open" not in st.session_state:
     st.session_state.ai_open = True
+
+if "phone_call_open" not in st.session_state:
+    st.session_state.phone_call_open = False
 
 if "greeted" not in st.session_state:
     st.session_state.greeted = True
@@ -250,6 +256,13 @@ if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "Nexus-Jarvis online. Holographic neural core engaged. Speak or type your command into the bar below."}
     ]
+
+bridge_history = CallBridgeServer.get_history()
+if bridge_history:
+    for h in bridge_history:
+        st.session_state.messages.append({"role": "user", "content": h.get("user", "")})
+        st.session_state.messages.append({"role": "assistant", "content": h.get("ai", "")})
+    CallBridgeServer.clear_history()
 
 with st.sidebar:
     st.markdown('<div class="main-title" style="font-size:1.35rem;">⚡ JARVIS DOCK</div>', unsafe_allow_html=True)
@@ -270,14 +283,15 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("##### 📞 Phone Call Station")
-    if call_loop.is_active:
+    if st.session_state.phone_call_open or call_loop.is_active:
         st.success("🟢 Call Active")
         if st.button("🔴 END CALL NOW", key="sb_end_call", type="primary", use_container_width=True):
+            st.session_state.phone_call_open = False
             call_loop.stop_call()
             st.rerun()
     else:
         if st.button("📞 START CALL", key="sb_start_call", use_container_width=True):
-            call_loop.start_call_background()
+            st.session_state.phone_call_open = True
             st.rerun()
 
     st.markdown("---")
@@ -460,24 +474,26 @@ if hasattr(call_loop, "transcript_history") and call_loop.transcript_history:
 st.markdown('<div id="call-anchor"></div>', unsafe_allow_html=True)
 call_box = st.container()
 with call_box:
-    if call_loop.is_active:
+    if st.session_state.phone_call_open or call_loop.is_active:
+        components.html(get_phone_call_component(port=bridge_port), height=340, scrolling=False)
         c_act1, c_act2 = st.columns([4, 1])
         with c_act1:
             st.markdown("""
-            <div style="background: rgba(16, 185, 129, 0.16); border: 2px solid #10b981; border-radius: 10px; padding: 10px 16px; margin-bottom: 8px;">
-                <div style="color: #10b981; font-weight: 800; font-size: 14px; letter-spacing: 1px;">📞 PHONE CALL ACTIVE — LIVE DISCUSSION</div>
-                <div style="color: #cbd5e1; font-size: 12px; margin-top: 3px;">The line is open. Speak continuously into your microphone; Jarvis will respond aloud and keep listening for your next question. Say 'hang up' or click End Call to close.</div>
+            <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; border-radius: 8px; padding: 8px 14px; margin-top: 4px;">
+                <span style="color: #10b981; font-weight: 700; font-size: 13px;">📞 FULL PHONE CALL CONSOLE ACTIVE:</span>
+                <span style="color: #cbd5e1; font-size: 12px; margin-left: 6px;">Speak naturally into your mic. Jarvis transcribes, answers aloud, and keeps listening hands-free until you hang up.</span>
             </div>
             """, unsafe_allow_html=True)
         with c_act2:
-            if st.button("🔴 END CALL", type="primary", use_container_width=True):
+            if st.button("🔴 END CALL", key="main_end_call", type="primary", use_container_width=True):
+                st.session_state.phone_call_open = False
                 call_loop.stop_call()
                 st.rerun()
     else:
         c_btn1, c_btn2 = st.columns([3, 1])
         with c_btn1:
             if st.button("📞 START LIVE PHONE CALL DISCUSSION", type="primary", use_container_width=True):
-                call_loop.start_call_background()
+                st.session_state.phone_call_open = True
                 st.rerun()
         with c_btn2:
             if st.button("🪟 CALL WINDOW", use_container_width=True):
@@ -506,13 +522,14 @@ with c_bot1:
             voice.speak("AI power online. Ready.", block=False)
             st.rerun()
 with c_bot2:
-    if call_loop.is_active:
+    if st.session_state.phone_call_open or call_loop.is_active:
         if st.button("🔴 END CALL", key="bot_end_call", type="primary", use_container_width=True):
+            st.session_state.phone_call_open = False
             call_loop.stop_call()
             st.rerun()
     else:
         if st.button("📞 CALL AI", key="bot_call_ai", use_container_width=True):
-            call_loop.start_call_background()
+            st.session_state.phone_call_open = True
             st.rerun()
 with c_bot3:
     if st.button("🗑️ Clear Chat", key="bot_clear_chat", use_container_width=True):

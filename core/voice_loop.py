@@ -100,8 +100,38 @@ class ConversationalCallLoop:
                     self.recognizer.adjust_for_ambient_noise(source, duration=0.6)
                     self.recognizer.pause_threshold = 0.8
                     self.recognizer.non_speaking_duration = 0.5
-            except Exception:
-                pass
+                    while self.is_active:
+                        user_input = self._listen_or_prompt(source=source)
+                        if not user_input or not self.is_active:
+                            continue
+
+                        clean_input = user_input.strip().lower()
+                        if any(w in clean_input for w in ['hang up', 'end call', 'close call', 'disconnect', 'goodbye', 'bye jarvis', 'bye', 'terminate call']):
+                            farewell = 'Call ended. Standby.'
+                            print(f'\nAI: {farewell}\n')
+                            self.voice.speak(farewell, block=True)
+                            self.is_active = False
+                            break
+
+                        print(f'\n[User]: {user_input}')
+                        self.last_user_speech = user_input
+                        try:
+                            response = self.agent_responder(user_input)
+                        except Exception as e:
+                            response = f'Error executing request: {str(e)}'
+
+                        print(f'[AI]: {response}\n')
+                        self.last_ai_response = response
+                        self.transcript_history.append((user_input, response))
+                        if on_turn:
+                            try:
+                                on_turn(user_input, response)
+                            except Exception:
+                                pass
+                        self.voice.speak(response, block=True)
+                return
+            except Exception as e:
+                print(f'[Microphone Stream Error] {e}')
 
         while self.is_active:
             user_input = self._listen_or_prompt()
@@ -143,13 +173,26 @@ class ConversationalCallLoop:
             self.call_thread = threading.Thread(target=self.start_call, args=(on_turn,), daemon=True)
             self.call_thread.start()
 
-    def _listen_or_prompt(self) -> Optional[str]:
+    def _listen_or_prompt(self, source=None) -> Optional[str]:
         if not self.is_active:
             return None
-        if self.recognizer and self.mic:
+        if self.recognizer and source:
             try:
-                with self.mic as source:
-                    audio = self.recognizer.listen(source, timeout=4, phrase_time_limit=12)
+                audio = self.recognizer.listen(source, timeout=4, phrase_time_limit=12)
+                text = self.recognizer.recognize_google(audio)
+                if text and text.strip():
+                    return text.strip()
+            except sr.WaitTimeoutError:
+                return None
+            except sr.UnknownValueError:
+                return None
+            except Exception:
+                time.sleep(0.05)
+                return None
+        elif self.recognizer and self.mic:
+            try:
+                with self.mic as src:
+                    audio = self.recognizer.listen(src, timeout=4, phrase_time_limit=12)
                 text = self.recognizer.recognize_google(audio)
                 if text and text.strip():
                     return text.strip()
