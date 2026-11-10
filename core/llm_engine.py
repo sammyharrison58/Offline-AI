@@ -82,18 +82,18 @@ class OfflineLLMEngine:
             payload = {
                 "model": self.ollama_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Grok. Direct 1-sentence answer only. Never repeat the question or quote anything.",
+                "system": system_prompt or "You are Grok. Answer clearly and in full depth. Never repeat the question or quote anything.",
                 "stream": True,
                 "keep_alive": -1,
                 "options": {
-                    "num_predict": min(max_tokens, 20),
-                    "repeat_penalty": 1.25,
+                    "num_predict": max_tokens,
+                    "repeat_penalty": 1.15,
                     "num_thread": min(4, os.cpu_count() or 4),
-                    "num_ctx": 256,
+                    "num_ctx": 2048,
                     "temperature": temperature,
-                    "top_k": 25,
-                    "top_p": 0.85,
-                    "stop": ["\n", "\n\n", "User:", "\nUser", "Question:", "Direct Answer:"]
+                    "top_k": 40,
+                    "top_p": 0.90,
+                    "stop": ["User:", "\nUser", "Question:"]
                 }
             }
             full_response = []
@@ -121,21 +121,21 @@ class OfflineLLMEngine:
             payload = {
                 "model": self.ollama_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Grok. Direct 1-sentence answer only. Never repeat the question or quote anything.",
+                "system": system_prompt or "You are Grok. Answer clearly and in full depth. Never repeat the question or quote anything.",
                 "stream": False,
                 "keep_alive": -1,
                 "options": {
-                    "num_predict": min(max_tokens, 20),
-                    "repeat_penalty": 1.25,
+                    "num_predict": max_tokens,
+                    "repeat_penalty": 1.15,
                     "num_thread": min(4, os.cpu_count() or 4),
-                    "num_ctx": 256,
+                    "num_ctx": 2048,
                     "temperature": temperature,
-                    "top_k": 25,
-                    "top_p": 0.85,
-                    "stop": ["\n", "\n\n", "User:", "\nUser", "Question:", "Direct Answer:"]
+                    "top_k": 40,
+                    "top_p": 0.90,
+                    "stop": ["User:", "\nUser", "Question:"]
                 }
             }
-            res = self.session.post(url, json=payload, timeout=20)
+            res = self.session.post(url, json=payload, timeout=60)
             if res.status_code == 200:
                 return res.json().get("response", "").strip()
             return f"[Ollama Error] HTTP {res.status_code}"
@@ -149,8 +149,8 @@ class OfflineLLMEngine:
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
-            payload = {"messages": messages, "max_tokens": min(max_tokens, 20), "temperature": temperature}
-            res = self.session.post(url, json=payload, timeout=15)
+            payload = {"messages": messages, "max_tokens": max_tokens, "temperature": temperature}
+            res = self.session.post(url, json=payload, timeout=60)
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"].strip()
             return f"[OpenAI Error] HTTP {res.status_code}"

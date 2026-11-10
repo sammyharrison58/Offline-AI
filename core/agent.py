@@ -258,8 +258,9 @@ class Nexus226Agent:
             pair = q[8:].split(" and ", 1)
             return self.knowledge.compare_paradigms(pair[0].strip(), pair[1].strip())
 
-        matched_domains = self.knowledge.query(q, top_k=2)
+        matched_domains = self.knowledge.query(q, top_k=3)
         k_ctx = ""
+        expanded_fallback = ""
         if matched_domains:
             top_d = matched_domains[0]
             name_tokens = set(self.knowledge._tokenize(top_d.get('name', '')))
@@ -267,23 +268,41 @@ class Nexus226Agent:
             if len(name_tokens.intersection(q_tokens)) >= 1 or any(tok in ql for tok in top_d.get("name").lower().split()[:2]):
                 if any(w in ql for w in ["research", "deep dive", "details", "formula", "math", "dossier"]):
                     return self.knowledge.deep_research(top_d.get("name"))["markdown"]
-                k_ctx = f"Reference: {top_d['concept']}"
+                k_ctx = self.knowledge.format_knowledge_context(q, max_records=2)
+                expanded_fallback = (
+                    f"**{top_d.get('name')}** ({top_d.get('category')})\n\n"
+                    f"{top_d.get('concept')}\n\n"
+                    f"**Mathematical Basis:** {top_d.get('mathematical_basis')}\n\n"
+                    f"**Key Insights:** {top_d.get('obscure_insights')}\n\n"
+                    f"**Frameworks:** {top_d.get('open_source_frameworks')}"
+                )
 
         system_instruction = (
-            f"You are Grok ({self.grok.mode} mode). Direct 1-sentence answer only. "
-            "NEVER repeat the question, never say 'You asked', 'According to', or repeat what was read. "
-            "Give only the answer."
+            f"You are Nexus-Jarvis ({self.grok.mode} mode), an expert AI assistant. "
+            "Give a thorough, structured explanation covering what the topic is, how it works, why it matters, and real-world applications. "
+            "Use multiple paragraphs if needed. Never repeat the question or say 'You asked'. "
+            "Never use phrases like 'According to' or 'Based on'. Just explain directly and in depth."
         )
-        user_prompt = f"{k_ctx}\nQuestion: {q}\nDirect Answer:" if k_ctx else f"Question: {q}\nDirect Answer:"
+        user_prompt = f"{k_ctx}\nQuestion: {q}\nDetailed Explanation:" if k_ctx else f"Question: {q}\nDetailed Explanation:"
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
-            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=20)
+            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=400)
             if res and not res.startswith("[Ollama") and not res.startswith("[Local"):
-                clean = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:)\s*', '', res, flags=re.IGNORECASE).strip()
+                clean = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', '', res, flags=re.IGNORECASE).strip()
                 return clean
 
-        if k_ctx:
-            return matched_domains[0]['concept']
+        if expanded_fallback:
+            return expanded_fallback
+
+        if k_ctx and matched_domains:
+            top_d = matched_domains[0]
+            return (
+                f"**{top_d.get('name')}** ({top_d.get('category')})\n\n"
+                f"{top_d.get('concept')}\n\n"
+                f"**Mathematical Basis:** {top_d.get('mathematical_basis')}\n\n"
+                f"**Key Insights:** {top_d.get('obscure_insights')}\n\n"
+                f"**Frameworks:** {top_d.get('open_source_frameworks')}"
+            )
 
         return "Operational. What would you like to explore or execute next?"
 
@@ -340,26 +359,40 @@ class Nexus226Agent:
             yield self.process_request(user_query)
             return
 
-        matched_domains = self.knowledge.query(q, top_k=1)
+        matched_domains = self.knowledge.query(q, top_k=3)
         k_ctx = ""
+        expanded_fallback = ""
         if matched_domains and any(tok in ql for tok in matched_domains[0].get("name").lower().split()[:2]):
-            k_ctx = f"Reference: {matched_domains[0]['concept']}"
+            top_d = matched_domains[0]
+            k_ctx = self.knowledge.format_knowledge_context(q, max_records=2)
+            expanded_fallback = (
+                f"**{top_d.get('name')}** ({top_d.get('category')})\n\n"
+                f"{top_d.get('concept')}\n\n"
+                f"**Mathematical Basis:** {top_d.get('mathematical_basis')}\n\n"
+                f"**Key Insights:** {top_d.get('obscure_insights')}\n\n"
+                f"**Frameworks:** {top_d.get('open_source_frameworks')}"
+            )
 
         system_instruction = (
-            f"You are Grok ({self.grok.mode} mode). Direct 1-sentence answer only. "
-            "NEVER repeat the question, never say 'You asked', 'According to', or repeat what was read. "
-            "Give only the answer."
+            f"You are Nexus-Jarvis ({self.grok.mode} mode), an expert AI assistant. "
+            "Give a thorough, structured explanation covering what the topic is, how it works, why it matters, and real-world applications. "
+            "Use multiple paragraphs if needed. Never repeat the question or say 'You asked'. "
+            "Never use phrases like 'According to' or 'Based on'. Just explain directly and in depth."
         )
-        user_prompt = f"{k_ctx}\nQuestion: {q}\nDirect Answer:" if k_ctx else f"Question: {q}\nDirect Answer:"
+        user_prompt = f"{k_ctx}\nQuestion: {q}\nDetailed Explanation:" if k_ctx else f"Question: {q}\nDetailed Explanation:"
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
             first_chunk = True
-            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=20):
+            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=400):
                 if first_chunk:
-                    chunk = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:)\s*', '', chunk, flags=re.IGNORECASE)
+                    chunk = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', '', chunk, flags=re.IGNORECASE)
                     first_chunk = False
                 if chunk:
                     yield chunk
+            return
+
+        if expanded_fallback:
+            yield expanded_fallback
             return
 
         yield self.process_request(user_query)

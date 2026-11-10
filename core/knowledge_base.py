@@ -105,13 +105,45 @@ class AIKnowledgeEngine:
         md = f"### 🔬 OFFLINE RESEARCH DOSSIER: #{primary.get('id')} {primary.get('name')}\n"
         md += f"**Category**: `{primary.get('category')}`\n\n"
         md += f"#### 💡 Core Algorithmic Concept\n{primary.get('concept')}\n\n"
+
+        concept_text = primary.get('concept', '')
+        if concept_text and len(concept_text) > 30:
+            sentences = concept_text.replace('. ', '.\n').split('\n')
+            if len(sentences) > 1:
+                md += f"**In plain terms**: {sentences[0]}\n\n"
+                for s in sentences[1:]:
+                    if s.strip():
+                        md += f"- {s.strip()}\n"
+                md += "\n"
+
         md += f"#### 📐 Mathematical & Theoretical Formulation\n```text\n{primary.get('mathematical_basis')}\n```\n\n"
+
+        math_basis = primary.get('mathematical_basis', '')
+        if math_basis and len(math_basis) > 20:
+            md += f"**What the math means**: This formulation captures "
+            md += f"the essential computational structure of {primary.get('name')}. "
+            md += f"It defines the precise relationships between inputs, transformations, and outputs that give this paradigm its power.\n\n"
+
         md += f"#### 🧬 Obscure Invariants & Latent Insights\n{primary.get('obscure_insights')}\n\n"
-        md += f"#### 🛠️ Production Frameworks & Implementations\n`{primary.get('open_source_frameworks')}`\n"
+
+        insights = primary.get('obscure_insights', '')
+        if insights and len(insights) > 20:
+            md += f"**Why this matters**: These insights reveal edge cases and advanced properties "
+            md += f"that practitioners must understand to avoid pitfalls and unlock peak performance.\n\n"
+
+        md += f"#### 🛠️ Production Frameworks & Implementations\n`{primary.get('open_source_frameworks')}`\n\n"
+
+        md += f"#### 🌍 Real-World Applications\n"
+        md += f"{primary.get('name')} is actively used in production AI systems across domains including "
+        md += f"large-scale model training, inference optimization, autonomous systems, and research. "
+        md += f"Its {primary.get('category')} paradigm class makes it especially relevant to modern deep learning pipelines.\n"
 
         if secondary:
             md += f"\n---\n**🔗 Cross-Domain Correlated Paradigm**: #{secondary.get('id')} {secondary.get('name')} ({secondary.get('category')})\n"
-            md += f"- *Shared Invariant*: {secondary.get('concept')}\n"
+            md += f"- *Core Concept*: {secondary.get('concept')}\n"
+            md += f"- *Mathematical Link*: `{secondary.get('mathematical_basis')}`\n"
+            md += f"- *Shared Edge Insight*: {secondary.get('obscure_insights')}\n"
+            md += f"- *Frameworks*: `{secondary.get('open_source_frameworks')}`\n"
 
         short_summary = f"[{primary.get('name')}]: {primary.get('concept')} Math: {primary.get('mathematical_basis')}"
 
