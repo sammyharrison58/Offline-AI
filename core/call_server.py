@@ -105,3 +105,4 @@ class CallBridgeServer:
     @classmethod
     def clear_history(cls):
         CallBridgeHandler.call_history.clear()
+
