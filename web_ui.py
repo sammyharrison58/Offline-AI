@@ -6,12 +6,6 @@ import base64
 import streamlit as st
 import streamlit.components.v1 as components
 
-try:
-    import speech_recognition as sr
-    SR_AVAILABLE = True
-except ImportError:
-    SR_AVAILABLE = False
-
 root_dir = os.path.dirname(os.path.abspath(__file__))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
@@ -317,7 +311,7 @@ with st.sidebar:
 col_hdr, col_pwr = st.columns([3, 1])
 with col_hdr:
     st.markdown('<div class="main-title">⚡ NEXUS-JARVIS AI COCKPIT</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-title">300+ Scientific & AI Paradigms | Holographic HUD Core | Direct Voice Duplex | OS Machine Control</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">325+ Scientific & AI Paradigms | Holographic HUD Core | Direct Voice Duplex | OS Machine Control</div>', unsafe_allow_html=True)
     st.markdown('<div style="font-size:10px; color:#38bdf8; letter-spacing:2px; font-weight:700; margin-top:-6px; margin-bottom:8px;">[ SYSTEM: MK-IV ] // [ QUANTUM FLUX: OPTIMAL ] // [ SEC-GRID: ZERO-TRUST ]</div>', unsafe_allow_html=True)
 
 with col_pwr:
@@ -397,7 +391,7 @@ body { margin:0; background:transparent; display:flex; justify-content:center; a
 </div>
 <div class='hud-text'>
 <div class='hud-tag'>J.A.R.V.I.S. QUANTUM SPHERE ACTIVE</div>
-<div class='hud-sub'>300+ SCIENTIFIC & AI PARADIGMS ● AUDIO FREQUENCY EQUALIZER ONLINE</div>
+<div class='hud-sub'>325+ SCIENTIFIC & AI PARADIGMS ● AUDIO FREQUENCY EQUALIZER ONLINE</div>
 </div>
 </div>
 """
@@ -557,20 +551,18 @@ if chat_submission is not None:
             user_input = chat_submission.text
         if hasattr(chat_submission, "audio") and chat_submission.audio:
             audio_bytes = chat_submission.audio.getvalue()
-            if SR_AVAILABLE:
-                with st.spinner("🎙️ Transcribing voice from microphone..."):
-                    try:
-                        r = sr.Recognizer()
-                        with sr.AudioFile(io.BytesIO(audio_bytes)) as source:
-                            audio_data = r.record(source)
-                        transcribed = r.recognize_google(audio_data)
-                        if transcribed:
-                            user_input = transcribed
-                            st.success(f"🗣️ Heard: \"{transcribed}\"")
-                    except sr.UnknownValueError:
-                        st.warning("Could not detect words clearly. Please speak closer to your microphone.")
-                    except Exception as e:
-                        st.error(f"Speech transcription error: {e}")
+            with st.spinner("🎙️ Transcribing voice from microphone..."):
+                try:
+                    import speech_recognition as sr
+                    r = sr.Recognizer()
+                    with sr.AudioFile(io.BytesIO(audio_bytes)) as source:
+                        audio_data = r.record(source)
+                    transcribed = r.recognize_google(audio_data)
+                    if transcribed:
+                        user_input = transcribed
+                        st.success(f"🗣️ Heard: \"{transcribed}\"")
+                except Exception as e:
+                    st.warning("Could not detect words clearly or speech service offline.")
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -633,7 +625,7 @@ with st.expander("🛠️ Advanced Machine, WoL Power & Blockchain Operations"):
                     voice.speak("Files exported to MongoDB collections.", block=False)
 
 st.markdown('<div id="research-anchor"></div>', unsafe_allow_html=True)
-with st.expander("🔬 Offline Research Lab & 300+ Scientific Dossiers", expanded=False):
+with st.expander("🔬 Offline Research Lab & 325+ Scientific Dossiers", expanded=False):
     r_tab1, r_tab2 = st.tabs(["📚 Paradigm Dossier", "⚖️ Compare Paradigms"])
     with r_tab1:
         rc1, rc2 = st.columns([1, 2])

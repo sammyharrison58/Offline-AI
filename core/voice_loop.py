@@ -11,11 +11,20 @@ try:
 except ImportError:
     SAPI_AVAILABLE = False
 
-try:
-    import speech_recognition as sr
-    SR_AVAILABLE = True
-except ImportError:
-    SR_AVAILABLE = False
+sr = None
+SR_AVAILABLE = None
+
+def _get_sr():
+    global sr, SR_AVAILABLE
+    if SR_AVAILABLE is None:
+        try:
+            import speech_recognition as _sr
+            sr = _sr
+            SR_AVAILABLE = True
+        except ImportError:
+            sr = None
+            SR_AVAILABLE = False
+    return sr, SR_AVAILABLE
 
 class OfflineVoiceEngine:
 
@@ -72,19 +81,21 @@ class ConversationalCallLoop:
         self.agent_responder = agent_responder
         self.voice = OfflineVoiceEngine(voice_speed=3)
         self.is_active = False
-        self.recognizer = sr.Recognizer() if SR_AVAILABLE else None
+        self.recognizer = None
         self.mic = None
         self.last_user_speech = ""
         self.last_ai_response = ""
         self.call_thread = None
         self.transcript_history = []
-        if SR_AVAILABLE:
-            threading.Thread(target=self._init_mic, daemon=True).start()
+        threading.Thread(target=self._init_mic, daemon=True).start()
 
     def _init_mic(self):
-        if SR_AVAILABLE and not self.mic:
+        _sr, avail = _get_sr()
+        if avail and not self.mic:
             try:
-                self.mic = sr.Microphone()
+                if not self.recognizer:
+                    self.recognizer = _sr.Recognizer()
+                self.mic = _sr.Microphone()
             except Exception:
                 self.mic = None
 
@@ -176,15 +187,18 @@ class ConversationalCallLoop:
     def _listen_or_prompt(self, source=None) -> Optional[str]:
         if not self.is_active:
             return None
+        _sr, avail = _get_sr()
+        w_err = getattr(_sr, "WaitTimeoutError", Exception) if avail else Exception
+        u_err = getattr(_sr, "UnknownValueError", Exception) if avail else Exception
         if self.recognizer and source:
             try:
                 audio = self.recognizer.listen(source, timeout=4, phrase_time_limit=12)
                 text = self.recognizer.recognize_google(audio)
                 if text and text.strip():
                     return text.strip()
-            except sr.WaitTimeoutError:
+            except w_err:
                 return None
-            except sr.UnknownValueError:
+            except u_err:
                 return None
             except Exception:
                 time.sleep(0.05)
@@ -196,9 +210,9 @@ class ConversationalCallLoop:
                 text = self.recognizer.recognize_google(audio)
                 if text and text.strip():
                     return text.strip()
-            except sr.WaitTimeoutError:
+            except w_err:
                 return None
-            except sr.UnknownValueError:
+            except u_err:
                 return None
             except Exception:
                 time.sleep(0.05)

@@ -26,7 +26,15 @@ class AIKnowledgeEngine:
         self._build_index()
 
     def _tokenize(self, text: str) -> List[str]:
-        return re.findall('[a-z0-9_\\-\\.\\+]+', text.lower())
+        raw_tokens = re.findall(r'[a-z0-9_\-\.\+]+', text.lower())
+        tokens = []
+        for t in raw_tokens:
+            tokens.append(t)
+            if '-' in t:
+                tokens.extend([p for p in t.split('-') if p])
+            if '_' in t:
+                tokens.extend([p for p in t.split('_') if p])
+        return tokens
 
     def _build_index(self):
         self.inverted_index.clear()

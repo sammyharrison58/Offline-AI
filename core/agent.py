@@ -52,7 +52,7 @@ class Nexus226Agent:
             return "Greetings! Nexus-Jarvis online and listening. Ready for your command."
 
         if any(ql == w or ql == f"{w} grok" or ql == f"{w} nexus" for w in ["who are you", "what are you", "what is your name"]):
-            return "I am Nexus-Grok, your uncensored offline autonomous AI agent equipped with 226 AI architecture paradigms, OS machine controls, blockchain treasury, and voice duplex."
+            return "I am Nexus-Grok, your uncensored offline autonomous AI agent equipped with 325+ universal scientific and AI architecture paradigms, OS machine controls, blockchain treasury, and voice duplex."
 
         if any(ql.startswith(w) for w in ["how are you", "are you ready", "are you online", "status", "are you working"]):
             return "All systems operational and hot in memory. Ready for commands or complex inquiries."
@@ -61,7 +61,7 @@ class Nexus226Agent:
             return "You're welcome! Ready for the next command."
 
         if ql in ["help", "what can you do", "commands", "menu"]:
-            return "Capabilities: Full OS control (open/close apps, volume, mute, lock, network, WoL), 226 AI paradigms, live web intelligence, python sandbox, crypto wallet, and MongoDB sync."
+            return "Capabilities: Full OS control (open/close apps, volume, mute, lock, network, WoL), 325+ scientific paradigms, live web intelligence, python sandbox, crypto wallet, and MongoDB sync."
 
         if any(w in ql for w in ["mute", "silence audio", "unmute"]):
             res = self.sys_controller.toggle_mute()
@@ -320,7 +320,7 @@ class Nexus226Agent:
             return
 
         if any(ql == w or ql == f"{w} grok" or ql == f"{w} nexus" for w in ["who are you", "what are you", "what is your name"]):
-            yield "I am Nexus-Grok, your uncensored offline autonomous AI agent equipped with 226 AI architecture paradigms, OS machine controls, blockchain treasury, and voice duplex."
+            yield "I am Nexus-Grok, your uncensored offline autonomous AI agent equipped with 325+ universal scientific and AI architecture paradigms, OS machine controls, blockchain treasury, and voice duplex."
             return
 
         if any(ql.startswith(w) for w in ["how are you", "are you ready", "are you online", "status", "are you working"]):
@@ -332,7 +332,7 @@ class Nexus226Agent:
             return
 
         if ql in ["help", "what can you do", "commands", "menu"]:
-            yield "Capabilities: Full OS control (open/close apps, volume, mute, lock, network, WoL), 226 AI paradigms, live web intelligence, python sandbox, crypto wallet, and MongoDB sync."
+            yield "Capabilities: Full OS control (open/close apps, volume, mute, lock, network, WoL), 325+ scientific paradigms, live web intelligence, python sandbox, crypto wallet, and MongoDB sync."
             return
 
         fast_keywords = [

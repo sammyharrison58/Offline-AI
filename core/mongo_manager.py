@@ -6,12 +6,8 @@ import hashlib
 import threading
 from typing import Dict, Any, List, Optional
 
-try:
-    import pymongo
-    from pymongo import MongoClient
-    PYMONGO_AVAILABLE = True
-except ImportError:
-    PYMONGO_AVAILABLE = False
+PYMONGO_AVAILABLE = None
+MongoClient = None
 
 class MongoDBManager:
 
@@ -24,6 +20,15 @@ class MongoDBManager:
         threading.Thread(target=self._init_connection, daemon=True).start()
 
     def _init_connection(self):
+        global PYMONGO_AVAILABLE, MongoClient
+        if PYMONGO_AVAILABLE is None:
+            try:
+                import pymongo
+                from pymongo import MongoClient as _MC
+                MongoClient = _MC
+                PYMONGO_AVAILABLE = True
+            except ImportError:
+                PYMONGO_AVAILABLE = False
         if not PYMONGO_AVAILABLE:
             return
         try:
