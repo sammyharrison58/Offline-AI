@@ -83,7 +83,7 @@ class AIKnowledgeEngine:
                     scores[doc_idx] = scores.get(doc_idx, 0.0) + (weight * idf)
 
         if not scores:
-            return self.domains[:top_k]
+            return []
 
         ranked_indices = sorted(scores.keys(), key=lambda i: scores[i], reverse=True)
         results = [self.domains[i] for i in ranked_indices[:max(top_k, 5)]]

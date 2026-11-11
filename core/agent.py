@@ -263,19 +263,20 @@ class Nexus226Agent:
         expanded_fallback = ""
         if matched_domains:
             top_d = matched_domains[0]
-            name_tokens = set(self.knowledge._tokenize(top_d.get('name', '')))
-            q_tokens = set(self.knowledge._tokenize(ql))
-            if len(name_tokens.intersection(q_tokens)) >= 1 or any(tok in ql for tok in top_d.get("name").lower().split()[:2]):
-                if any(w in ql for w in ["research", "deep dive", "details", "formula", "math", "dossier"]):
-                    return self.knowledge.deep_research(top_d.get("name"))["markdown"]
-                k_ctx = self.knowledge.format_knowledge_context(q, max_records=2)
-                expanded_fallback = (
-                    f"**{top_d.get('name')}** ({top_d.get('category')})\n\n"
-                    f"{top_d.get('concept')}\n\n"
-                    f"**Mathematical Basis:** {top_d.get('mathematical_basis')}\n\n"
-                    f"**Key Insights:** {top_d.get('obscure_insights')}\n\n"
-                    f"**Frameworks:** {top_d.get('open_source_frameworks')}"
-                )
+            sec_d = matched_domains[1] if len(matched_domains) > 1 else None
+            if any(w in ql for w in ["research", "deep dive", "details", "formula", "math", "dossier"]):
+                return self.knowledge.deep_research(top_d.get("name"))["markdown"]
+            k_ctx = self.knowledge.format_knowledge_context(q, max_records=2)
+            exp_lines = [
+                f"### 💡 {top_d.get('name')} ({top_d.get('category')})\n",
+                f"**Core Concept & Mechanism:**\n{top_d.get('concept')}\n",
+                f"**Scientific & Mathematical Foundation:**\n```text\n{top_d.get('mathematical_basis')}\n```\n",
+                f"**Key Insights & Edge Invariants:**\n{top_d.get('obscure_insights')}\n",
+                f"**Frameworks & Implementations:**\n`{top_d.get('open_source_frameworks')}`\n"
+            ]
+            if sec_d:
+                exp_lines.append(f"\n---\n**🔗 Cross-Domain Correlated Field:** #{sec_d.get('id')} {sec_d.get('name')} ({sec_d.get('category')})\n{sec_d.get('concept')}")
+            expanded_fallback = "\n".join(exp_lines)
 
         system_instruction = (
             f"You are Nexus-Jarvis ({self.grok.mode} mode), an expert AI assistant. "
@@ -362,16 +363,20 @@ class Nexus226Agent:
         matched_domains = self.knowledge.query(q, top_k=3)
         k_ctx = ""
         expanded_fallback = ""
-        if matched_domains and any(tok in ql for tok in matched_domains[0].get("name").lower().split()[:2]):
+        if matched_domains:
             top_d = matched_domains[0]
+            sec_d = matched_domains[1] if len(matched_domains) > 1 else None
             k_ctx = self.knowledge.format_knowledge_context(q, max_records=2)
-            expanded_fallback = (
-                f"**{top_d.get('name')}** ({top_d.get('category')})\n\n"
-                f"{top_d.get('concept')}\n\n"
-                f"**Mathematical Basis:** {top_d.get('mathematical_basis')}\n\n"
-                f"**Key Insights:** {top_d.get('obscure_insights')}\n\n"
-                f"**Frameworks:** {top_d.get('open_source_frameworks')}"
-            )
+            exp_lines = [
+                f"### 💡 {top_d.get('name')} ({top_d.get('category')})\n",
+                f"**Core Concept & Mechanism:**\n{top_d.get('concept')}\n",
+                f"**Scientific & Mathematical Foundation:**\n```text\n{top_d.get('mathematical_basis')}\n```\n",
+                f"**Key Insights & Edge Invariants:**\n{top_d.get('obscure_insights')}\n",
+                f"**Frameworks & Implementations:**\n`{top_d.get('open_source_frameworks')}`\n"
+            ]
+            if sec_d:
+                exp_lines.append(f"\n---\n**🔗 Cross-Domain Correlated Field:** #{sec_d.get('id')} {sec_d.get('name')} ({sec_d.get('category')})\n{sec_d.get('concept')}")
+            expanded_fallback = "\n".join(exp_lines)
 
         system_instruction = (
             f"You are Nexus-Jarvis ({self.grok.mode} mode), an expert AI assistant. "

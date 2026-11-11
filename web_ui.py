@@ -317,7 +317,7 @@ with st.sidebar:
 col_hdr, col_pwr = st.columns([3, 1])
 with col_hdr:
     st.markdown('<div class="main-title">⚡ NEXUS-JARVIS AI COCKPIT</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-title">226 AI Paradigms | Holographic HUD Core | Direct Voice Duplex | OS Machine Control</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">300+ Scientific & AI Paradigms | Holographic HUD Core | Direct Voice Duplex | OS Machine Control</div>', unsafe_allow_html=True)
     st.markdown('<div style="font-size:10px; color:#38bdf8; letter-spacing:2px; font-weight:700; margin-top:-6px; margin-bottom:8px;">[ SYSTEM: MK-IV ] // [ QUANTUM FLUX: OPTIMAL ] // [ SEC-GRID: ZERO-TRUST ]</div>', unsafe_allow_html=True)
 
 with col_pwr:
@@ -397,7 +397,7 @@ body { margin:0; background:transparent; display:flex; justify-content:center; a
 </div>
 <div class='hud-text'>
 <div class='hud-tag'>J.A.R.V.I.S. QUANTUM SPHERE ACTIVE</div>
-<div class='hud-sub'>226 AI PARADIGMS ● AUDIO FREQUENCY EQUALIZER ONLINE</div>
+<div class='hud-sub'>300+ SCIENTIFIC & AI PARADIGMS ● AUDIO FREQUENCY EQUALIZER ONLINE</div>
 </div>
 </div>
 """
@@ -407,6 +407,7 @@ telemetry = agent.sys_controller.get_telemetry()
 cpu_val = f"{telemetry['cpu_usage_percent']}%"
 ram_val = f"{telemetry['ram_available_gb']} GB Free"
 battery_val = f"{telemetry['battery']['percent']}%" if telemetry['battery']['percent'] != 'N/A' else "AC Power"
+domain_count_val = f"{len(agent.knowledge.domains)} DOMAINS"
 
 st.markdown(f"""
 <div class="hud-metrics-bar">
@@ -424,7 +425,7 @@ st.markdown(f"""
     </div>
     <div class="hud-card">
         <div class="hud-card-lbl">NEURAL CORE</div>
-        <div class="hud-card-val">226 DOMAINS</div>
+        <div class="hud-card-val">{domain_count_val}</div>
     </div>
     <div class="hud-card">
         <div class="hud-card-lbl">SEC VAULT</div>
@@ -632,7 +633,7 @@ with st.expander("🛠️ Advanced Machine, WoL Power & Blockchain Operations"):
                     voice.speak("Files exported to MongoDB collections.", block=False)
 
 st.markdown('<div id="research-anchor"></div>', unsafe_allow_html=True)
-with st.expander("🔬 Offline AI Research Lab & 226 Architectural Dossiers", expanded=False):
+with st.expander("🔬 Offline Research Lab & 300+ Scientific Dossiers", expanded=False):
     r_tab1, r_tab2 = st.tabs(["📚 Paradigm Dossier", "⚖️ Compare Paradigms"])
     with r_tab1:
         rc1, rc2 = st.columns([1, 2])
