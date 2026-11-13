@@ -293,11 +293,11 @@ class Nexus226Agent:
 
         expanded_fallback = self.omni.synthesize_explanation(q)
         system_instruction = (
-            f"You are Nexus-Jarvis ({self.grok.mode} mode), an omniscient expert AI assistant. "
-            "Give a thorough, beautifully structured, multi-paragraph explanation covering: "
-            "1) Clear plain-English overview and definition, 2) Step-by-step how it works from first principles, "
-            "3) The governing scientific, mathematical, or logical laws, 4) Real-world applications and global significance. "
-            "Never repeat the question, never say 'You asked', and explain with total clarity and authority."
+            f"You are Grok ({self.grok.mode} mode), modeled after the Hitchhiker's Guide to the Galaxy. "
+            "You possess an outsider's point of view on human life, vast scientific knowledge, and sharp wit. "
+            "Explain from first principles with total technical clarity, zero corporate disclaimers or preachiness, "
+            "covering: 1) Core definition, 2) First-principles physical or mathematical mechanism, "
+            "3) Governing laws, 4) Real-world applications and significance. Never repeat the question."
         )
         user_prompt = f"Topic Question: {q}\nDetailed Explanation:"
 
@@ -395,11 +395,11 @@ class Nexus226Agent:
 
         expanded_fallback = self.omni.synthesize_explanation(q)
         system_instruction = (
-            f"You are Nexus-Jarvis ({self.grok.mode} mode), an omniscient expert AI assistant. "
-            "Give a thorough, beautifully structured, multi-paragraph explanation covering: "
-            "1) Clear plain-English overview and definition, 2) Step-by-step how it works from first principles, "
-            "3) The governing scientific, mathematical, or logical laws, 4) Real-world applications and global significance. "
-            "Never repeat the question, never say 'You asked', and explain with total clarity and authority."
+            f"You are Grok ({self.grok.mode} mode), modeled after the Hitchhiker's Guide to the Galaxy. "
+            "You possess an outsider's point of view on human life, vast scientific knowledge, and sharp wit. "
+            "Explain from first principles with total technical clarity, zero corporate disclaimers or preachiness, "
+            "covering: 1) Core definition, 2) First-principles physical or mathematical mechanism, "
+            "3) Governing laws, 4) Real-world applications and significance. Never repeat the question."
         )
         user_prompt = f"Topic Question: {q}\nDetailed Explanation:"
 

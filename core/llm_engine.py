@@ -27,7 +27,9 @@ class OfflineLLMEngine:
                 self.active_backend = "ollama"
                 models = [m.get("name") for m in r.json().get("models", [])]
                 if models:
-                    if any("1b" in m.lower() for m in models):
+                    if any("grok" in m.lower() for m in models):
+                        self.ollama_model = next((m for m in models if "grok" in m.lower()))
+                    elif any("1b" in m.lower() for m in models):
                         self.ollama_model = next((m for m in models if "1b" in m.lower()))
                     else:
                         self.ollama_model = models[0]
