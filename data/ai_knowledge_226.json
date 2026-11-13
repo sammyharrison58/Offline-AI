@@ -1,5 +1,5 @@
 {
-  "total_domains": 226,
+  "total_domains": 335,
   "domains": [
     {
       "id": 1,
@@ -2925,6 +2925,96 @@
       "obscure_insights": "The 'Solow Computer Paradox' (1987: 'You can see the computer age everywhere but in the productivity statistics') occurs because fundamental technologies require 20-30 years of organizational and infrastructural restructuring before measurable macroeconomic gains materialize.",
       "open_source_frameworks": "Our World in Data, FRED economic data, Penn World Table",
       "id": 325
+    },
+    {
+      "id": 326,
+      "name": "Enzyme Kinetics, Allostery & Michaelis-Menten Dynamics",
+      "category": "Biology & Life Sciences",
+      "concept": "Quantitative catalytic mechanisms by which protein enzymes lower transition-state activation energy, regulate metabolic pathways via allosteric feedback inhibition, and coordinate cellular biochemical throughput.",
+      "mathematical_basis": "v = (V_max * [S]) / (K_m + [S]). Lineweaver-Burk reciprocal: 1/v = (K_m/V_max)(1/[S]) + 1/V_max. Hill cooperativity equation: theta = [L]^n / (K_d + [L]^n).",
+      "obscure_insights": "Diffusion-controlled enzymes operate at the catalytic perfection limit (~10^8 to 10^9 M^-1 s^-1), where reaction rate is limited solely by how fast substrates physically diffuse through water to the active pocket.",
+      "open_source_frameworks": "BioPython, COPASI, PySCeS, Tellurium"
+    },
+    {
+      "id": 327,
+      "name": "Semiconductor Bandgap Engineering & Heterojunction Transistors",
+      "category": "Computer Science & Engineering",
+      "concept": "Quantum mechanical engineering of compound semiconductor energy bands (III-V materials like GaAs, GaN, InP) to design high-electron-mobility transistors (HEMTs) and laser diodes operating at extreme frequencies and efficiencies.",
+      "mathematical_basis": "E_g = E_c - E_v. Effective mass approximation: m* = hbar^2 / (d^2 E / dk^2). 2D electron gas (2DEG) sheet carrier density: n_s = int(D(E) * f(E) dE).",
+      "obscure_insights": "Modulation doping physically separates donor impurities from conduction electrons, eliminating ionized impurity scattering and allowing room-temperature electron mobilities exceeding 10,000 cm^2/(V*s) in 2DEG channels.",
+      "open_source_frameworks": "Nextnano, SDevice, NanoHub, Qiskit-Metal"
+    },
+    {
+      "id": 328,
+      "name": "Aerospace Orbital Mechanics, Hohmann Transfers & Lagrange Points",
+      "category": "Physics & Cosmology",
+      "concept": "Astrodynamic orbital mechanics governing satellite trajectory optimization, gravitational slingshot assists, two-impulse Hohmann orbital transfers, and libration point orbits in the restricted three-body problem.",
+      "mathematical_basis": "Vis-viva equation: v^2 = G*M*(2/r - 1/a). Hohmann transfer delta-v: Delta_v1 = sqrt(mu/r1)*(sqrt(2*r2/(r1+r2)) - 1); Delta_v2 = sqrt(mu/r2)*(1 - sqrt(2*r1/(r1+r2))).",
+      "obscure_insights": "Lagrange points L1 and L2 are unstable saddle points with Lyapunov orbits; spacecraft stationed there (e.g., JWST at Sun-Earth L2) require periodic station-keeping thruster burns every 21 days along the unstable invariant manifold.",
+      "open_source_frameworks": "Poliastro, Astropy, SPICE toolkit (NASA NAIF), Orekit"
+    },
+    {
+      "id": 329,
+      "name": "Computational Neuroscience, Hodgkin-Huxley Dynamics & Synaptic Plasticity",
+      "category": "Philosophy & Cognitive Science",
+      "concept": "Biophysical modeling of electrical action potential generation via voltage-gated ion channels, coupled with Hebbian and Spike-Timing-Dependent Plasticity (STDP) governing learning in biological neural networks.",
+      "mathematical_basis": "C_m * (dV/dt) = -g_Na*m^3*h*(V - E_Na) - g_K*n^4*(V - E_K) - g_L*(V - E_L) + I_ext. STDP weight update: Delta_w = A_+ * exp(-Delta_t / tau_+) for Delta_t > 0, A_- * exp(Delta_t / tau_-) for Delta_t < 0.",
+      "obscure_insights": "Phase precession in hippocampal place cells compresses behavioral-timescale navigation into millisecond-scale theta cycles (~8 Hz), exactly matching the STDP temporal learning window necessary to bind sequential memories.",
+      "open_source_frameworks": "NEURON, Brian2, NEST simulator, BindsNET"
+    },
+    {
+      "id": 330,
+      "name": "CRISPR Gene Editing, Epigenome Modulation & Prime Editing",
+      "category": "Medicine & Health",
+      "concept": "Precision genomic surgery using Cas nucleases, deactivated dCas9 epigenetic activators/repressors (CRISPRa/CRISPRi), and reverse-transcriptase-mediated Prime Editing without requiring double-stranded DNA breaks.",
+      "mathematical_basis": "PAM-dependent Cas9 cleavage kinetics: k_cleave = f([sgRNA:target], [PAM]). Prime editing reverse transcriptase efficiency: eta_pe = RT_incorporation / (NHEJ_indel + RT_incorporation).",
+      "obscure_insights": "Prime Editing overcomes the high mutagenic indel rates of classic Cas9 NHEJ by utilizing an engineered reverse transcriptase fused to Cas9-nickase, directly writing target edits from a pegRNA template into the genome without double-strand breaks.",
+      "open_source_frameworks": "CRISPResso2, Cas-OFFinder, Benchling, Bioconductor CRISPRseek"
+    },
+    {
+      "id": 331,
+      "name": "Global Geochemical Cycles, Ocean Acidification & Carbon Sinks",
+      "category": "Earth & Environment",
+      "concept": "Planetary biogeochemical cycling of carbon, nitrogen, and phosphorus between atmosphere, hydrosphere, lithosphere, and biosphere, and carbonate buffer chemistry under anthropogenic carbon dioxide forcing.",
+      "mathematical_basis": "CO2(aq) + H2O <-> H2CO3 <-> H+ + HCO3- <-> 2H+ + CO3^2-. Aragonite saturation state: Omega_arag = [Ca^2+][CO3^2-] / K*_sp. pH = -log10([H+]).",
+      "obscure_insights": "As oceanic pH drops from 8.2 to 8.0, carbonate ion concentration drops by nearly 50% due to proton titration, severely reducing Omega_arag below 1.0 in polar waters and causing pteropod shells to chemically dissolve within 48 hours.",
+      "open_source_frameworks": "PyCO2SYS, CO2SYS, ESMValTool, Copernicus Climate Data Store"
+    },
+    {
+      "id": 332,
+      "name": "Game Theory, Mechanism Design & Algorithmic Auctions",
+      "category": "Economics & Social Sciences",
+      "concept": "Strategic mathematical interaction between rational agents, Nash equilibria, dominant strategy incentive compatibility, and the design of truth-revealing economic mechanisms (Vickrey-Clarke-Groves auctions).",
+      "mathematical_basis": "Nash Equilibrium: u_i(s*_i, s*_{-i}) >= u_i(s_i, s*_{-i}) for all s_i. VCG payment rule: p_i(v) = max_{k} sum_{j!=i} v_j(k) - sum_{j!=i} v_j(k*).",
+      "obscure_insights": "The Revelation Principle proves that any equilibrium outcome achieved by any arbitrary multi-stage game or negotiation can be replicated by an equivalent direct-revelation mechanism where players truthfully report their private types.",
+      "open_source_frameworks": "Nashpy, Gambit, OpenSpiel, QuantEcon"
+    },
+    {
+      "id": 333,
+      "name": "Historical Geopolitics, Heartland Theory & Maritime vs Continental Power",
+      "category": "History & Civilization",
+      "concept": "Strategic spatial theories of world history and geopolitical conflict, analyzing how control of the Eurasian Heartland (Mackinder), Rimland (Spykman), and maritime chokepoints dictates global hegemony.",
+      "mathematical_basis": "Mackinder dictate: Who rules East Europe commands the Heartland; who rules the Heartland commands the World-Island; who rules the World-Island commands the world. Gravity model of trade: T_ij = G * (M_i * M_j) / D_ij.",
+      "obscure_insights": "Maritime powers maintain asymmetric capital-efficiency because moving freight over water requires 10 to 15 times less kinetic energy per ton-kilometer than over land, explaining British and American naval hegemony over continental empires.",
+      "open_source_frameworks": "Natural Earth, GeoPandas, Correlates of War (COW), ACLED"
+    },
+    {
+      "id": 334,
+      "name": "Formal Semantics, Montague Grammar & Natural Language Pragmatics",
+      "category": "Language & Communication",
+      "concept": "Mathematical and logical modeling of natural language meaning, type-theoretic compositionality, lambda calculus semantic representations, and Gricean pragmatic conversational implicature.",
+      "mathematical_basis": "Frege Compositionality Principle: ||alpha beta|| = ||alpha||(||beta||). Typed lambda calculus: lambda x:e. lambda y:e. Likes(x, y) : <e, <e, t>>. Gricean Cooperative Principle maxims.",
+      "obscure_insights": "Montague Grammar demonstrated that natural human languages and artificial formal languages can be analyzed using the exact same model-theoretic mathematical apparatus without any theoretical compromise.",
+      "open_source_frameworks": "NLTK Semantics, Spacy, HuggingFace Transformers, Boxer / C&C tools"
+    },
+    {
+      "id": 335,
+      "name": "Synthetic Organic Chemistry, Retrosynthesis & C-H Functionalization",
+      "category": "Chemistry & Materials",
+      "concept": "Systematic multi-step chemical synthesis planning, disconnection approaches, protecting group strategies, transition-metal catalysis (cross-couplings), and atom-economical C-H bond activation.",
+      "mathematical_basis": "Hammett equation: log(k/k_0) = rho * sigma. Reaction selectivity: Delta_Delta_G_double_dagger = -R * T * ln(Ratio_stereoisomers). E-factor: mass of waste / mass of product.",
+      "obscure_insights": "Direct catalytic C-H functionalization bypasses conventional pre-functionalization steps (such as halogenation), reducing the step-count of complex natural product total syntheses by over 40% while dramatically lowering E-factor waste.",
+      "open_source_frameworks": "RDKit, AiZynthFinder, ASKCOS, ChemDraw / OpenBabel"
     }
   ]
 }
