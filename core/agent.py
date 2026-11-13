@@ -26,6 +26,7 @@ class Nexus226Agent:
         self.llm = OfflineLLMEngine()
         self.grok = GrokEngine(mode="fun")
         self.mongo = MongoDBManager()
+        self.response_cache: Dict[str, str] = {}
 
     def _is_greeting(self, ql: str) -> bool:
         clean = re.sub(r'[^a-z0-9\s]', ' ', ql).strip()
@@ -49,6 +50,9 @@ class Nexus226Agent:
 
         if not ql:
             return "Listening. Say or type a command."
+
+        if ql in self.response_cache:
+            return self.response_cache[ql]
 
         if self._is_greeting(ql):
             return "Greetings! Nexus-Jarvis online and listening. Ready for your command."
@@ -261,18 +265,19 @@ class Nexus226Agent:
             return self.knowledge.compare_paradigms(pair[0].strip(), pair[1].strip())
 
         omni_match = self.omni.search(q)
+        if omni_match:
+            res = self.omni.synthesize_explanation(q, matched_topic=omni_match)
+            self.response_cache[ql] = res
+            return res
+
         matched_domains = self.knowledge.query(q, top_k=3)
-        k_ctx = ""
-        expanded_fallback = ""
-        if omni_match and any(kw in ql or ql in kw for kw in omni_match.get("keywords", [])):
-            expanded_fallback = self.omni.synthesize_explanation(q, matched_topic=omni_match)
-            k_ctx = f"Topic: {omni_match.get('name')}\nDefinition: {omni_match.get('definition')}\nMechanism: {omni_match.get('mechanism')}\nPrinciples: {omni_match.get('principles')}\nApplications: {omni_match.get('applications')}"
-        elif matched_domains:
+        if matched_domains:
             top_d = matched_domains[0]
             sec_d = matched_domains[1] if len(matched_domains) > 1 else None
             if any(w in ql for w in ["research", "deep dive", "details", "formula", "math", "dossier"]):
-                return self.knowledge.deep_research(top_d.get("name"))["markdown"]
-            k_ctx = self.knowledge.format_knowledge_context(q, max_records=2)
+                res = self.knowledge.deep_research(top_d.get("name"))["markdown"]
+                self.response_cache[ql] = res
+                return res
             exp_lines = [
                 f"### 💡 {top_d.get('name')} ({top_d.get('category')})\n",
                 f"**Core Concept & Mechanism:**\n{top_d.get('concept')}\n",
@@ -282,14 +287,11 @@ class Nexus226Agent:
             ]
             if sec_d:
                 exp_lines.append(f"\n---\n**🔗 Cross-Domain Correlated Field:** #{sec_d.get('id')} {sec_d.get('name')} ({sec_d.get('category')})\n{sec_d.get('concept')}")
-            expanded_fallback = "\n".join(exp_lines)
-        elif omni_match:
-            expanded_fallback = self.omni.synthesize_explanation(q, matched_topic=omni_match)
-            k_ctx = f"Topic: {omni_match.get('name')}\nDefinition: {omni_match.get('definition')}\nMechanism: {omni_match.get('mechanism')}\nPrinciples: {omni_match.get('principles')}\nApplications: {omni_match.get('applications')}"
-        else:
-            expanded_fallback = self.omni.synthesize_explanation(q)
-            k_ctx = f"Topic Question: {q}\nObjective: Provide a multi-paragraph, first-principles comprehensive explanation."
+            res = "\n".join(exp_lines)
+            self.response_cache[ql] = res
+            return res
 
+        expanded_fallback = self.omni.synthesize_explanation(q)
         system_instruction = (
             f"You are Nexus-Jarvis ({self.grok.mode} mode), an omniscient expert AI assistant. "
             "Give a thorough, beautifully structured, multi-paragraph explanation covering: "
@@ -297,14 +299,16 @@ class Nexus226Agent:
             "3) The governing scientific, mathematical, or logical laws, 4) Real-world applications and global significance. "
             "Never repeat the question, never say 'You asked', and explain with total clarity and authority."
         )
-        user_prompt = f"{k_ctx}\nQuestion: {q}\nDetailed Explanation:" if k_ctx else f"Question: {q}\nDetailed Explanation:"
+        user_prompt = f"Topic Question: {q}\nDetailed Explanation:"
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
-            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=450)
+            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=220)
             if res and not res.startswith("[Ollama") and not res.startswith("[Local"):
                 clean = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', '', res, flags=re.IGNORECASE).strip()
+                self.response_cache[ql] = clean
                 return clean
 
+        self.response_cache[ql] = expanded_fallback
         return expanded_fallback
 
     def process_request_stream(self, user_query: str) -> Generator[str, None, None]:
@@ -360,17 +364,21 @@ class Nexus226Agent:
             yield self.process_request(user_query)
             return
 
+        if ql in self.response_cache:
+            yield self.response_cache[ql]
+            return
+
         omni_match = self.omni.search(q)
+        if omni_match:
+            res = self.omni.synthesize_explanation(q, matched_topic=omni_match)
+            self.response_cache[ql] = res
+            yield res
+            return
+
         matched_domains = self.knowledge.query(q, top_k=3)
-        k_ctx = ""
-        expanded_fallback = ""
-        if omni_match and any(kw in ql or ql in kw for kw in omni_match.get("keywords", [])):
-            expanded_fallback = self.omni.synthesize_explanation(q, matched_topic=omni_match)
-            k_ctx = f"Topic: {omni_match.get('name')}\nDefinition: {omni_match.get('definition')}\nMechanism: {omni_match.get('mechanism')}\nPrinciples: {omni_match.get('principles')}\nApplications: {omni_match.get('applications')}"
-        elif matched_domains:
+        if matched_domains:
             top_d = matched_domains[0]
             sec_d = matched_domains[1] if len(matched_domains) > 1 else None
-            k_ctx = self.knowledge.format_knowledge_context(q, max_records=2)
             exp_lines = [
                 f"### 💡 {top_d.get('name')} ({top_d.get('category')})\n",
                 f"**Core Concept & Mechanism:**\n{top_d.get('concept')}\n",
@@ -380,14 +388,12 @@ class Nexus226Agent:
             ]
             if sec_d:
                 exp_lines.append(f"\n---\n**🔗 Cross-Domain Correlated Field:** #{sec_d.get('id')} {sec_d.get('name')} ({sec_d.get('category')})\n{sec_d.get('concept')}")
-            expanded_fallback = "\n".join(exp_lines)
-        elif omni_match:
-            expanded_fallback = self.omni.synthesize_explanation(q, matched_topic=omni_match)
-            k_ctx = f"Topic: {omni_match.get('name')}\nDefinition: {omni_match.get('definition')}\nMechanism: {omni_match.get('mechanism')}\nPrinciples: {omni_match.get('principles')}\nApplications: {omni_match.get('applications')}"
-        else:
-            expanded_fallback = self.omni.synthesize_explanation(q)
-            k_ctx = f"Topic Question: {q}\nObjective: Provide a multi-paragraph, first-principles comprehensive explanation."
+            res = "\n".join(exp_lines)
+            self.response_cache[ql] = res
+            yield res
+            return
 
+        expanded_fallback = self.omni.synthesize_explanation(q)
         system_instruction = (
             f"You are Nexus-Jarvis ({self.grok.mode} mode), an omniscient expert AI assistant. "
             "Give a thorough, beautifully structured, multi-paragraph explanation covering: "
@@ -395,16 +401,21 @@ class Nexus226Agent:
             "3) The governing scientific, mathematical, or logical laws, 4) Real-world applications and global significance. "
             "Never repeat the question, never say 'You asked', and explain with total clarity and authority."
         )
-        user_prompt = f"{k_ctx}\nQuestion: {q}\nDetailed Explanation:" if k_ctx else f"Question: {q}\nDetailed Explanation:"
+        user_prompt = f"Topic Question: {q}\nDetailed Explanation:"
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
             first_chunk = True
-            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=450):
+            chunks = []
+            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=220):
                 if first_chunk:
                     chunk = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', '', chunk, flags=re.IGNORECASE)
                     first_chunk = False
                 if chunk:
+                    chunks.append(chunk)
                     yield chunk
+            if chunks:
+                self.response_cache[ql] = "".join(chunks).strip()
             return
 
+        self.response_cache[ql] = expanded_fallback
         yield expanded_fallback

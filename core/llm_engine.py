@@ -79,6 +79,7 @@ class OfflineLLMEngine:
 
         if self.active_backend == "ollama":
             url = f"{self.ollama_url}/api/generate"
+            threads = max(1, min(8, os.cpu_count() or 4))
             payload = {
                 "model": self.ollama_model,
                 "prompt": prompt,
@@ -88,8 +89,8 @@ class OfflineLLMEngine:
                 "options": {
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
-                    "num_thread": min(4, os.cpu_count() or 4),
-                    "num_ctx": 2048,
+                    "num_thread": threads,
+                    "num_ctx": 1024,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,
@@ -118,6 +119,7 @@ class OfflineLLMEngine:
     def _call_ollama(self, prompt: str, system_prompt: str, max_tokens: int, temperature: float) -> str:
         try:
             url = f"{self.ollama_url}/api/generate"
+            threads = max(1, min(8, os.cpu_count() or 4))
             payload = {
                 "model": self.ollama_model,
                 "prompt": prompt,
@@ -127,8 +129,8 @@ class OfflineLLMEngine:
                 "options": {
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
-                    "num_thread": min(4, os.cpu_count() or 4),
-                    "num_ctx": 2048,
+                    "num_thread": threads,
+                    "num_ctx": 1024,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,
