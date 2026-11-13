@@ -9,6 +9,7 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
 from core.knowledge_base import AIKnowledgeEngine
+from core.omni_knowledge import OmniKnowledgeEngine
 from core.system_controller import SystemController
 from core.blockchain_manager import BlockchainManager
 from core.llm_engine import OfflineLLMEngine
@@ -19,6 +20,7 @@ class Nexus226Agent:
 
     def __init__(self):
         self.knowledge = AIKnowledgeEngine()
+        self.omni = OmniKnowledgeEngine()
         self.sys_controller = SystemController()
         self.blockchain = BlockchainManager()
         self.llm = OfflineLLMEngine()
@@ -258,10 +260,14 @@ class Nexus226Agent:
             pair = q[8:].split(" and ", 1)
             return self.knowledge.compare_paradigms(pair[0].strip(), pair[1].strip())
 
+        omni_match = self.omni.search(q)
         matched_domains = self.knowledge.query(q, top_k=3)
         k_ctx = ""
         expanded_fallback = ""
-        if matched_domains:
+        if omni_match and any(kw in ql or ql in kw for kw in omni_match.get("keywords", [])):
+            expanded_fallback = self.omni.synthesize_explanation(q, matched_topic=omni_match)
+            k_ctx = f"Topic: {omni_match.get('name')}\nDefinition: {omni_match.get('definition')}\nMechanism: {omni_match.get('mechanism')}\nPrinciples: {omni_match.get('principles')}\nApplications: {omni_match.get('applications')}"
+        elif matched_domains:
             top_d = matched_domains[0]
             sec_d = matched_domains[1] if len(matched_domains) > 1 else None
             if any(w in ql for w in ["research", "deep dive", "details", "formula", "math", "dossier"]):
@@ -277,35 +283,29 @@ class Nexus226Agent:
             if sec_d:
                 exp_lines.append(f"\n---\n**🔗 Cross-Domain Correlated Field:** #{sec_d.get('id')} {sec_d.get('name')} ({sec_d.get('category')})\n{sec_d.get('concept')}")
             expanded_fallback = "\n".join(exp_lines)
+        elif omni_match:
+            expanded_fallback = self.omni.synthesize_explanation(q, matched_topic=omni_match)
+            k_ctx = f"Topic: {omni_match.get('name')}\nDefinition: {omni_match.get('definition')}\nMechanism: {omni_match.get('mechanism')}\nPrinciples: {omni_match.get('principles')}\nApplications: {omni_match.get('applications')}"
+        else:
+            expanded_fallback = self.omni.synthesize_explanation(q)
+            k_ctx = f"Topic Question: {q}\nObjective: Provide a multi-paragraph, first-principles comprehensive explanation."
 
         system_instruction = (
-            f"You are Nexus-Jarvis ({self.grok.mode} mode), an expert AI assistant. "
-            "Give a thorough, structured explanation covering what the topic is, how it works, why it matters, and real-world applications. "
-            "Use multiple paragraphs if needed. Never repeat the question or say 'You asked'. "
-            "Never use phrases like 'According to' or 'Based on'. Just explain directly and in depth."
+            f"You are Nexus-Jarvis ({self.grok.mode} mode), an omniscient expert AI assistant. "
+            "Give a thorough, beautifully structured, multi-paragraph explanation covering: "
+            "1) Clear plain-English overview and definition, 2) Step-by-step how it works from first principles, "
+            "3) The governing scientific, mathematical, or logical laws, 4) Real-world applications and global significance. "
+            "Never repeat the question, never say 'You asked', and explain with total clarity and authority."
         )
         user_prompt = f"{k_ctx}\nQuestion: {q}\nDetailed Explanation:" if k_ctx else f"Question: {q}\nDetailed Explanation:"
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
-            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=400)
+            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=450)
             if res and not res.startswith("[Ollama") and not res.startswith("[Local"):
                 clean = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', '', res, flags=re.IGNORECASE).strip()
                 return clean
 
-        if expanded_fallback:
-            return expanded_fallback
-
-        if k_ctx and matched_domains:
-            top_d = matched_domains[0]
-            return (
-                f"**{top_d.get('name')}** ({top_d.get('category')})\n\n"
-                f"{top_d.get('concept')}\n\n"
-                f"**Mathematical Basis:** {top_d.get('mathematical_basis')}\n\n"
-                f"**Key Insights:** {top_d.get('obscure_insights')}\n\n"
-                f"**Frameworks:** {top_d.get('open_source_frameworks')}"
-            )
-
-        return "Operational. What would you like to explore or execute next?"
+        return expanded_fallback
 
     def process_request_stream(self, user_query: str) -> Generator[str, None, None]:
         q = user_query.strip()
@@ -360,10 +360,14 @@ class Nexus226Agent:
             yield self.process_request(user_query)
             return
 
+        omni_match = self.omni.search(q)
         matched_domains = self.knowledge.query(q, top_k=3)
         k_ctx = ""
         expanded_fallback = ""
-        if matched_domains:
+        if omni_match and any(kw in ql or ql in kw for kw in omni_match.get("keywords", [])):
+            expanded_fallback = self.omni.synthesize_explanation(q, matched_topic=omni_match)
+            k_ctx = f"Topic: {omni_match.get('name')}\nDefinition: {omni_match.get('definition')}\nMechanism: {omni_match.get('mechanism')}\nPrinciples: {omni_match.get('principles')}\nApplications: {omni_match.get('applications')}"
+        elif matched_domains:
             top_d = matched_domains[0]
             sec_d = matched_domains[1] if len(matched_domains) > 1 else None
             k_ctx = self.knowledge.format_knowledge_context(q, max_records=2)
@@ -377,18 +381,25 @@ class Nexus226Agent:
             if sec_d:
                 exp_lines.append(f"\n---\n**🔗 Cross-Domain Correlated Field:** #{sec_d.get('id')} {sec_d.get('name')} ({sec_d.get('category')})\n{sec_d.get('concept')}")
             expanded_fallback = "\n".join(exp_lines)
+        elif omni_match:
+            expanded_fallback = self.omni.synthesize_explanation(q, matched_topic=omni_match)
+            k_ctx = f"Topic: {omni_match.get('name')}\nDefinition: {omni_match.get('definition')}\nMechanism: {omni_match.get('mechanism')}\nPrinciples: {omni_match.get('principles')}\nApplications: {omni_match.get('applications')}"
+        else:
+            expanded_fallback = self.omni.synthesize_explanation(q)
+            k_ctx = f"Topic Question: {q}\nObjective: Provide a multi-paragraph, first-principles comprehensive explanation."
 
         system_instruction = (
-            f"You are Nexus-Jarvis ({self.grok.mode} mode), an expert AI assistant. "
-            "Give a thorough, structured explanation covering what the topic is, how it works, why it matters, and real-world applications. "
-            "Use multiple paragraphs if needed. Never repeat the question or say 'You asked'. "
-            "Never use phrases like 'According to' or 'Based on'. Just explain directly and in depth."
+            f"You are Nexus-Jarvis ({self.grok.mode} mode), an omniscient expert AI assistant. "
+            "Give a thorough, beautifully structured, multi-paragraph explanation covering: "
+            "1) Clear plain-English overview and definition, 2) Step-by-step how it works from first principles, "
+            "3) The governing scientific, mathematical, or logical laws, 4) Real-world applications and global significance. "
+            "Never repeat the question, never say 'You asked', and explain with total clarity and authority."
         )
         user_prompt = f"{k_ctx}\nQuestion: {q}\nDetailed Explanation:" if k_ctx else f"Question: {q}\nDetailed Explanation:"
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
             first_chunk = True
-            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=400):
+            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=450):
                 if first_chunk:
                     chunk = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', '', chunk, flags=re.IGNORECASE)
                     first_chunk = False
@@ -396,8 +407,4 @@ class Nexus226Agent:
                     yield chunk
             return
 
-        if expanded_fallback:
-            yield expanded_fallback
-            return
-
-        yield self.process_request(user_query)
+        yield expanded_fallback

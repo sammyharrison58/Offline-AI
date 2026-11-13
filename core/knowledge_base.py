@@ -78,12 +78,16 @@ class AIKnowledgeEngine:
 
         tokens = self._tokenize(clean_q)
         if not tokens:
-            return self.domains[:top_k]
+            return []
+
+        stopwords = {"what", "is", "how", "does", "do", "the", "a", "an", "why", "work", "works", "explain", "tell", "me", "about", "in", "of", "and", "or", "for", "to", "on", "at", "by", "with", "from", "it", "its", "are", "can", "be", "this", "that"}
+        substantive_tokens = [t for t in tokens if t not in stopwords]
+        active_tokens = substantive_tokens if substantive_tokens else tokens
 
         scores: Dict[int, float] = {}
         num_docs = len(self.domains)
 
-        for t in tokens:
+        for t in active_tokens:
             if t in self.inverted_index:
                 df = self.doc_freq.get(t, 1)
                 idf = math.log((num_docs + 1) / (df + 1)) + 1.0
