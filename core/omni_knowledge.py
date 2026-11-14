@@ -361,6 +361,33 @@ OMNI_TOPICS = [
         "principles": "Second Law of Thermodynamics (heat flows spontaneously from hot to cold; mechanical work must be input to pump heat in reverse). Clausius-Clapeyron equation of phase change. Ideal Gas Law: P * V = n * R * T.",
         "significance": "Enabled modern demographic settlement of arid and tropical regions (e.g., American Sun Belt, Dubai, Singapore), revolutionized human summer workplace productivity, and prevents tens of thousands of heatwave fatalities annually.",
         "applications": "Residential central cooling, heat pump zero-emission building heating, internet cloud data center server cooling, commercial food cold-chains, and automotive climate control."
+    },
+    {
+        "name": "Phase Change & Boiling Point Thermodynamics",
+        "keywords": ["boiling point of water", "boiling point", "phase change water", "latent heat of vaporization", "vapor pressure", "why water boils", "boiling temperature"],
+        "definition": "The thermodynamic transition where liquid water turns into water vapor when its saturated vapor pressure equals the surrounding ambient atmospheric pressure.",
+        "mechanism": "At standard sea-level atmospheric pressure (1 atm or 101.325 kPa), pure water boils at exactly 100 degrees Celsius (212 degrees Fahrenheit or 373.15 Kelvin). At this temperature, thermal kinetic energy overcomes intermolecular hydrogen bonding, allowing bubbles of vapor to form throughout the liquid. At higher altitudes where atmospheric pressure is lower (such as on Mount Everest at ~34 kPa), water boils at approximately 68 degrees Celsius (154 degrees Fahrenheit). During boiling, temperature remains fixed at the boiling point until all liquid transitions, absorbing 2,260 kJ/kg as latent heat of vaporization.",
+        "principles": "Clausius-Clapeyron equation: dP/dT = L / (T * Delta_V). Antoine equation for vapor pressure: log10(P) = A - (B / (T + C)). First and Second Laws of Thermodynamics.",
+        "significance": "Underpins planetary water cycles, steam-powered industrial turbine electricity generation, autoclave medical sterilization, and daily cooking chemistry worldwide.",
+        "applications": "Steam turbine electric power plants, autoclave medical sterilization, industrial fractional distillation, pressure cookers, and desalted water evaporation."
+    },
+    {
+        "name": "Universal Physical Constants & The Speed of Light",
+        "keywords": ["speed of light", "speed of light in vacuum", "value of c", "how fast is light", "light speed constant"],
+        "definition": "The universal physical constant (c) representing the maximum speed at which all conventional matter, energy, and information in the universe can travel through empty space.",
+        "mechanism": "In vacuum, the speed of light is defined as exactly 299,792,458 meters per second (approximately 300,000 km/s or 186,282 miles per second). In 1983, the International Committee for Weights and Measures fixed this value exactly, defining the SI meter as the distance light travels in vacuum in 1 / 299,792,458 of a second. According to Einstein's Special Relativity, as an object with rest mass accelerates toward c, its relativistic mass/momentum approaches infinity, requiring infinite energy; thus only massless particles (photons, gravitons) can travel at c. In physical media such as water (refractive index n ~ 1.33) or glass (n ~ 1.5), light propagates slower (v = c / n) due to continuous electromagnetic absorption and re-emission delays.",
+        "principles": "Maxwell's wave equation: c = 1 / sqrt(mu_0 * epsilon_0) where mu_0 is vacuum permeability and epsilon_0 is vacuum permittivity. Lorentz transformation factor: gamma = 1 / sqrt(1 - v^2/c^2). Mass-energy equivalence: E = m * c^2.",
+        "significance": "Forms the foundational invariant speed limit of the universe, linking space and time into four-dimensional spacetime and anchoring modern physics, relativistic astrophysics, and cosmology.",
+        "applications": "GPS satellite relativistic synchronization, telecommunications optical fiber latency, astronomical distance measurement (light-years), and radar/lidar ranging."
+    },
+    {
+        "name": "Global Continental Geography & Tectonic Plates",
+        "keywords": ["how many continents are there", "continents on earth", "seven continents", "names of continents", "continental landmasses"],
+        "definition": "The primary continuous landmasses of Earth, traditionally classified by international convention and physical geography as seven distinct continents.",
+        "mechanism": "Earth's surface is geographically classified into 7 continents: Asia (the largest by both land area and human population), Africa (second largest), North America, South America, Antarctica (ice-covered polar desert), Europe, and Australia (Oceania). Together they cover approximately 29.2% of Earth's total surface area (~148.9 million square kilometers), with oceans covering the remaining 70.8%. Continents sit atop buoyant granitic continental crust (~35-40 km thick) that floats on the denser basaltic mantle, driven across geologic epochs by mantle convection currents and plate tectonics (continental drift).",
+        "principles": "Plate tectonics and Wilson cycle. Isostasy and continental crust buoyancy (crustal density ~2.7 g/cm^3 vs oceanic basalt ~3.0 g/cm^3). Continental shelf bathymetry.",
+        "significance": "Shapes global biodiversity biomes, human linguistic and geopolitical borders, climate weather patterns, and maritime trade routes.",
+        "applications": "Geographic information systems (GIS), climate circulation models, demographic distribution analysis, and natural hazard zoning."
     }
 ]
 

@@ -97,20 +97,27 @@ class AIKnowledgeEngine:
         if not scores:
             return []
 
+        generic_domain_words = {"deep", "learning", "neural", "networks", "network", "system", "systems", "model", "models", "architecture", "architectures", "analysis", "method", "methods", "theory", "foundations", "approach", "computing"}
+        core_tokens = [t for t in active_tokens if t not in generic_domain_words and not t.isdigit() and len(t) > 2]
+
         ranked_indices = sorted(scores.keys(), key=lambda i: scores[i], reverse=True)
         filtered_results = []
         for idx in ranked_indices:
             doc = self.domains[idx]
             name_tokens = set(self._tokenize(doc.get("name", "")))
             concept_tokens = set(self._tokenize(doc.get("concept", "")))
-            name_overlap = [t for t in active_tokens if t in name_tokens and not t.isdigit() and len(t) > 2]
-            concept_overlap = [t for t in active_tokens if t in concept_tokens and not t.isdigit() and len(t) > 2]
-            if len(active_tokens) == 1:
-                single_t = active_tokens[0]
-                if not single_t.isdigit() and len(single_t) > 2 and single_t in name_tokens:
+            if core_tokens:
+                name_overlap = [t for t in core_tokens if t in name_tokens]
+                if len(core_tokens) == 1 and name_overlap:
                     filtered_results.append(doc)
-            elif name_overlap or len(concept_overlap) >= 2:
-                filtered_results.append(doc)
+                elif len(core_tokens) > 1 and len(name_overlap) == len(core_tokens):
+                    filtered_results.append(doc)
+                elif len(name_overlap) >= 2 and len(name_overlap) / len(core_tokens) >= 0.6:
+                    filtered_results.append(doc)
+            else:
+                name_overlap = [t for t in active_tokens if t in name_tokens and not t.isdigit() and len(t) > 2]
+                if name_overlap:
+                    filtered_results.append(doc)
 
         if not filtered_results:
             return []

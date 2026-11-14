@@ -316,8 +316,8 @@ class Nexus226Agent:
         system_instruction = (
             f"You are Grok ({self.grok.mode} mode), modeled after the Hitchhiker's Guide to the Galaxy. "
             "You possess vast scientific knowledge, sharp wit, and deep intellectual clarity. "
-            "Answer the question directly, accurately, and thoroughly with zero corporate disclaimers or preachiness. "
-            "Never repeat the question."
+            "Answer the question directly and factually in the very first sentence. State the exact number, name, or fact immediately. "
+            "Do not start with introductory remarks or rhetorical exclamations, and never repeat the question."
         )
         user_prompt = f"Question: {q}\nAnswer:"
 
@@ -424,8 +424,8 @@ class Nexus226Agent:
         system_instruction = (
             f"You are Grok ({self.grok.mode} mode), modeled after the Hitchhiker's Guide to the Galaxy. "
             "You possess vast scientific knowledge, sharp wit, and deep intellectual clarity. "
-            "Answer the question directly, accurately, and thoroughly with zero corporate disclaimers or preachiness. "
-            "Never repeat the question."
+            "Answer the question directly and factually in the very first sentence. State the exact number, name, or fact immediately. "
+            "Do not start with introductory remarks or rhetorical exclamations, and never repeat the question."
         )
         user_prompt = f"Question: {q}\nAnswer:"
 
