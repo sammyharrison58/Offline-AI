@@ -44,6 +44,21 @@ class Nexus226Agent:
             return True
         return False
 
+    def _solve_math(self, q: str) -> Optional[str]:
+        clean = q.lower().strip().rstrip('? .')
+        clean = re.sub(r'^(what is|calculate|evaluate|solve|compute)\s+', '', clean).strip()
+        clean = clean.replace('plus', '+').replace('minus', '-').replace('times', '*').replace('multiplied by', '*').replace('divided by', '/').replace('x', '*')
+        if re.match(r'^[0-9\.\s\+\-\*\/\(\)\^\%]+$', clean) and any(op in clean for op in '+-*/^%'):
+            clean_expr = clean.replace('^', '**')
+            try:
+                val = eval(clean_expr, {'__builtins__': None}, {})
+                if isinstance(val, float) and val.is_integer():
+                    val = int(val)
+                return str(val)
+            except Exception:
+                return None
+        return None
+
     def process_request(self, user_query: str) -> str:
         q = user_query.strip()
         ql = q.lower()
@@ -53,6 +68,12 @@ class Nexus226Agent:
 
         if ql in self.response_cache:
             return self.response_cache[ql]
+
+        math_res = self._solve_math(q)
+        if math_res is not None:
+            ans = f"{math_res}"
+            self.response_cache[ql] = ans
+            return ans
 
         if self._is_greeting(ql):
             return "Greetings! Nexus-Jarvis online and listening. Ready for your command."
@@ -365,6 +386,13 @@ class Nexus226Agent:
 
         if ql in self.response_cache:
             yield self.response_cache[ql]
+            return
+
+        math_res = self._solve_math(q)
+        if math_res is not None:
+            ans = f"{math_res}"
+            self.response_cache[ql] = ans
+            yield ans
             return
 
         omni_match = self.omni.search(q)
