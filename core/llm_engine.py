@@ -92,7 +92,7 @@ class OfflineLLMEngine:
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
                     "num_thread": threads,
-                    "num_ctx": 1024,
+                    "num_ctx": 512,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,
@@ -101,7 +101,7 @@ class OfflineLLMEngine:
             }
             full_response = []
             try:
-                with self.session.post(url, json=payload, stream=True, timeout=20) as resp:
+                with self.session.post(url, json=payload, stream=True, timeout=30) as resp:
                     for line in resp.iter_lines():
                         if line:
                             data = json.loads(line)
@@ -132,7 +132,7 @@ class OfflineLLMEngine:
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
                     "num_thread": threads,
-                    "num_ctx": 1024,
+                    "num_ctx": 512,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,

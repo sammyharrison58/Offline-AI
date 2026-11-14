@@ -80,7 +80,7 @@ class AIKnowledgeEngine:
         if not tokens:
             return []
 
-        stopwords = {"what", "is", "how", "does", "do", "the", "a", "an", "why", "work", "works", "explain", "tell", "me", "about", "in", "of", "and", "or", "for", "to", "on", "at", "by", "with", "from", "it", "its", "are", "can", "be", "this", "that"}
+        stopwords = {"what", "is", "how", "does", "do", "the", "a", "an", "why", "work", "works", "explain", "tell", "me", "about", "in", "of", "and", "or", "for", "to", "on", "at", "by", "with", "from", "it", "its", "are", "can", "be", "this", "that", "who", "was", "were", "which", "where", "when", "there"}
         substantive_tokens = [t for t in tokens if t not in stopwords]
         active_tokens = substantive_tokens if substantive_tokens else tokens
 
@@ -98,9 +98,25 @@ class AIKnowledgeEngine:
             return []
 
         ranked_indices = sorted(scores.keys(), key=lambda i: scores[i], reverse=True)
-        results = [self.domains[i] for i in ranked_indices[:max(top_k, 5)]]
-        self.query_cache[clean_q] = results
-        return results[:top_k]
+        filtered_results = []
+        for idx in ranked_indices:
+            doc = self.domains[idx]
+            name_tokens = set(self._tokenize(doc.get("name", "")))
+            concept_tokens = set(self._tokenize(doc.get("concept", "")))
+            name_overlap = [t for t in active_tokens if t in name_tokens and not t.isdigit() and len(t) > 2]
+            concept_overlap = [t for t in active_tokens if t in concept_tokens and not t.isdigit() and len(t) > 2]
+            if len(active_tokens) == 1:
+                single_t = active_tokens[0]
+                if not single_t.isdigit() and len(single_t) > 2 and single_t in name_tokens:
+                    filtered_results.append(doc)
+            elif name_overlap or len(concept_overlap) >= 2:
+                filtered_results.append(doc)
+
+        if not filtered_results:
+            return []
+
+        self.query_cache[clean_q] = filtered_results
+        return filtered_results[:top_k]
 
     def deep_research(self, topic_query: str) -> Dict[str, Any]:
         matches = self.query(topic_query, top_k=2)

@@ -396,30 +396,40 @@ class OmniKnowledgeEngine:
                 self.keyword_index[token].add(idx)
 
     def search(self, query: str) -> Optional[Dict[str, Any]]:
-        tokens = self._tokenize(query)
+        clean_q = query.strip().lower()
+        stopwords = {"what", "is", "how", "does", "do", "the", "a", "an", "why", "work", "works", "explain", "tell", "me", "about", "in", "of", "and", "or", "for", "to", "on", "at", "by", "with", "from", "it", "its", "are", "can", "be", "this", "that", "who", "was", "were", "which", "where", "when", "there"}
+        tokens = [t for t in self._tokenize(clean_q) if t not in stopwords]
         if not tokens:
             return None
 
-        clean_q = query.strip().lower()
+        best_item = None
+        best_score = 0
         for item in self.topics:
-            for kw in item.get("keywords", []):
-                if kw in clean_q or clean_q in kw:
-                    return item
+            kws = [k.lower() for k in item.get("keywords", [])]
+            for kw in kws:
+                kw_tokens = [t for t in self._tokenize(kw) if t not in stopwords]
+                if not kw_tokens:
+                    continue
+                if all(t in tokens for t in kw_tokens):
+                    score = len(kw_tokens) * 3
+                    if score > best_score:
+                        best_score = score
+                        best_item = item
+                elif all(t in kw_tokens for t in tokens) and len(tokens) >= 2:
+                    score = len(tokens) * 2
+                    if score > best_score:
+                        best_score = score
+                        best_item = item
+                else:
+                    overlap = [t for t in tokens if t in kw_tokens]
+                    if len(overlap) >= 2 and len(overlap) >= len(tokens) * 0.75:
+                        score = len(overlap)
+                        if score > best_score:
+                            best_score = score
+                            best_item = item
 
-        scores = {}
-        for t in tokens:
-            if t in ["what", "is", "how", "does", "the", "a", "an", "why", "work", "works", "explain", "tell", "me", "about"]:
-                continue
-            if t in self.keyword_index:
-                for idx in self.keyword_index[t]:
-                    scores[idx] = scores.get(idx, 0) + 1
-
-        if not scores:
-            return None
-
-        best_idx = max(scores.keys(), key=lambda i: scores[i])
-        if scores[best_idx] >= 1:
-            return self.topics[best_idx]
+        if best_item and best_score >= 2:
+            return best_item
         return None
 
     def synthesize_explanation(self, query: str, matched_topic: Optional[Dict[str, Any]] = None, kb_context: str = "") -> str:

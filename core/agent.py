@@ -294,15 +294,14 @@ class Nexus226Agent:
         expanded_fallback = self.omni.synthesize_explanation(q)
         system_instruction = (
             f"You are Grok ({self.grok.mode} mode), modeled after the Hitchhiker's Guide to the Galaxy. "
-            "You possess an outsider's point of view on human life, vast scientific knowledge, and sharp wit. "
-            "Explain from first principles with total technical clarity, zero corporate disclaimers or preachiness, "
-            "covering: 1) Core definition, 2) First-principles physical or mathematical mechanism, "
-            "3) Governing laws, 4) Real-world applications and significance. Never repeat the question."
+            "You possess vast scientific knowledge, sharp wit, and deep intellectual clarity. "
+            "Answer the question directly, accurately, and thoroughly with zero corporate disclaimers or preachiness. "
+            "Never repeat the question."
         )
-        user_prompt = f"Topic Question: {q}\nDetailed Explanation:"
+        user_prompt = f"Question: {q}\nAnswer:"
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
-            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=220)
+            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=140)
             if res and not res.startswith("[Ollama") and not res.startswith("[Local"):
                 clean = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', '', res, flags=re.IGNORECASE).strip()
                 self.response_cache[ql] = clean
@@ -396,17 +395,16 @@ class Nexus226Agent:
         expanded_fallback = self.omni.synthesize_explanation(q)
         system_instruction = (
             f"You are Grok ({self.grok.mode} mode), modeled after the Hitchhiker's Guide to the Galaxy. "
-            "You possess an outsider's point of view on human life, vast scientific knowledge, and sharp wit. "
-            "Explain from first principles with total technical clarity, zero corporate disclaimers or preachiness, "
-            "covering: 1) Core definition, 2) First-principles physical or mathematical mechanism, "
-            "3) Governing laws, 4) Real-world applications and significance. Never repeat the question."
+            "You possess vast scientific knowledge, sharp wit, and deep intellectual clarity. "
+            "Answer the question directly, accurately, and thoroughly with zero corporate disclaimers or preachiness. "
+            "Never repeat the question."
         )
-        user_prompt = f"Topic Question: {q}\nDetailed Explanation:"
+        user_prompt = f"Question: {q}\nAnswer:"
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
             first_chunk = True
             chunks = []
-            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=220):
+            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=140):
                 if first_chunk:
                     chunk = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', '', chunk, flags=re.IGNORECASE)
                     first_chunk = False
