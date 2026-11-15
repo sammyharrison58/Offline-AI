@@ -1,5 +1,5 @@
 {
-  "total_domains": 335,
+  "total_domains": 345,
   "domains": [
     {
       "id": 1,
@@ -3015,6 +3015,96 @@
       "mathematical_basis": "Hammett equation: log(k/k_0) = rho * sigma. Reaction selectivity: Delta_Delta_G_double_dagger = -R * T * ln(Ratio_stereoisomers). E-factor: mass of waste / mass of product.",
       "obscure_insights": "Direct catalytic C-H functionalization bypasses conventional pre-functionalization steps (such as halogenation), reducing the step-count of complex natural product total syntheses by over 40% while dramatically lowering E-factor waste.",
       "open_source_frameworks": "RDKit, AiZynthFinder, ASKCOS, ChemDraw / OpenBabel"
+    },
+    {
+      "id": 336,
+      "name": "Python Advanced Internals, Metaclasses & AsyncIO Event Loop",
+      "category": "Computer Science & Engineering",
+      "concept": "Deep internal architecture of Python runtime: type creation via type metaclass __new__/__init__, descriptor protocol (__get__/__set__/__delete__), co-routine suspension via generators and yield from, and epoll/kqueue async event loop concurrency.",
+      "mathematical_basis": "Co-routine state transition: f(state_t, input_t) -> (state_{t+1}, output_t). Amdahl law for multi-core speedup under GIL serial fraction: S(N) = 1 / (s + (1-s)/N).",
+      "obscure_insights": "Python descriptors power all property, classmethod, and staticmethod decorators; instance method calls obj.method() automatically translate to Class.method.__get__(obj, Class)(*args) on the attribute lookup.",
+      "open_source_frameworks": "CPython, AsyncIO, Uvloop, PyPy, Cython"
+    },
+    {
+      "id": 337,
+      "name": "JavaScript Engine Optimization, Hidden Classes & Inline Caches (IC)",
+      "category": "Computer Science & Engineering",
+      "concept": "Compiler optimization techniques used by Google V8 and SpiderMonkey: dynamically generating transition-tree Hidden Classes (Shapes) for dynamic objects, monomorphic/polymorphic inline caching at call sites, and deoptimization bailouts.",
+      "mathematical_basis": "Property offset access: MemoryAddress = BaseAddress + Shape.Offsets[PropertyID] in O(1) time without hash table lookups. Monomorphic cache hit rate ~95%+ in hot loops.",
+      "obscure_insights": "Modifying object properties in inconsistent orders creates distinct Hidden Class transition paths, turning monomorphic IC call sites into polymorphic or megamorphic call sites that trigger deoptimization and slow execution by 10x.",
+      "open_source_frameworks": "Google V8, SpiderMonkey, JavaScriptCore, Node.js, Deno, Bun"
+    },
+    {
+      "id": 338,
+      "name": "Rust Async Runtimes, Pinning & Tokio Work-Stealing Schedulers",
+      "category": "Computer Science & Engineering",
+      "concept": "Zero-allocation asynchronous concurrency in Rust: the std::future::Future poll state-machine contract, Pin<P<T>> structural pinning preventing self-referential pointer invalidation, and multi-threaded work-stealing task schedulers.",
+      "mathematical_basis": "Chase-Lev work-stealing deque algorithm: workers push/pop LIFO locally in O(1) time while thieves steal FIFO with atomic compare-and-swap (CAS). Non-blocking poll: Poll::Ready(T) or Poll::Pending.",
+      "obscure_insights": "Async Rust futures are zero-cost lazy state machines that allocate no memory on the heap unless explicitly boxed; no background task executes until it is driven to completion by an explicit executor poll.",
+      "open_source_frameworks": "Tokio, Async-std, Mio, Rayon, Actix"
+    },
+    {
+      "id": 339,
+      "name": "C++ Template Metaprogramming, Concepts & Compile-Time Evaluation",
+      "category": "Computer Science & Engineering",
+      "concept": "Turing-complete compile-time code generation in modern C++: Substitution Failure Is Not An Error (SFINAE), C++20 Concepts constraint checking, constexpr/consteval functions executing during compilation, and zero-runtime-cost polymorphic types.",
+      "mathematical_basis": "Compile-time template instantiation is Turing-complete (Unruh 1994 proof). SFINAE rule: type deduction failure in template specialization does not cause hard compiler errors, enabling automatic overload selection.",
+      "obscure_insights": "constexpr functions can build compile-time lookup tables, parse JSON schemas, and construct encrypted strings that exist entirely in the readonly text segment of the compiled binary with zero runtime initialization penalty.",
+      "open_source_frameworks": "Boost.MPL, Boost.Hana, Clang, GCC, MSVC"
+    },
+    {
+      "id": 340,
+      "name": "Distributed Consensus, Raft Protocol & Paxos State Machines",
+      "category": "Computer Science & Engineering",
+      "concept": "Fault-tolerant distributed agreement protocols ensuring multiple networked server replicas agree on an identical sequence of state machine log entries despite network partitions, packet loss, and node crashes.",
+      "mathematical_basis": "CAP theorem (Brewer): cannot simultaneously achieve Consistency, Availability, and Partition-tolerance. Raft quorum requirement: Quorum = floor(N/2) + 1 nodes. Log matching invariant.",
+      "obscure_insights": "Raft leader election utilizes randomized election timeouts (150-300ms) to decorrelate split votes, guaranteeing an undisputed majority leader emerges within a single round of election RPCs in over 99.8% of cases.",
+      "open_source_frameworks": "Etcd, HashiCorp Consul, Apache ZooKeeper, TiKV, Kafka (KRaft)"
+    },
+    {
+      "id": 341,
+      "name": "Modern Operating System Virtual Memory, Page Tables & TLB Architecture",
+      "category": "Computer Science & Engineering",
+      "concept": "Hardware and kernel memory management: 4-level/5-level hierarchical paging, Translation Lookaside Buffers (TLB), copy-on-write (CoW) fork optimization, demand paging, and page fault interrupt handlers.",
+      "mathematical_basis": "Virtual to physical translation: Effective Memory Access Time (EMAT) = TLB_hit_rate * t_tlb + (1 - TLB_hit_rate) * (t_tlb + PageTableWalk_Latency). 48-bit canonical addressing: 4 levels of 9-bit page directory indexes + 12-bit page offset.",
+      "obscure_insights": "Linux hugepages (2MB or 1GB vs standard 4KB) reduce TLB cache miss penalties by a factor of 500 for massive memory-bound workloads like databases and neural network tensor allocations.",
+      "open_source_frameworks": "Linux Kernel mm subsystem, FreeBSD, jemalloc, tcmalloc"
+    },
+    {
+      "id": 342,
+      "name": "Compiler Engineering, Static Single Assignment (SSA) & LLVM IR",
+      "category": "Computer Science & Engineering",
+      "concept": "Intermediate representation and optimization architectures in modern compilers: converting AST to Static Single Assignment (SSA) form with phi-nodes, dead-code elimination, loop-invariant code motion (LICM), and LLVM backend code generation.",
+      "mathematical_basis": "SSA invariant: every variable is assigned exactly once, and every use is dominated by its single definition. Dominance frontier algorithm for optimal phi-node insertion (Cytron et al.).",
+      "obscure_insights": "By reducing variable lifetimes to strict SSA definitions, compilers can compute dataflow analysis in linear time, enabling aggressive auto-vectorization (SIMD) and instruction scheduling.",
+      "open_source_frameworks": "LLVM, Clang, Rustc, MLIR, GCC"
+    },
+    {
+      "id": 343,
+      "name": "High-Throughput Concurrent Systems, Lock-Free Queues & LMAX Disruptor",
+      "category": "Computer Science & Engineering",
+      "concept": "Ultra-low-latency concurrent data structures: eliminating OS mutex locks and thread context-switching using hardware atomic Compare-And-Swap (CAS), cache-line padding preventing False Sharing, and ring-buffer architectures.",
+      "mathematical_basis": "Hardware MESI cache coherence protocol bus locking. Amdahl contention limit. Ring-buffer sequence masking: index = sequence & (Buffer_Size - 1) where Buffer_Size is a power of 2.",
+      "obscure_insights": "False sharing occurs when independent variables accessed by different CPU cores reside on the same 64-byte hardware cache line; adding @Contended 64-byte padding prevents cache-line invalidation thrashing, boosting throughput by 300%.",
+      "open_source_frameworks": "LMAX Disruptor, Crossbeam-epoch, Folly (Facebook), JCTools"
+    },
+    {
+      "id": 344,
+      "name": "Linux eBPF Kernel Tracing & Programmable Networking Subsystems",
+      "category": "Computer Science & Engineering",
+      "concept": "Running sandboxed, just-in-time compiled programs inside the Linux kernel address space at runtime without modifying kernel source code or loading untrusted external kernel modules.",
+      "mathematical_basis": "Kernel in-situ verification: Directed Acyclic Graph (DAG) state exploration proving program termination and memory safety before load. Packet processing rate: XDP (eXpress Data Path) achieves 24 million packets/second per core.",
+      "obscure_insights": "eBPF programs attached to XDP hooks process network packets directly in the network card driver ring buffer before the Linux kernel network stack allocates an sk_buff data structure, dropping DDoS attack traffic at wire speed.",
+      "open_source_frameworks": "BCC, Cilium, bpftrace, Libbpf, Falco"
+    },
+    {
+      "id": 345,
+      "name": "Deep Learning Compilation, Triton DSL & Hardware Tensor Accelerators",
+      "category": "Computer Science & Engineering",
+      "concept": "Domain-specific languages and kernel compilers (OpenAI Triton, TVM, torch.compile) transforming high-level PyTorch tensor operations into fused, optimized GPU machine code that maximizes SRAM cache residency and hides DRAM memory bandwidth latency.",
+      "mathematical_basis": "Roofline model: Performance = min(Peak_Compute_FLOPs, Operational_Intensity * Memory_Bandwidth). FlashAttention fusion reduces HBM DRAM access from O(N^2) to O(N).",
+      "obscure_insights": "Memory-bandwidth-bound operators (Softmax, LayerNorm, GELU) lose 80%+ of peak GPU theoretical compute waiting for slow off-chip HBM; Triton kernel fusion executes these operations in high-speed on-chip SRAM without intermediate DRAM roundtrips.",
+      "open_source_frameworks": "OpenAI Triton, PyTorch 2.x Inductor, Apache TVM, TensorRT"
     }
   ]
 }

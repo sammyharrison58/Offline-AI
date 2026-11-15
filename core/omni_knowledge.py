@@ -388,6 +388,69 @@ OMNI_TOPICS = [
         "principles": "Plate tectonics and Wilson cycle. Isostasy and continental crust buoyancy (crustal density ~2.7 g/cm^3 vs oceanic basalt ~3.0 g/cm^3). Continental shelf bathymetry.",
         "significance": "Shapes global biodiversity biomes, human linguistic and geopolitical borders, climate weather patterns, and maritime trade routes.",
         "applications": "Geographic information systems (GIS), climate circulation models, demographic distribution analysis, and natural hazard zoning."
+    },
+    {
+        "name": "Python Architecture, CPython & GIL Mechanics",
+        "keywords": ["what is python", "python programming", "python programming language", "how python works", "cpython runtime", "global interpreter lock"],
+        "definition": "A high-level, dynamically typed, multi-paradigm interpreted programming language created by Guido van Rossum, known for clean syntax, rich ecosystem, and extensive application in AI, data science, and backend engineering.",
+        "mechanism": "Python code (.py) is compiled by the reference CPython implementation into bytecode (.pyc) instructions. The CPython Virtual Machine executes these bytecode instructions sequentially using a stack-based architecture. Memory is managed automatically via PyObject reference counting combined with a cyclic garbage collector (generational gc). In standard CPython, thread safety around interpreter internals is governed by the Global Interpreter Lock (GIL), which permits only one OS thread to execute Python bytecode at a time, making multiprocessing, native C-extensions, or async I/O necessary for CPU-bound multi-core concurrency.",
+        "principles": "Duck typing and dynamic dispatch. Bytecode evaluation loop (ceval.c). PyObject struct header: ob_refcnt and ob_type. Lexical scoping and namespace resolution via LEGB (Local, Enclosing, Global, Built-in).",
+        "significance": "The undisputed lingua franca of Artificial Intelligence, Machine Learning, scientific computing, data engineering, and rapid application prototyping worldwide.",
+        "applications": "PyTorch / TensorFlow deep learning, NumPy / Pandas data science, FastAPI / Django backend services, automation scripting, and scientific modeling."
+    },
+    {
+        "name": "JavaScript, V8 Engine & Event Loop Architecture",
+        "keywords": ["what is javascript", "javascript programming", "how javascript works", "v8 engine", "js event loop", "ecmascript"],
+        "definition": "A high-level, just-in-time compiled, multi-paradigm programming language conforming to the ECMAScript standard, serving as the foundational programming language of the World Wide Web.",
+        "mechanism": "Modern JavaScript engines like Google V8 parse source code into an Abstract Syntax Tree (AST), compile it to bytecode via an interpreter (Ignition), and optimize hot execution paths into native machine code using an adaptive optimizing compiler (TurboFan) with hidden classes and inline caching. JavaScript execution is single-threaded and non-blocking, driven by the Event Loop. When asynchronous tasks (timers, fetch requests, DOM events) occur, their callbacks are placed into the Task Queue (macro-tasks) or Microtask Queue (Promises, queueMicrotask). Once the main Call Stack is empty, the Event Loop drains all microtasks before executing the next macro-task.",
+        "principles": "Prototype-based inheritance. Asynchronous non-blocking event-driven I/O. Just-In-Time (JIT) compilation and deoptimization bailouts. Microtask vs macrotask execution order.",
+        "significance": "Powers the client-side user interface of virtually every website on the internet, and through Node.js and Deno, serves as a high-throughput backend server ecosystem.",
+        "applications": "React / Vue / Next.js web frontend development, Node.js backend microservices, Electron cross-platform desktop applications, and serverless edge functions."
+    },
+    {
+        "name": "Rust Systems Programming, Borrow Checker & Memory Safety",
+        "keywords": ["what is rust", "rust programming", "rust language", "borrow checker", "rust memory safety", "rust vs c++"],
+        "definition": "A multi-paradigm, statically typed systems programming language designed for performance, memory safety, and thread concurrency without requiring an automated garbage collector.",
+        "mechanism": "Rust achieves memory safety at compile time using an affine type system enforced by the Borrow Checker based on three fundamental ownership rules: 1) Every value has a single owner variable. 2) When the owner goes out of scope, the memory is immediately deallocated (RAII). 3) You may have either any number of immutable references (&T) or exactly one mutable reference (&mut T) to a resource, but never both simultaneously. This compile-time analysis completely prevents null pointer dereferences, dangling pointers, buffer overflows, and data races before the binary is ever compiled, yielding execution speeds comparable to C and C++.",
+        "principles": "Linear/affine ownership types and lifetime annotations ('a). Resource Acquisition Is Initialization (RAII). Zero-cost abstractions: traits, generics, monomorphization. Fearless concurrency without data races.",
+        "significance": "Revolutionized modern systems engineering, integrated into the Linux kernel and major browser engines (Firefox, Chromium), and voted the most admired language for consecutive years.",
+        "applications": "Operating systems kernels, high-performance database engines (TiKV), blockchain clients (Solana, Polkadot), WebAssembly runtimes, and fast networking proxies."
+    },
+    {
+        "name": "C++ Systems Programming, RAII & Zero-Cost Abstractions",
+        "keywords": ["what is c++", "c++ programming", "how c++ works", "c plus plus", "cpp programming", "raii in c++"],
+        "definition": "A high-performance, statically typed, compiled systems programming language created by Bjarne Stroustrup as an extension of C, providing fine-grained direct hardware and memory control with high-level object-oriented and generic abstractions.",
+        "mechanism": "C++ compiles directly to native CPU machine code via optimizing toolchains (GCC, Clang, MSVC) without an intermediate virtual machine or runtime interpreter. Memory is managed deterministically through the Resource Acquisition Is Initialization (RAII) idiom, where constructors acquire resources and destructors release them deterministically when objects exit scope. Modern C++ (C++11 through C++23) eliminates raw manual memory manipulation through smart pointers (std::unique_ptr, std::shared_ptr), move semantics with rvalue references (T&&) eliminating deep copies, and compile-time template metaprogramming via constexpr and concepts.",
+        "principles": "Zero-overhead principle: what you don't use, you don't pay for; what you do use, you couldn't hand-code any better. Direct pointer arithmetic and memory addressing. Virtual method tables (vtables) for polymorphic dynamic dispatch.",
+        "significance": "The primary foundation for low-latency financial trading systems, game engines (Unreal Engine), operating systems, graphics drivers, embedded aerospace avionics, and deep learning runtime kernels (CUDA/cuDNN).",
+        "applications": "Unreal Engine video game development, low-latency quantitative finance algorithms, NVIDIA CUDA neural network acceleration kernels, operating systems, and autonomous vehicle robotics."
+    },
+    {
+        "name": "Relational Databases, SQL & ACID Transaction Guarantees",
+        "keywords": ["what is sql", "relational database", "sql database", "acid properties", "how databases work", "database transactions"],
+        "definition": "Structured data storage systems based on relational algebra and Structured Query Language (SQL), guaranteeing data integrity, persistence, and safe multi-client concurrency through ACID transaction properties.",
+        "mechanism": "Relational Database Management Systems (RDBMS like PostgreSQL, MySQL, SQLite) store data in structured tables composed of rows (tuples) and columns (attributes) governed by primary and foreign keys. Queries expressed in declarative SQL are parsed by an engine, converted into logical relational algebra plans, optimized via cost-based optimizers (CBO), and executed against storage engines using B+ Tree or LSM-Tree indexes. Data integrity is guaranteed via ACID properties: Atomicity (all operations commit or all rollback), Consistency (invariants and constraints strictly preserved), Isolation (concurrent transactions execute without interfering, enforced via Multi-Version Concurrency Control (MVCC) or Write-Ahead Logging (WAL)), and Durability (committed transactions persist through power loss via disk fsync).",
+        "principles": "Relational algebra (selection, projection, join, union). B+ Tree index traversal time complexity O(log N). Two-Phase Locking (2PL) and Multi-Version Concurrency Control (MVCC). Write-Ahead Logging (WAL).",
+        "significance": "The mission-critical persistent ledger of the global digital economy, storing financial transactions, user accounts, enterprise inventories, and healthcare records reliably.",
+        "applications": "Enterprise banking ledgers, PostgreSQL cloud databases, e-commerce shopping platforms, mobile local app storage (SQLite), and business intelligence analytics."
+    },
+    {
+        "name": "Git Distributed Version Control & Directed Acyclic Graph (DAG) Mechanics",
+        "keywords": ["how git works", "what is git", "git version control", "git commit", "git merge", "version control system"],
+        "definition": "A distributed version control system designed by Linus Torvalds for tracking changes in source code across distributed teams of software developers.",
+        "mechanism": "Unlike older version control systems that track delta differences between file revisions, Git models repository history as a content-addressable storage filesystem and Directed Acyclic Graph (DAG) of immutable snapshots. Every file is stored as a compressed 'blob' hashed with SHA-1 or SHA-256; directories are stored as 'tree' objects pointing to blobs and subtrees; and a 'commit' object points to a root tree, parent commit hashes, author metadata, and a log message. Branches in Git are lightweight 41-byte pointer files containing the commit hash of the branch tip. Merging creates a commit with two parent hashes, and rebasing replays a sequence of commits onto a new base commit by generating new commit objects with updated parent references.",
+        "principles": "Cryptographic content-addressable storage (hash-addressed objects). Merkle tree integrity verification. Directed Acyclic Graph (DAG) revision history. 3-way merge algorithms and fast-forward branch resolution.",
+        "significance": "The universal global standard for collaborative software development, powering open-source collaboration, corporate software engineering, and continuous integration / continuous deployment (CI/CD) pipelines.",
+        "applications": "GitHub / GitLab collaborative repositories, automated CI/CD deployment pipelines, Linux kernel distributed development, and automated release versioning."
+    },
+    {
+        "name": "Docker Containerization & Linux Kernel Namespaces",
+        "keywords": ["what is docker", "how docker works", "containerization", "docker containers", "containers vs virtual machines", "linux containers"],
+        "definition": "An open platform for developing, shipping, and running software applications inside isolated, lightweight process environments called containers, sharing the host OS kernel.",
+        "mechanism": "Unlike full Virtual Machines (VMs) that emulate complete virtual hardware and require a dedicated guest operating system via a hypervisor (consuming gigabytes of RAM and taking minutes to boot), Docker containers are native Linux processes running directly on the host kernel. Container isolation is achieved through three core Linux kernel primitives: 1) Namespaces (PID, Mount, Network, IPC, UTS, User) provide process isolation, giving the container its own private view of processes, network interfaces, and filesystem mounts. 2) Control Groups (cgroups) meter and limit physical hardware resource consumption (CPU cores, RAM memory limits, disk I/O bandwidth). 3) OverlayFS / Union Filesystem layers immutable read-only image layers under a thin copy-on-write (CoW) container layer, enabling instantaneous startup times under 100 milliseconds.",
+        "principles": "Operating system-level virtualization. Linux kernel namespaces and cgroups resource throttling. Union filesystem layered caching. OCI (Open Container Initiative) runtime specifications.",
+        "significance": "Solved the 'it works on my machine' software distribution dilemma, enabling microservices architectures, cloud-native deployments, and modern continuous integration pipelines.",
+        "applications": "Kubernetes cloud cluster orchestration, microservice backend deployments, reproducible development environments, and automated CI/CD testing pipelines."
     }
 ]
 
