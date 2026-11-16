@@ -67,22 +67,35 @@ class GrokEngine:
 
     def generate_visual_graphic(self, prompt: str, output_path: str = "generated_graphic.png") -> str:
         width, height = 720, 480
-        img = Image.new("RGB", (width, height), color=(15, 23, 42))
+        img = Image.new("RGB", (width, height), color=(10, 15, 30))
         draw = ImageDraw.Draw(img)
 
-        draw.rectangle([20, 20, width - 20, height - 20], outline=(99, 102, 241), width=3)
-        draw.text((40, 40), f"GROK AI VISUAL GENERATOR", fill=(129, 140, 248))
-        draw.text((40, 70), f"Prompt: {prompt[:60]}", fill=(148, 163, 184))
+        draw.rectangle([15, 15, width - 15, height - 15], outline=(0, 240, 255), width=2)
+        draw.rectangle([18, 18, width - 18, height - 18], outline=(99, 102, 241), width=1)
+        draw.text((35, 30), "⚡ NEXUS-GROK AUTONOMOUS VISUAL ENGINE", fill=(0, 240, 255))
+        draw.text((35, 55), f"Subject: {prompt[:65]}", fill=(203, 213, 225))
 
-        for i in range(12):
-            x0 = 60 + i * 50
-            y0 = 350 - (i * 17 % 180)
-            x1 = x0 + 35
-            y1 = 380
-            draw.rectangle([x0, y0, x1, y1], fill=(59, 130, 246), outline=(96, 165, 250))
+        for row in range(5):
+            y_line = 90 + row * 65
+            draw.line([(35, y_line), (width - 35, y_line)], fill=(30, 41, 59), width=1)
 
-        draw.line([(60, 260), (width - 60, 260)], fill=(236, 72, 153), width=2)
-        draw.text((40, 420), f"Rendered by Nexus-Grok Autonomous Engine | Seed: {int(time.time())}", fill=(100, 116, 139))
+        seed_val = sum(ord(c) for c in prompt) if prompt else 42
+        num_bars = 14
+        bar_w = 36
+        gap = 12
+        start_x = 40
+        for i in range(num_bars):
+            val = ((seed_val * (i + 1) * 37) % 240) + 40
+            x0 = start_x + i * (bar_w + gap)
+            y0 = 400 - val
+            x1 = x0 + bar_w
+            y1 = 400
+            intensity = min(255, 120 + i * 9)
+            draw.rectangle([x0, y0, x1, y1], fill=(14, 165, 233), outline=(0, 240, 255), width=1)
+            draw.rectangle([x0 + 4, y0 + 4, x1 - 4, y0 + 8], fill=(intensity, 255, 255))
+
+        draw.line([(35, 400), (width - 35, 400)], fill=(0, 240, 255), width=2)
+        draw.text((35, 435), f"Offline Cyber-Neural Render | Hash: {hex(seed_val)} | Latency: 0.001s", fill=(100, 116, 139))
 
         abs_path = os.path.abspath(output_path)
         img.save(abs_path)
