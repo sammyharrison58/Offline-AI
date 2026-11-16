@@ -1,5 +1,5 @@
 {
-  "total_domains": 345,
+  "total_domains": 350,
   "domains": [
     {
       "id": 1,
@@ -3105,6 +3105,51 @@
       "mathematical_basis": "Roofline model: Performance = min(Peak_Compute_FLOPs, Operational_Intensity * Memory_Bandwidth). FlashAttention fusion reduces HBM DRAM access from O(N^2) to O(N).",
       "obscure_insights": "Memory-bandwidth-bound operators (Softmax, LayerNorm, GELU) lose 80%+ of peak GPU theoretical compute waiting for slow off-chip HBM; Triton kernel fusion executes these operations in high-speed on-chip SRAM without intermediate DRAM roundtrips.",
       "open_source_frameworks": "OpenAI Triton, PyTorch 2.x Inductor, Apache TVM, TensorRT"
+    },
+    {
+      "id": 346,
+      "name": "CrewAI Hierarchical Multi-Agent Crew Orchestration",
+      "category": "Autonomous Agent Frameworks",
+      "concept": "Role-playing multi-agent system where autonomous agents equipped with distinct personas, goals, tools, and background stories collaborate through sequential or hierarchical manager-driven workflows to accomplish composite objectives.",
+      "mathematical_basis": "Hierarchical task assignment: max sum_{i,j} c_{i,j} * x_{i,j} subject to agent capacity constraints. Finite state machine transitions for task delegation and verification.",
+      "obscure_insights": "CrewAI implements explicit ManagerAgent delegation where an LLM supervisor reviews intermediate agent task outputs, requests revisions, and dynamically assigns next steps, mitigating hallucination cascades.",
+      "open_source_frameworks": "CrewAI, LangChain, Instructor, Pydantic"
+    },
+    {
+      "id": 347,
+      "name": "Microsoft AutoGen Conversational Multi-Agent Workflows",
+      "category": "Autonomous Agent Frameworks",
+      "concept": "Multi-agent conversation framework enabling cooperative problem solving through automated dialogue between ConversableAgent subclasses, integrating human-in-the-loop verification, native code execution, and group chat managers.",
+      "mathematical_basis": "Multi-turn conversation graph state: S_{t+1} = f(S_t, M_{i->j}). GroupChatManager transition probability distribution over candidate next speakers: P(A_k | Context).",
+      "obscure_insights": "AutoGen UserProxyAgent can execute generated code in a local docker sandbox or python environment, passing runtime tracebacks back to AssistantAgent to auto-debug until execution succeeds.",
+      "open_source_frameworks": "AutoGen (pyautogen), AutoGen-Studio, Semantic Kernel"
+    },
+    {
+      "id": 348,
+      "name": "LangGraph Cyclical State Graph Agent Architecture",
+      "category": "Autonomous Agent Frameworks",
+      "concept": "Cyclical directed graph framework extending LangChain to build resilient, multi-agent systems with explicit state management, human-in-the-loop checkpoints, conditional routing, and time-travel replay debugging.",
+      "mathematical_basis": "State graph: G = (V, E) where nodes V are agent/tool functions taking State_t -> State_{t+1}, and edges E are conditional routing functions mapping State -> Next_Node.",
+      "obscure_insights": "Unlike linear DAG runtimes, LangGraph supports cycles and loops natively, allowing agents to iteratively refine code, critique drafts, and pause for human approval with persistent SQLite or Postgres state serialization.",
+      "open_source_frameworks": "LangGraph, LangChain, LangSmith"
+    },
+    {
+      "id": 349,
+      "name": "SWE-bench & Autonomous Software Engineering Agents (Devin / OpenDevin)",
+      "category": "Autonomous Agent Frameworks",
+      "concept": "End-to-end autonomous software development agents capable of ingesting GitHub issues, cloning repositories, navigating directory structures, editing multiple files, running unit test suites, and opening pull requests.",
+      "mathematical_basis": "SWE-bench resolution rate: Percentage of unobserved real-world GitHub issues resolved by generating git patches passing regression test suites. Search over program edit trees: MCTS + LLM value function.",
+      "obscure_insights": "Autonomous coding agents achieve high benchmark scores not by writing code in one shot, but through continuous test-driven iteration: running pytest, reading stderr, modifying AST, and verifying regression passes before committing.",
+      "open_source_frameworks": "OpenDevin (OpenHands), SWE-agent, Aider, Devin"
+    },
+    {
+      "id": 350,
+      "name": "Hierarchical Task Network (HTN) Planning & MCTS Agent Decomposition",
+      "category": "Autonomous Agent Frameworks",
+      "concept": "Advanced automated planning for complex multi-agent systems, recursively decomposing high-level non-primitive goals into subtasks until primitive executable tool actions are reached, guided by Monte Carlo Tree Search (MCTS).",
+      "mathematical_basis": "HTN domain: D = (T_p, T_n, M) where T_p are primitive tasks, T_n are compound tasks, and M are reduction methods. MCTS Upper Confidence Bound for Trees (UCT): UCT = Q(s, a) + c * sqrt(ln N(s) / N(s, a)).",
+      "obscure_insights": "Combining HTN domain rules with LLM value heuristics prevents the exponential state explosion typical of purely search-based planners, guaranteeing task plans adhere to formal safety invariants.",
+      "open_source_frameworks": "PyHop, PDDL4J, Fast-Downward, Language Agent Tree Search (LATS)"
     }
   ]
 }

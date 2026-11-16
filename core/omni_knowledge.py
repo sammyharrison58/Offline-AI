@@ -451,6 +451,24 @@ OMNI_TOPICS = [
         "principles": "Operating system-level virtualization. Linux kernel namespaces and cgroups resource throttling. Union filesystem layered caching. OCI (Open Container Initiative) runtime specifications.",
         "significance": "Solved the 'it works on my machine' software distribution dilemma, enabling microservices architectures, cloud-native deployments, and modern continuous integration pipelines.",
         "applications": "Kubernetes cloud cluster orchestration, microservice backend deployments, reproducible development environments, and automated CI/CD testing pipelines."
+    },
+    {
+        "name": "Autonomous AI Agents Architecture & Multi-Agent Swarms",
+        "keywords": ["ai agents", "what are ai agents", "how ai agents work", "autonomous agents", "multi-agent systems", "ai agent architecture", "llm agents"],
+        "definition": "Autonomous computational software entities that perceive environments, maintain episodic memory, formulate plans, execute multi-step tool actions, and collaborate in swarms to accomplish complex real-world objectives without human micro-management.",
+        "mechanism": "An autonomous AI agent integrates four core subsystems: 1) Perception & Goal Decomposition: Parsing human instructions into structured Directed Acyclic Graph (DAG) task trees using chain-of-thought and tree-of-thought exploration. 2) Memory Architecture: Utilizing short-term in-context memory, working scratchpads, and long-term episodic/semantic vector retrieval (RAG). 3) Tool Calling & Action Execution: Formulating JSON-RPC/REST API arguments, executing external code sandboxes, operating system shells, and browser automation drivers. 4) Self-Correction Loop: Observing output environments via ReAct (Reason + Act) and Reflexion cycles, evaluating errors against invariants, adjusting strategy dynamically, and coordinating with peer agents via publish-subscribe message boards and hierarchical manager-worker protocols.",
+        "principles": "ReAct pattern: Thought -> Action -> Observation -> Reflection. Belief-Desire-Intention (BDI) software model. Finite state machines and LangGraph cyclical workflow graphs. Nash equilibrium in multi-agent game-theoretic negotiations.",
+        "significance": "Represents the fundamental paradigm shift of AI from passive conversational chatbots to active, goal-driven economic actors capable of automating complex software engineering, scientific discovery, and corporate enterprise operations.",
+        "applications": "CrewAI / AutoGen multi-agent workflows, Devin autonomous software engineering, browser automation agents, robotic process automation (RPA), and autonomous financial algorithmic trading."
+    },
+    {
+        "name": "State-of-the-Art AI Agent Frameworks (CrewAI, AutoGen, LangGraph)",
+        "keywords": ["crewai", "autogen", "langgraph", "agent frameworks", "best ai agent frameworks", "multi agent frameworks", "crewai vs autogen"],
+        "definition": "Modern open-source orchestration libraries and runtimes designed to compose, coordinate, debug, and monitor complex multi-agent collaborative workflows and state machines.",
+        "mechanism": "Leading AI agent frameworks each solve autonomous coordination through distinct architectural paradigms: 1) LangGraph: Treats agent workflows as cyclical stateful graphs with explicit nodes (agents/tools), edges (conditional routers), checkpoints, and time-travel debugging. 2) AutoGen (Microsoft): Employs conversational multi-agent chat loops where specialized agents (UserProxyAgent, AssistantAgent) converse through natural language and code execution rounds. 3) CrewAI: Employs role-playing hierarchical crews (Manager, Researcher, Writer) with explicit backstories, goals, process delegation (sequential, hierarchical), and task assignment. 4) BabyAGI & AutoGPT: Early iterative goal-loop pioneers that execute continuous prioritized task queues using vector memory.",
+        "principles": "Stateful cyclical graph processing vs conversational agent message passing. Task routing via dynamic LLM function calling. Memory checkpointing and state persistence.",
+        "significance": "Standardized the industrial deployment of autonomous AI teams, enabling enterprises to build resilient, fault-tolerant multi-agent pipelines for research, customer support, and software development.",
+        "applications": "Enterprise automated research desks, autonomous software bug fixing pipelines, customer service agent swarms, and synthetic data generation."
     }
 ]
 
