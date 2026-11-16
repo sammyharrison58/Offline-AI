@@ -469,6 +469,69 @@ OMNI_TOPICS = [
         "principles": "Stateful cyclical graph processing vs conversational agent message passing. Task routing via dynamic LLM function calling. Memory checkpointing and state persistence.",
         "significance": "Standardized the industrial deployment of autonomous AI teams, enabling enterprises to build resilient, fault-tolerant multi-agent pipelines for research, customer support, and software development.",
         "applications": "Enterprise automated research desks, autonomous software bug fixing pipelines, customer service agent swarms, and synthetic data generation."
+    },
+    {
+        "name": "Go (Golang) Systems Architecture, Goroutines & Channels",
+        "keywords": ["what is go", "what is golang", "go programming", "golang programming", "goroutines", "go channels", "golang runtime"],
+        "definition": "An open-source, statically typed, compiled systems programming language designed at Google by Robert Griesemer, Rob Pike, and Ken Thompson, optimized for simplicity, high-throughput cloud networking, and massive lightweight concurrency.",
+        "mechanism": "Go compiles directly to native machine code with zero external dynamic dependencies. Concurrency is built around Goroutines—user-space green threads multiplexed across OS threads using an M:N work-stealing runtime scheduler. A goroutine starts with only a 2KB dynamic stack that grows and shrinks on demand, allowing single machines to run hundreds of thousands of concurrent goroutines simultaneously. Concurrency coordination follows Communicating Sequential Processes (CSP): goroutines communicate and synchronize state safely by passing data across typed Channels rather than sharing locked memory.",
+        "principles": "CSP concurrency model. M:N work-stealing scheduler (G=Goroutine, M=Machine/OS thread, P=Processor context). Tricolor mark-and-sweep concurrent garbage collection with sub-millisecond STW pauses. Composition over inheritance via implicit interfaces.",
+        "significance": "The architectural foundation of modern cloud infrastructure, container orchestration, microservices backends, and distributed storage systems.",
+        "applications": "Docker engine, Kubernetes orchestration, Terraform cloud provisioning, Prometheus metrics monitoring, and high-performance microservices."
+    },
+    {
+        "name": "Java Virtual Machine (JVM) Architecture & Enterprise Ecosystem",
+        "keywords": ["what is java", "java programming", "jvm architecture", "how java works", "java virtual machine", "garbage collection java"],
+        "definition": "A class-based, object-oriented, statically typed programming language designed by James Gosling with the 'Write Once, Run Anywhere' (WORA) philosophy, executing atop the cross-platform Java Virtual Machine.",
+        "mechanism": "Java source code (.java) compiles via javac into platform-independent Bytecode (.class). The JVM executes bytecode using a hybrid execution model: an interpreter executes cold bytecode initially, while the HotSpot Just-In-Time (JIT) compiler (C1 client and C2 server compilers) dynamically monitors runtime execution, identifies hot methods, inlines method calls, and compiles them into heavily optimized native CPU instructions. Memory is managed automatically across generational heap spaces (Young, Old, Metaspace) using advanced low-latency garbage collectors (G1GC, ZGC, Shenandoah) that minimize stop-the-world pauses.",
+        "principles": "Write Once, Run Anywhere (WORA). Tiered compilation (Interpreter -> C1 -> C2). Generational garbage collection hypothesis. Strongly typed object-oriented polymorphism via vtables.",
+        "significance": "Powers global banking and financial transaction backends, enterprise Android mobile ecosystems, and massive big-data streaming infrastructures.",
+        "applications": "Apache Kafka streaming, Apache Spark big data, Android application development, Spring Boot enterprise microservices, and high-volume banking systems."
+    },
+    {
+        "name": "TypeScript, Static Type Systems & Structural Subtyping",
+        "keywords": ["what is typescript", "typescript programming", "typescript vs javascript", "how typescript works", "typescript type system"],
+        "definition": "A strongly typed, open-source programming language developed by Microsoft as a syntactic superset of JavaScript, adding compile-time static type verification and modern tooling before compiling to pure JavaScript.",
+        "mechanism": "TypeScript acts as a static analysis layer during development. The TypeScript compiler (tsc) parses code into an AST, performs type-checking using a Structural Type System (duck typing where type compatibility is determined by shape and members rather than explicit declaration), and erases all types during compilation to emit clean, standard ECMAScript code. TypeScript supports advanced type-level metaprogramming including generics, union and intersection types, mapped types, conditional types (T extends U ? X : Y), and template literal types, catching bugs at compile time without incurring any runtime performance penalty.",
+        "principles": "Structural subtyping. Type erasure during compilation (zero runtime overhead). Soundness vs developer ergonomics balance. Algebraic data types and type narrowing.",
+        "significance": "Transformed modern full-stack web engineering by making large-scale JavaScript codebases maintainable, refactorable, and bug-resistant across global engineering organizations.",
+        "applications": "Large-scale React / Next.js web applications, enterprise Node.js/Bun microservices, VS Code development, and open-source frontend libraries."
+    },
+    {
+        "name": "C# (.NET) Common Language Runtime & Modern Enterprise Engineering",
+        "keywords": ["what is c#", "c# programming", "csharp programming", "dotnet runtime", "clr architecture", "c sharp language"],
+        "definition": "A modern, object-oriented, type-safe programming language developed by Microsoft and led by Anders Hejlsberg within the cross-platform open-source .NET ecosystem, executing on the Common Language Runtime (CLR).",
+        "mechanism": "C# source code compiles into Common Intermediate Language (CIL) bytecode conforming to the Common Language Infrastructure (CLI). When an application executes, the CoreCLR runtime uses the RyuJIT just-in-time compiler to compile CIL instructions into optimized native CPU machine code. Modern C# (versions 8 through 13) features high-performance memory abstractions like Span<T> and Memory<T> for contiguous memory access without heap allocations, pattern matching, records, async/await task pipelines, and high-performance ASP.NET Core web engines.",
+        "principles": "Common Language Infrastructure (CLI). Generational mark-compact garbage collection (Gen 0, 1, 2, Large Object Heap). Zero-allocation memory slicing via Span<T> and ref structs. Async/await state machine transformation.",
+        "significance": "The primary development platform for Microsoft Windows enterprise infrastructure, cross-platform cloud services via ASP.NET Core, and the Unity 3D video game engine.",
+        "applications": "Unity 3D video game development, ASP.NET Core cloud enterprise APIs, cross-platform desktop/mobile apps (.NET MAUI), and financial service backends."
+    },
+    {
+        "name": "Swift Systems Architecture, ARC & Protocol-Oriented Programming",
+        "keywords": ["what is swift", "swift programming", "swift language", "how swift works", "automatic reference counting swift", "swift vs objective-c"],
+        "definition": "A powerful, intuitive, compiled general-purpose programming language developed by Apple for iOS, macOS, watchOS, and systems engineering, prioritizing safety, speed, and modern software design patterns.",
+        "mechanism": "Swift compiles directly to native ARM and x86 machine code via the LLVM compiler infrastructure. Unlike languages with garbage collectors, Swift manages memory deterministically at runtime via Automatic Reference Counting (ARC), inserting retain and release calls at compile time. Swift emphasizes Protocol-Oriented Programming (POP) over classical class inheritance, providing value semantics through structs and enums that live on the stack and avoid heap allocations, coupled with strict compile-time null safety (Optionals: Option<T>) and actor-based structured concurrency.",
+        "principles": "Protocol-Oriented Programming. Deterministic Automatic Reference Counting (ARC) with weak/unowned references preventing retain cycles. Value types (structs) with copy-on-write (CoW) semantics. Structured async/await concurrency with thread-safe Actors.",
+        "significance": "The premier language for Apple's multi-billion device global operating systems ecosystem, enabling high-performance mobile, wearable, and desktop client applications.",
+        "applications": "iOS and macOS native application development (SwiftUI / UIKit), watchOS / visionOS spatial computing apps, Apple Silicon hardware machine learning (MLX), and server-side Swift."
+    },
+    {
+        "name": "Kotlin Language Architecture, Multiplatform & Coroutines",
+        "keywords": ["what is kotlin", "kotlin programming", "kotlin language", "how kotlin works", "kotlin coroutines", "kotlin vs java"],
+        "definition": "A modern, statically typed, cross-platform general-purpose programming language developed by JetBrains and designated by Google as the official preferred language for Android development.",
+        "mechanism": "Kotlin compiles seamlessly to JVM bytecode, JavaScript, and native CPU machine code (Kotlin/Native via LLVM). Designed for 100% two-way interoperability with existing Java codebases, Kotlin eliminates the 'billion-dollar mistake' through first-class compile-time Null Safety (T vs T?). Concurrency is managed via lightweight Coroutines that suspend function execution without blocking OS threads, using structured concurrency scopes to ensure child tasks cancel cleanly if parents fail.",
+        "principles": "Compile-time Null Pointer Exception safety. Suspension state machines via continuation-passing style (CPS) in coroutines. Kotlin Multiplatform (KMP) shared business logic compilation across iOS, Android, and Web.",
+        "significance": "The official standard for modern Android mobile development, dramatically increasing developer velocity while slashing crash rates caused by NullPointerExceptions.",
+        "applications": "Android mobile application engineering (Jetpack Compose), Kotlin Multiplatform (KMP) cross-platform apps, Spring Boot backend development, and data science scripting."
+    },
+    {
+        "name": "PHP Architecture, Zend Engine & Modern Backend Web Systems",
+        "keywords": ["what is php", "php programming", "how php works", "zend engine", "php modern web", "php 8 jit"],
+        "definition": "A widely used open-source server-side scripting language created by Rasmus Lerdorf, designed specifically for web development and powering over 75% of websites with known server-side languages.",
+        "mechanism": "PHP source code is executed by the Zend Engine: the compiler tokenizes and parses PHP scripts into an Abstract Syntax Tree (AST), which compiles into Zend Opcodes. The Zend Virtual Machine executes opcodes within a shared-nothing request lifecycle where all memory and variables are initialized upon HTTP request arrival and cleanly deallocated upon response completion. In PHP 8.x, an integrated tracing Just-In-Time (JIT) compiler compiles frequently executed opcodes directly into native machine code, while OPcache keeps pre-compiled opcodes resident in shared memory to bypass compilation overhead on repeated requests.",
+        "principles": "Shared-nothing execution model eliminating inter-request memory leaks. OPcache shared memory opcode caching. Zend Engine JIT compilation. Type declarations and attribute annotations in modern PHP 8+.",
+        "significance": "The architectural foundation powering the majority of the global web's content management systems, e-commerce engines, and media publications.",
+        "applications": "WordPress, WooCommerce e-commerce, Laravel enterprise web frameworks, Symfony microservices, and Wikipedia server backend."
     }
 ]
 
