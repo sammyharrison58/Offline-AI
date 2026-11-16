@@ -26,7 +26,29 @@ class Nexus226Agent:
         self.llm = OfflineLLMEngine()
         self.grok = GrokEngine(mode="fun")
         self.mongo = MongoDBManager()
-        self.response_cache: Dict[str, str] = {}
+        self.cache_path = os.path.join(root_dir, "data", "response_cache.json")
+        self.response_cache: Dict[str, str] = self._load_cache()
+
+    def _load_cache(self) -> Dict[str, str]:
+        if os.path.exists(self.cache_path):
+            try:
+                with open(self.cache_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                return {}
+        return {}
+
+    def _save_cache(self):
+        try:
+            os.makedirs(os.path.dirname(self.cache_path), exist_ok=True)
+            with open(self.cache_path, "w", encoding="utf-8") as f:
+                json.dump(self.response_cache, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+    def _cache_set(self, key: str, value: str):
+        self.response_cache[key] = value
+        self._save_cache()
 
     def _is_greeting(self, ql: str) -> bool:
         clean = re.sub(r'[^a-z0-9\s]', ' ', ql).strip()
@@ -72,7 +94,7 @@ class Nexus226Agent:
         math_res = self._solve_math(q)
         if math_res is not None:
             ans = f"{math_res}"
-            self.response_cache[ql] = ans
+            self._cache_set(ql, ans)
             return ans
 
         if self._is_greeting(ql):
@@ -288,7 +310,7 @@ class Nexus226Agent:
         omni_match = self.omni.search(q)
         if omni_match:
             res = self.omni.synthesize_explanation(q, matched_topic=omni_match)
-            self.response_cache[ql] = res
+            self._cache_set(ql, res)
             return res
 
         matched_domains = self.knowledge.query(q, top_k=3)
@@ -297,7 +319,7 @@ class Nexus226Agent:
             sec_d = matched_domains[1] if len(matched_domains) > 1 else None
             if any(w in ql for w in ["research", "deep dive", "details", "formula", "math", "dossier"]):
                 res = self.knowledge.deep_research(top_d.get("name"))["markdown"]
-                self.response_cache[ql] = res
+                self._cache_set(ql, res)
                 return res
             exp_lines = [
                 f"### 💡 {top_d.get('name')} ({top_d.get('category')})\n",
@@ -309,7 +331,7 @@ class Nexus226Agent:
             if sec_d:
                 exp_lines.append(f"\n---\n**🔗 Cross-Domain Correlated Field:** #{sec_d.get('id')} {sec_d.get('name')} ({sec_d.get('category')})\n{sec_d.get('concept')}")
             res = "\n".join(exp_lines)
-            self.response_cache[ql] = res
+            self._cache_set(ql, res)
             return res
 
         expanded_fallback = self.omni.synthesize_explanation(q)
@@ -325,10 +347,10 @@ class Nexus226Agent:
             res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=140)
             if res and not res.startswith("[Ollama") and not res.startswith("[Local"):
                 clean = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', '', res, flags=re.IGNORECASE).strip()
-                self.response_cache[ql] = clean
+                self._cache_set(ql, clean)
                 return clean
 
-        self.response_cache[ql] = expanded_fallback
+        self._cache_set(ql, expanded_fallback)
         return expanded_fallback
 
     def process_request_stream(self, user_query: str) -> Generator[str, None, None]:
@@ -391,14 +413,14 @@ class Nexus226Agent:
         math_res = self._solve_math(q)
         if math_res is not None:
             ans = f"{math_res}"
-            self.response_cache[ql] = ans
+            self._cache_set(ql, ans)
             yield ans
             return
 
         omni_match = self.omni.search(q)
         if omni_match:
             res = self.omni.synthesize_explanation(q, matched_topic=omni_match)
-            self.response_cache[ql] = res
+            self._cache_set(ql, res)
             yield res
             return
 
@@ -416,7 +438,7 @@ class Nexus226Agent:
             if sec_d:
                 exp_lines.append(f"\n---\n**🔗 Cross-Domain Correlated Field:** #{sec_d.get('id')} {sec_d.get('name')} ({sec_d.get('category')})\n{sec_d.get('concept')}")
             res = "\n".join(exp_lines)
-            self.response_cache[ql] = res
+            self._cache_set(ql, res)
             yield res
             return
 
@@ -440,8 +462,8 @@ class Nexus226Agent:
                     chunks.append(chunk)
                     yield chunk
             if chunks:
-                self.response_cache[ql] = "".join(chunks).strip()
+                self._cache_set(ql, "".join(chunks).strip())
             return
 
-        self.response_cache[ql] = expanded_fallback
+        self._cache_set(ql, expanded_fallback)
         yield expanded_fallback
