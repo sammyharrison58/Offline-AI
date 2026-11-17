@@ -11,11 +11,6 @@ if root_dir not in sys.path:
 
 from core.knowledge_base import AIKnowledgeEngine
 from core.omni_knowledge import OmniKnowledgeEngine
-from core.system_controller import SystemController
-from core.blockchain_manager import BlockchainManager
-from core.llm_engine import OfflineLLMEngine
-from core.grok_engine import GrokEngine
-from core.mongo_manager import MongoDBManager
 
 _CLEAN_RE = re.compile(r'[^a-z0-9\s]')
 _MATH_PREFIX_RE = re.compile(r'^(what is|calculate|evaluate|solve|compute)\s+')
@@ -39,13 +34,48 @@ class Nexus226Agent:
     def __init__(self):
         self.knowledge = AIKnowledgeEngine()
         self.omni = OmniKnowledgeEngine()
-        self.sys_controller = SystemController()
-        self.blockchain = BlockchainManager()
-        self.llm = OfflineLLMEngine()
-        self.grok = GrokEngine(mode="fun")
-        self.mongo = MongoDBManager()
+        self._sys_controller = None
+        self._blockchain = None
+        self._llm = None
+        self._grok = None
+        self._mongo = None
         self.cache_path = os.path.join(root_dir, "data", "response_cache.json")
         self.response_cache: Dict[str, str] = self._load_cache()
+
+    @property
+    def sys_controller(self):
+        if self._sys_controller is None:
+            from core.system_controller import SystemController
+            self._sys_controller = SystemController()
+        return self._sys_controller
+
+    @property
+    def blockchain(self):
+        if self._blockchain is None:
+            from core.blockchain_manager import BlockchainManager
+            self._blockchain = BlockchainManager()
+        return self._blockchain
+
+    @property
+    def llm(self):
+        if self._llm is None:
+            from core.llm_engine import OfflineLLMEngine
+            self._llm = OfflineLLMEngine()
+        return self._llm
+
+    @property
+    def grok(self):
+        if self._grok is None:
+            from core.grok_engine import GrokEngine
+            self._grok = GrokEngine(mode="fun")
+        return self._grok
+
+    @property
+    def mongo(self):
+        if self._mongo is None:
+            from core.mongo_manager import MongoDBManager
+            self._mongo = MongoDBManager()
+        return self._mongo
 
     def _load_cache(self) -> Dict[str, str]:
         if os.path.exists(self.cache_path):
@@ -59,8 +89,10 @@ class Nexus226Agent:
     def _save_cache(self):
         try:
             os.makedirs(os.path.dirname(self.cache_path), exist_ok=True)
-            with open(self.cache_path, "w", encoding="utf-8") as f:
+            tmp_path = self.cache_path + ".tmp"
+            with open(tmp_path, "w", encoding="utf-8") as f:
                 json.dump(self.response_cache, f, ensure_ascii=False, indent=2)
+            os.replace(tmp_path, self.cache_path)
         except Exception:
             pass
 

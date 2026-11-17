@@ -1,5 +1,5 @@
 {
-  "total_domains": 360,
+  "total_domains": 363,
   "domains": [
     {
       "id": 1,
@@ -3240,6 +3240,33 @@
       "mathematical_basis": "Complexity reduction: historical select() and poll() require O(N) linear scanning of all file descriptors on every wake-up; epoll_wait() uses a kernel red-black tree and ready-list queue yielding O(1) event delivery.",
       "obscure_insights": "Edge-Triggered (EPOLLET) epoll only notifies the process when new data arrives, requiring non-blocking read() in a tight loop until EAGAIN/EWOULDBLOCK to avoid permanent connection stalls.",
       "open_source_frameworks": "libuv (Node.js), Tokio (Rust), Netty (Java), asyncio (Python)"
+    },
+    {
+      "id": 361,
+      "name": "Vector Databases, High-Dimensional Embeddings & HNSW Indexing",
+      "category": "Database Systems & Storage",
+      "concept": "Specialized vector database management systems (Pinecone, Milvus, Qdrant, Chroma, pgvector) engineered for real-time Approximate Nearest Neighbor (ANN) similarity search across dense multi-dimensional embedding vectors using Hierarchical Navigable Small World (HNSW) graphs and Product Quantization (PQ).",
+      "mathematical_basis": "Cosine similarity: cos(theta) = (u . v) / (||u|| * ||v||); Euclidean L2 distance: d(u, v) = sqrt(sum((u_i - v_i)^2)); Inner product: dot(u, v). HNSW skip-list hierarchy graph search complexity: O(log N) average query time with bounded recall guarantees.",
+      "obscure_insights": "Product Quantization compresses 1536-dimensional float32 vectors by 16x into 8-bit centroid indices, allowing billions of embeddings to fit in RAM with asymmetric distance computation (ADC) lookups executed via CPU AVX-512 SIMD registers.",
+      "open_source_frameworks": "Faiss (Meta), HNSWlib, Qdrant, Milvus, ChromaDB, pgvector"
+    },
+    {
+      "id": 362,
+      "name": "Zero-Copy I/O Architecture, Kernel Bypass & DMA Transfer (sendfile, io_uring, DPDK)",
+      "category": "Systems Programming & Concurrency",
+      "concept": "High-performance operating system input/output mechanisms that bypass redundant intermediate buffer copies between kernel space and user space memory using Direct Memory Access (DMA), page-remapping, and asynchronous submission queues.",
+      "mathematical_basis": "Traditional POSIX I/O requires 4 context switches and 4 data copies per file-to-network transfer: Disk -> OS page cache (DMA) -> User buffer (CPU) -> Socket buffer (CPU) -> Network NIC (DMA). Zero-copy sendfile() and splice() reduce this to 2 context switches and 0 CPU memory copies using gather-DMA.",
+      "obscure_insights": "Linux io_uring provides two ring buffers (Submission Queue and Completion Queue) shared between kernel and user space via mmap, achieving true zero-syscall asynchronous I/O batching at millions of IOPS without thread context switching.",
+      "open_source_frameworks": "io_uring, Linux sendfile(2)/splice(2), DPDK, Apache Kafka (zero-copy disk transfer)"
+    },
+    {
+      "id": 363,
+      "name": "Garbage Collection Algorithms, Generational Compaction & Memory Safety",
+      "category": "Computer Science & Engineering",
+      "concept": "Automated dynamic memory management subsystems in high-level runtimes (JVM, V8, Go, .NET, Python) that detect and reclaim unreferenced heap allocations without explicit manual deallocation.",
+      "mathematical_basis": "Mark-and-Sweep graph traversal from GC roots (thread stacks, global variables). Generational hypothesis: the probability P(survival | age = t) decreases exponentially with t, partitioned into Young (Eden, Survivor S0/S1) and Tenured/Old generations. Amortized Cheney copying collector: O(live_data) rather than O(total_heap).",
+      "obscure_insights": "Modern low-latency garbage collectors (JVM ZGC, Shenandoah, Go GC) use colored pointers and load barriers to perform concurrent marking and compaction in parallel with running mutator application threads, keeping stop-the-world (STW) pauses consistently below 1 millisecond regardless of terabyte heap size.",
+      "open_source_frameworks": "JVM ZGC / G1GC, V8 Orinoco, Go Concurrent Collector, Boehm-Demers-Weiser GC"
     }
   ]
 }

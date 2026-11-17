@@ -427,7 +427,7 @@ OMNI_TOPICS = [
     },
     {
         "name": "Relational Databases, SQL & ACID Transaction Guarantees",
-        "keywords": ["what is sql", "relational database", "sql database", "acid properties", "how databases work", "database transactions"],
+        "keywords": ["what is sql", "relational database", "sql database", "acid properties", "how databases work", "database transactions", "what is acid in databases", "acid in databases", "what is acid", "acid transaction properties", "acid transactions"],
         "definition": "Structured data storage systems based on relational algebra and Structured Query Language (SQL), guaranteeing data integrity, persistence, and safe multi-client concurrency through ACID transaction properties.",
         "mechanism": "Relational Database Management Systems (RDBMS like PostgreSQL, MySQL, SQLite) store data in structured tables composed of rows (tuples) and columns (attributes) governed by primary and foreign keys. Queries expressed in declarative SQL are parsed by an engine, converted into logical relational algebra plans, optimized via cost-based optimizers (CBO), and executed against storage engines using B+ Tree or LSM-Tree indexes. Data integrity is guaranteed via ACID properties: Atomicity (all operations commit or all rollback), Consistency (invariants and constraints strictly preserved), Isolation (concurrent transactions execute without interfering, enforced via Multi-Version Concurrency Control (MVCC) or Write-Ahead Logging (WAL)), and Durability (committed transactions persist through power loss via disk fsync).",
         "principles": "Relational algebra (selection, projection, join, union). B+ Tree index traversal time complexity O(log N). Two-Phase Locking (2PL) and Multi-Version Concurrency Control (MVCC). Write-Ahead Logging (WAL).",
@@ -481,7 +481,7 @@ OMNI_TOPICS = [
     },
     {
         "name": "Java Virtual Machine (JVM) Architecture & Enterprise Ecosystem",
-        "keywords": ["what is java", "java programming", "jvm architecture", "how java works", "java virtual machine", "garbage collection java"],
+        "keywords": ["what is java", "java programming", "jvm architecture", "how java works", "java virtual machine", "garbage collection java", "what is garbage collection", "garbage collection", "how garbage collection works"],
         "definition": "A class-based, object-oriented, statically typed programming language designed by James Gosling with the 'Write Once, Run Anywhere' (WORA) philosophy, executing atop the cross-platform Java Virtual Machine.",
         "mechanism": "Java source code (.java) compiles via javac into platform-independent Bytecode (.class). The JVM executes bytecode using a hybrid execution model: an interpreter executes cold bytecode initially, while the HotSpot Just-In-Time (JIT) compiler (C1 client and C2 server compilers) dynamically monitors runtime execution, identifies hot methods, inlines method calls, and compiles them into heavily optimized native CPU instructions. Memory is managed automatically across generational heap spaces (Young, Old, Metaspace) using advanced low-latency garbage collectors (G1GC, ZGC, Shenandoah) that minimize stop-the-world pauses.",
         "principles": "Write Once, Run Anywhere (WORA). Tiered compilation (Interpreter -> C1 -> C2). Generational garbage collection hypothesis. Strongly typed object-oriented polymorphism via vtables.",
@@ -625,7 +625,7 @@ OMNI_TOPICS = [
     },
     {
         "name": "Cybersecurity Engineering, Cryptography & Secure Software Development",
-        "keywords": ["what is software security", "cryptography in software", "tls handshake", "asymmetric encryption rsa ecc", "jwt authentication", "owasp top 10", "oauth2 authorization", "cybersecurity in coding"],
+        "keywords": ["what is software security", "cryptography in software", "tls handshake", "asymmetric encryption rsa ecc", "jwt authentication", "owasp top 10", "oauth2 authorization", "cybersecurity in coding", "rsa encryption", "how rsa works", "rsa algorithm", "asymmetric cryptography"],
         "definition": "The discipline of designing, implementing, and securing software applications and communication channels against unauthorized access, data compromise, tampering, and malicious exploitation.",
         "mechanism": "Modern software security rests on cryptographic primitives and defensive programming: 1) Cryptographic Foundations: Symmetric encryption (AES-256-GCM, ChaCha20-Poly1305) encrypts bulk data using a shared secret key; Asymmetric encryption (RSA, Elliptic Curve Cryptography ECDSA/Ed25519) uses public-private key pairs for digital signatures and secure key exchange (Diffie-Hellman/ECDH). 2) Transport Security: TLS 1.3 handshakes establish encrypted tunnels using ephemeral Diffie-Hellman exchange with zero-RTT resumption and mandatory forward secrecy. 3) Authentication & Authorization: Passwords are protected using salted, memory-hard key derivation functions (Argon2id, bcrypt, PBKDF2); access control is delegated via OAuth 2.0 authorization code flows and signed JSON Web Tokens (JWT). 4) Defensive Coding: Mitigating the OWASP Top 10 vulnerabilities through parameterized SQL queries (preventing SQL injection), strict context-aware output encoding (preventing XSS), Anti-CSRF tokens, Content Security Policies (CSP), and input validation schemas.",
         "principles": "Confidentiality, Integrity, and Availability (CIA Triad). Principle of Least Privilege (PoLP). Defense in Depth: layered security perimeters. Zero Trust Architecture: never trust, always verify every request regardless of origin.",
@@ -682,15 +682,34 @@ class OmniKnowledgeEngine:
         self._search_cache = {}
         self._build_index()
 
+    def _stem(self, t: str) -> str:
+        if len(t) <= 3:
+            return t
+        if t.endswith('ies') and len(t) > 4:
+            return t[:-3] + 'y'
+        if t.endswith('sses') and len(t) > 5:
+            return t[:-2]
+        if t.endswith('s') and not t.endswith('ss'):
+            return t[:-1]
+        return t
+
     def _tokenize(self, text: str) -> List[str]:
         raw = _OMNI_TOKEN_RE.findall(text.lower())
         tokens = []
         for t in raw:
             tokens.append(t)
+            if t not in OMNI_STOPWORDS:
+                st = self._stem(t)
+                if st != t and st not in OMNI_STOPWORDS:
+                    tokens.append(st)
             if '-' in t:
-                tokens.extend([p for p in t.split('-') if p])
+                parts = [p for p in t.split('-') if p]
+                tokens.extend(parts)
+                tokens.extend([self._stem(p) for p in parts if p not in OMNI_STOPWORDS and self._stem(p) != p])
             if '_' in t:
-                tokens.extend([p for p in t.split('_') if p])
+                parts = [p for p in t.split('_') if p]
+                tokens.extend(parts)
+                tokens.extend([self._stem(p) for p in parts if p not in OMNI_STOPWORDS and self._stem(p) != p])
         return tokens
 
     def _build_index(self):

@@ -47,15 +47,34 @@ class AIKnowledgeEngine:
         AIKnowledgeEngine._shared_categories = self.categories
         AIKnowledgeEngine._shared_mtime = mtime
 
+    def _stem(self, t: str) -> str:
+        if len(t) <= 3:
+            return t
+        if t.endswith('ies') and len(t) > 4:
+            return t[:-3] + 'y'
+        if t.endswith('sses') and len(t) > 5:
+            return t[:-2]
+        if t.endswith('s') and not t.endswith('ss'):
+            return t[:-1]
+        return t
+
     def _tokenize(self, text: str) -> List[str]:
         raw_tokens = _TOKEN_RE.findall(text.lower())
         tokens = []
         for t in raw_tokens:
             tokens.append(t)
+            if t not in STOPWORDS:
+                st = self._stem(t)
+                if st != t and st not in STOPWORDS:
+                    tokens.append(st)
             if '-' in t:
-                tokens.extend([p for p in t.split('-') if p])
+                parts = [p for p in t.split('-') if p]
+                tokens.extend(parts)
+                tokens.extend([self._stem(p) for p in parts if p not in STOPWORDS and self._stem(p) != p])
             if '_' in t:
-                tokens.extend([p for p in t.split('_') if p])
+                parts = [p for p in t.split('_') if p]
+                tokens.extend(parts)
+                tokens.extend([self._stem(p) for p in parts if p not in STOPWORDS and self._stem(p) != p])
         return tokens
 
     def _build_index(self):
