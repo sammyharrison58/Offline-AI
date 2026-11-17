@@ -245,7 +245,7 @@ class Nexus226Agent:
         if "sleep computer" in ql or "suspend machine" in ql:
             return "Entering low-power sleep mode."
 
-        if any((w in ql for w in ["system status", "telemetry", "hardware status", "pc specs", "ram usage", "battery"])):
+        if "opentelemetry" not in ql and (any(w in ql for w in ["system status", "hardware status", "pc specs", "ram usage", "battery", "hardware telemetry"]) or "telemetry" in ql.split()):
             t = self.sys_controller.get_telemetry()
             return f"Hardware: CPU {t['cpu_usage_percent']}% | RAM {t['ram_available_gb']}GB free of {t['ram_total_gb']}GB ({t['ram_used_percent']}% used) | Battery {t['battery']['percent']}%"
 
@@ -441,7 +441,7 @@ class Nexus226Agent:
             "search web", "look up", "google ", "browse web", "latest news",
             "wake on lan", "wol", "open computer", "open the computer", "wake computer", "power on",
             "schedule wake", "wake at", "sleep computer", "suspend machine",
-            "system status", "telemetry", "hardware status", "pc specs", "ram usage", "battery",
+            "system status", "system telemetry", "hardware status", "pc specs", "ram usage", "battery",
             "screenshot", "capture display", "capture screen", "run powershell ", "powershell ",
             "run cmd ", "cmd ", "open ", "launch ", "start ", "close ", "kill ", "terminate ",
             "type ", "create file ", "delete file ", "remove file ", "create folder ",

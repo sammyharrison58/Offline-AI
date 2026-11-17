@@ -1,5 +1,5 @@
 {
-  "total_domains": 363,
+  "total_domains": 370,
   "domains": [
     {
       "id": 1,
@@ -3267,6 +3267,69 @@
       "mathematical_basis": "Mark-and-Sweep graph traversal from GC roots (thread stacks, global variables). Generational hypothesis: the probability P(survival | age = t) decreases exponentially with t, partitioned into Young (Eden, Survivor S0/S1) and Tenured/Old generations. Amortized Cheney copying collector: O(live_data) rather than O(total_heap).",
       "obscure_insights": "Modern low-latency garbage collectors (JVM ZGC, Shenandoah, Go GC) use colored pointers and load barriers to perform concurrent marking and compaction in parallel with running mutator application threads, keeping stop-the-world (STW) pauses consistently below 1 millisecond regardless of terabyte heap size.",
       "open_source_frameworks": "JVM ZGC / G1GC, V8 Orinoco, Go Concurrent Collector, Boehm-Demers-Weiser GC"
+    },
+    {
+      "id": 364,
+      "name": "Abstract Syntax Trees (AST), Parser Combinators & Lexical Analysis",
+      "category": "Compiler Engineering & Languages",
+      "concept": "The front-end compilation pipeline converting raw source text into structured hierarchical syntax trees using deterministic finite automata lexers, recursive descent, and parser combinator grammars.",
+      "mathematical_basis": "Chomsky hierarchy Type-2 Context-Free Grammars (CFG). Shift-Reduce LR(1) parsing state machine tables: Action(s, a) and Goto(s, A). Monadic parser combinators: P a = String -> List (a, String).",
+      "obscure_insights": "Error-tolerant Pratt parsers handle operator precedence dynamically via numeric binding power (lbp and rbp), allowing modern IDE language servers (rust-analyzer, typescript-language-server) to build resilient ASTs even on incomplete or syntactically invalid user keystrokes.",
+      "open_source_frameworks": "Tree-sitter, ANTLR4, nom (Rust), Pest, Babel parser"
+    },
+    {
+      "id": 365,
+      "name": "Memory Allocator Internals: TCMalloc, Jemalloc, Slab & Arena Allocation",
+      "category": "Systems Programming & Concurrency",
+      "concept": "High-performance user-space memory allocators designed to eliminate thread contention, lock bottlenecks, and memory fragmentation during high-frequency malloc/free allocations.",
+      "mathematical_basis": "Size-class binning quantization (power-of-two and Fibonacci bucketing). Thread-Caching: per-thread Thread-Local Storage (TLS) free lists achieving O(1) allocation without acquiring global mutex locks. Slab allocation: pre-allocating contiguous chunks partitioned into uniform object slots.",
+      "obscure_insights": "Jemalloc divides memory into independent Arenas assigned across CPU cores; when a thread requests memory, it accesses its dedicated arena, completely eliminating cross-core cache line bouncing and false sharing on NUMA multi-socket server hardware.",
+      "open_source_frameworks": "jemalloc (Meta/FreeBSD), TCMalloc (Google), mimalloc (Microsoft), rpmalloc"
+    },
+    {
+      "id": 366,
+      "name": "Modern Cryptographic Hash Functions: BLAKE3, SHA-3 & Argon2id Mechanics",
+      "category": "Cybersecurity & Cryptography",
+      "concept": "State-of-the-art cryptographic hashing and password-hashing primitives designed for hardware side-channel resistance, GPU resistance, and extreme parallel throughput.",
+      "mathematical_basis": "BLAKE3 Merkle tree structure: hashing 1KB chunks in parallel with 4-round ChaCha core yielding >6 GB/s throughput per core. Sponge construction in SHA-3 (Keccak-f[1600] permutation) with capacity c and rate r. Argon2id: hybrid data-independent and data-dependent memory-hard access matrix iterating over 2D memory blocks to defeat ASIC/GPU attacks.",
+      "obscure_insights": "BLAKE3 dynamically tree-hashes unbounded streams of data; because internal nodes are computed as a Merkle tree, verify proofs of inclusion require only O(log N) branch hashes, enabling verified streaming downloads.",
+      "open_source_frameworks": "BLAKE3 (Rust/C), libsodium, OpenSSL, Argon2-reference"
+    },
+    {
+      "id": 367,
+      "name": "Actor Model Concurrency & Supervision Trees (Erlang, Elixir, Akka)",
+      "category": "Distributed Systems & Engineering",
+      "concept": "A mathematical concurrency paradigm where autonomous computational entities (Actors) communicate exclusively via asynchronous message passing, completely eliminating shared mutable memory and deadlocks.",
+      "mathematical_basis": "Actor axioms (Hewitt, Bishop, Steiger): in response to a message, an actor can concurrently: 1) Send a finite number of messages to known addresses, 2) Create a finite number of new actors, 3) Designate the behavior for the next incoming message. Message queuing via unbounded mailboxes with FIFO delivery guarantees per actor pair.",
+      "obscure_insights": "The Erlang/OTP Supervision Tree philosophy (\"Let It Crash\") isolates runtime failures: instead of defensive try-catch wrappers, crashed actors are terminated immediately, and supervisor actors restart them from known clean states using OneForOne, OneForAll, or RestForOne restart strategies.",
+      "open_source_frameworks": "Erlang/OTP, Elixir GenServer, Akka (JVM), ProtoActor, Actix (Rust)"
+    },
+    {
+      "id": 368,
+      "name": "Database Transaction Isolation Levels, Write Skew & Concurrency Anomalies",
+      "category": "Database Systems & Storage",
+      "concept": "The formal ANSI SQL and modern snapshot isolation hierarchies defining which concurrency phenomena are permitted when multiple database transactions execute simultaneously.",
+      "mathematical_basis": "Dependency graphs (Direct Serialization Graphs / DSG). Isolation levels defined by forbidden anomalies: Read Uncommitted permits Dirty Reads (G1); Read Committed forbids G1 but permits Non-Repeatable Reads (G2a); Repeatable Read forbids G2a but permits Phantom Reads (A3); Serializable forbids all anomalies including Write Skew (A5B).",
+      "obscure_insights": "PostgreSQL and MySQL implement Repeatable Read via Snapshot Isolation (SI), which prevents Phantom Reads but still permits Write Skew anomalies (e.g., two on-call doctors simultaneously resigning based on a snapshot showing both active); preventing Write Skew requires true Serializable Snapshot Isolation (SSI) using lock-free read-write conflict tracking.",
+      "open_source_frameworks": "PostgreSQL SSI engine, CockroachDB serializable consensus, MySQL InnoDB MVCC"
+    },
+    {
+      "id": 369,
+      "name": "Distributed Tracing, Context Propagation & OpenTelemetry Specification",
+      "category": "DevOps & Cloud Architecture",
+      "concept": "Standardized observability frameworks enabling software engineers to trace requests through complex microservice topologies, cloud networks, and asynchronous message queues.",
+      "mathematical_basis": "Directed Acyclic Graph (DAG) trace representation: Trace = {Span_1, Span_2, ..., Span_n} where each Span holds a 64-bit SpanID, 128-bit TraceID, ParentSpanID, timestamps, and attributes. W3C Trace Context HTTP header propagation: traceparent: 00-{trace-id}-{parent-id}-{trace-flags}.",
+      "obscure_insights": "Context propagation across thread boundaries or event loops requires explicit thread-local storage or async context carriers (e.g., Node.js AsyncLocalStorage, Java ThreadLocal, Python contextvars); dropping context during thread handoffs silently breaks the entire downstream distributed trace.",
+      "open_source_frameworks": "OpenTelemetry (OTel), Jaeger, Zipkin, Grafana Tempo, SigNoz"
+    },
+    {
+      "id": 370,
+      "name": "Event-Driven Architecture, Event Sourcing & CQRS Pattern",
+      "category": "Software Architecture & Systems",
+      "concept": "Architectural paradigms decoupling state mutation from state representation: persisting every state change as an immutable chronological append-only sequence of domain events, segregated from read query models.",
+      "mathematical_basis": "Event Sourcing fold function: State_t = fold(State_0, [Event_1, Event_2, ..., Event_t]). Command Query Responsibility Segregation (CQRS): Command Model (mutations, invariants verification) != Read Model (denormalized, optimized projection views). Eventual consistency delta: Delta_t = Time(Projection_update) - Time(Event_commit).",
+      "obscure_insights": "Because the event log is immutable and append-only, an application state can be reconstructed to any exact microsecond in history (Time Travel / Temporal Querying), making event-sourced architectures inherently audit-proof and capable of rebuilding corrupted read databases from scratch.",
+      "open_source_frameworks": "EventStoreDB, Apache Kafka, Axon Framework, Debezium CDC"
     }
   ]
 }
