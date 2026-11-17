@@ -108,7 +108,7 @@ class ConversationalCallLoop:
         if self.recognizer and self.mic:
             try:
                 with self.mic as source:
-                    self.recognizer.adjust_for_ambient_noise(source, duration=0.6)
+                    self.recognizer.adjust_for_ambient_noise(source, duration=0.2)
                     self.recognizer.pause_threshold = 0.8
                     self.recognizer.non_speaking_duration = 0.5
                     while self.is_active:
@@ -190,9 +190,10 @@ class ConversationalCallLoop:
         _sr, avail = _get_sr()
         w_err = getattr(_sr, "WaitTimeoutError", Exception) if avail else Exception
         u_err = getattr(_sr, "UnknownValueError", Exception) if avail else Exception
+        r_err = getattr(_sr, "RequestError", Exception) if avail else Exception
         if self.recognizer and source:
             try:
-                audio = self.recognizer.listen(source, timeout=4, phrase_time_limit=12)
+                audio = self.recognizer.listen(source, timeout=3, phrase_time_limit=10)
                 text = self.recognizer.recognize_google(audio)
                 if text and text.strip():
                     return text.strip()
@@ -200,13 +201,19 @@ class ConversationalCallLoop:
                 return None
             except u_err:
                 return None
+            except r_err:
+                try:
+                    return input('>> [Voice Line - Enter query]: ')
+                except (EOFError, KeyboardInterrupt):
+                    self.is_active = False
+                    return 'hang up'
             except Exception:
                 time.sleep(0.05)
                 return None
         elif self.recognizer and self.mic:
             try:
                 with self.mic as src:
-                    audio = self.recognizer.listen(src, timeout=4, phrase_time_limit=12)
+                    audio = self.recognizer.listen(src, timeout=3, phrase_time_limit=10)
                 text = self.recognizer.recognize_google(audio)
                 if text and text.strip():
                     return text.strip()
@@ -214,6 +221,12 @@ class ConversationalCallLoop:
                 return None
             except u_err:
                 return None
+            except r_err:
+                try:
+                    return input('>> [Voice Line - Enter query]: ')
+                except (EOFError, KeyboardInterrupt):
+                    self.is_active = False
+                    return 'hang up'
             except Exception:
                 time.sleep(0.05)
                 return None

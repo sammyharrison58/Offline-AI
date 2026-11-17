@@ -227,12 +227,13 @@ def get_agent():
 def get_voice():
     return OfflineVoiceEngine(voice_speed=3)
 
+agent = get_agent()
+voice = get_voice()
+
 @st.cache_resource
 def get_call_loop():
     return ConversationalCallLoop(agent_responder=agent.process_request)
 
-agent = get_agent()
-voice = get_voice()
 call_loop = get_call_loop()
 bridge_port = CallBridgeServer.start(agent, host="127.0.0.1", port=8502)
 
@@ -391,7 +392,7 @@ body { margin:0; background:transparent; display:flex; justify-content:center; a
 </div>
 <div class='hud-text'>
 <div class='hud-tag'>J.A.R.V.I.S. QUANTUM SPHERE ACTIVE</div>
-<div class='hud-sub'>325+ SCIENTIFIC & AI PARADIGMS ● AUDIO FREQUENCY EQUALIZER ONLINE</div>
+<div class='hud-sub'>370+ SCIENTIFIC & AI PARADIGMS ● AUDIO FREQUENCY EQUALIZER ONLINE</div>
 </div>
 </div>
 """

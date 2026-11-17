@@ -491,7 +491,7 @@ function endCall() {{
     }}).catch(() => {{}});
 }}
 
-window.addEventListener('DOMContentLoaded', () => {{
+function initCallComponent() {{
     playChime(523.25, 659.25, 0.4);
     timerInterval = setInterval(updateTimer, 1000);
     recognition = initSpeechRecognition();
@@ -550,7 +550,13 @@ window.addEventListener('DOMContentLoaded', () => {{
             if (e.key === 'Enter') sendText();
         }});
     }}
-}});
+}}
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {{
+    initCallComponent();
+}} else {{
+    window.addEventListener('DOMContentLoaded', initCallComponent);
+}}
 </script>
 </body>
 </html>
