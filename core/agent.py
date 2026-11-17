@@ -2,6 +2,7 @@ import os
 import sys
 import re
 import json
+import threading
 from typing import Dict, Any, Optional, Generator
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -15,6 +16,23 @@ from core.blockchain_manager import BlockchainManager
 from core.llm_engine import OfflineLLMEngine
 from core.grok_engine import GrokEngine
 from core.mongo_manager import MongoDBManager
+
+_CLEAN_RE = re.compile(r'[^a-z0-9\s]')
+_MATH_PREFIX_RE = re.compile(r'^(what is|calculate|evaluate|solve|compute)\s+')
+_MATH_EXPR_RE = re.compile(r'^[0-9\.\s\+\-\*\/\(\)\^\%]+$')
+_APP_RE = re.compile(r'^(open|launch|start)\s+(app\s+)?', re.IGNORECASE)
+_KILL_RE = re.compile(r'^(close|kill|terminate|quit)\s+(app\s+)?', re.IGNORECASE)
+_DEL_FILE_RE = re.compile(r'^(delete file|remove file)\s+', re.IGNORECASE)
+_DIR_RE = re.compile(r'^(create folder|make folder|create directory)\s+', re.IGNORECASE)
+_MAC_RE = re.compile(r'([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})')
+_TIME_RE = re.compile(r'(\d{1,2}:\d{2})')
+_AMT_RE = re.compile(r'(\d+(?:\.\d+)?)')
+_ADDR_RE = re.compile(r'(0x[a-fA-F0-9]{40})')
+_CLEAN_ANSWER_RE = re.compile(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', re.IGNORECASE)
+
+GREETING_EXACT = frozenset({"hello", "hi", "hey", "howdy", "greetings", "yo", "jarvis", "nexus"})
+GREETING_STARTS = frozenset({"hello", "hi", "hey", "greetings", "yo"})
+GREETING_PHRASES = ("good morning", "good afternoon", "good evening", "wake up")
 
 class Nexus226Agent:
 
@@ -48,29 +66,28 @@ class Nexus226Agent:
 
     def _cache_set(self, key: str, value: str):
         self.response_cache[key] = value
-        self._save_cache()
+        threading.Thread(target=self._save_cache, daemon=True).start()
 
     def _is_greeting(self, ql: str) -> bool:
-        clean = re.sub(r'[^a-z0-9\s]', ' ', ql).strip()
+        clean = _CLEAN_RE.sub(' ', ql).strip()
         words = clean.split()
         if not words:
             return False
-        greeting_exact = {"hello", "hi", "hey", "howdy", "greetings", "yo", "jarvis", "nexus"}
-        if clean in greeting_exact:
+        if clean in GREETING_EXACT:
             return True
-        if any(g in clean for g in ["good morning", "good afternoon", "good evening", "wake up"]):
+        if any(g in clean for g in GREETING_PHRASES):
             return True
-        if words[0] in {"hello", "hi", "hey", "greetings", "yo"}:
+        if words[0] in GREETING_STARTS:
             return True
-        if len(words) <= 3 and any(w in greeting_exact for w in words):
+        if len(words) <= 3 and any(w in GREETING_EXACT for w in words):
             return True
         return False
 
     def _solve_math(self, q: str) -> Optional[str]:
         clean = q.lower().strip().rstrip('? .')
-        clean = re.sub(r'^(what is|calculate|evaluate|solve|compute)\s+', '', clean).strip()
+        clean = _MATH_PREFIX_RE.sub('', clean).strip()
         clean = clean.replace('plus', '+').replace('minus', '-').replace('times', '*').replace('multiplied by', '*').replace('divided by', '/').replace('x', '*')
-        if re.match(r'^[0-9\.\s\+\-\*\/\(\)\^\%]+$', clean) and any(op in clean for op in '+-*/^%'):
+        if _MATH_EXPR_RE.match(clean) and any(op in clean for op in '+-*/^%'):
             clean_expr = clean.replace('^', '**')
             try:
                 val = eval(clean_expr, {'__builtins__': None}, {})
@@ -218,12 +235,12 @@ class Nexus226Agent:
             return res.get("stdout") or res.get("stderr") or "[Executed]"
 
         if any(ql.startswith(p) for p in ["open ", "launch ", "start "]):
-            app = re.sub(r"^(open|launch|start)\s+(app\s+)?", "", q, flags=re.IGNORECASE).strip()
+            app = _APP_RE.sub("", q).strip()
             res = self.sys_controller.launch_app(app)
             return str(res.get("message", res.get("error")))
 
         if any(ql.startswith(p) for p in ["close ", "kill ", "terminate ", "quit "]):
-            target = re.sub(r"^(close|kill|terminate|quit)\s+(app\s+)?", "", q, flags=re.IGNORECASE).strip()
+            target = _KILL_RE.sub("", q).strip()
             res = self.sys_controller.terminate_by_name(target)
             return str(res.get("message", res.get("error")))
 
@@ -242,12 +259,12 @@ class Nexus226Agent:
             return res.get("message", str(res))
 
         if ql.startswith("delete file ") or ql.startswith("remove file "):
-            f_path = re.sub(r"^(delete file|remove file)\s+", "", q, flags=re.IGNORECASE).strip()
+            f_path = _DEL_FILE_RE.sub("", q).strip()
             res = self.sys_controller.delete_file(f_path)
             return res.get("message", str(res))
 
         if ql.startswith("create folder ") or ql.startswith("make folder ") or ql.startswith("create directory "):
-            d_path = re.sub(r"^(create folder|make folder|create directory)\s+", "", q, flags=re.IGNORECASE).strip()
+            d_path = _DIR_RE.sub("", q).strip()
             res = self.sys_controller.create_directory(d_path)
             return res.get("message", str(res))
 
@@ -344,9 +361,9 @@ class Nexus226Agent:
         user_prompt = f"Question: {q}\nAnswer:"
 
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
-            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=140)
+            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=80)
             if res and not res.startswith("[Ollama") and not res.startswith("[Local"):
-                clean = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', '', res, flags=re.IGNORECASE).strip()
+                clean = _CLEAN_ANSWER_RE.sub('', res).strip()
                 self._cache_set(ql, clean)
                 return clean
 
@@ -454,9 +471,9 @@ class Nexus226Agent:
         if self.llm.active_backend in ["ollama", "openai_compatible"]:
             first_chunk = True
             chunks = []
-            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=140):
+            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=80):
                 if first_chunk:
-                    chunk = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', '', chunk, flags=re.IGNORECASE)
+                    chunk = _CLEAN_ANSWER_RE.sub('', chunk)
                     first_chunk = False
                 if chunk:
                     chunks.append(chunk)

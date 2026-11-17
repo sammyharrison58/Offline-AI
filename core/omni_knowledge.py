@@ -670,15 +670,20 @@ OMNI_TOPICS = [
     }
 ]
 
+_OMNI_TOKEN_RE = re.compile(r'[a-z0-9_\-\.\+]+')
+_OMNI_SUBJECT_RE = re.compile(r'^(what is|how does|how do|why is|explain|tell me about|what are|describe)\s+', re.IGNORECASE)
+OMNI_STOPWORDS = frozenset({"what", "is", "how", "does", "do", "the", "a", "an", "why", "work", "works", "explain", "tell", "me", "about", "in", "of", "and", "or", "for", "to", "on", "at", "by", "with", "from", "it", "its", "are", "can", "be", "this", "that", "who", "was", "were", "which", "where", "when", "there"})
+
 class OmniKnowledgeEngine:
 
     def __init__(self):
         self.topics = list(OMNI_TOPICS)
         self.keyword_index = {}
+        self._search_cache = {}
         self._build_index()
 
     def _tokenize(self, text: str) -> List[str]:
-        raw = re.findall(r'[a-z0-9_\-\.\+]+', text.lower())
+        raw = _OMNI_TOKEN_RE.findall(text.lower())
         tokens = []
         for t in raw:
             tokens.append(t)
@@ -690,12 +695,18 @@ class OmniKnowledgeEngine:
 
     def _build_index(self):
         self.keyword_index.clear()
+        self._search_cache.clear()
         for idx, item in enumerate(self.topics):
+            kw_tokens_list = []
             for kw in item.get("keywords", []):
+                toks = [t for t in self._tokenize(kw) if t not in OMNI_STOPWORDS]
+                if toks:
+                    kw_tokens_list.append(toks)
                 for token in self._tokenize(kw):
                     if token not in self.keyword_index:
                         self.keyword_index[token] = set()
                     self.keyword_index[token].add(idx)
+            item['_kw_tokens_list'] = kw_tokens_list
             for token in self._tokenize(item.get("name", "")):
                 if token not in self.keyword_index:
                     self.keyword_index[token] = set()
@@ -703,17 +714,24 @@ class OmniKnowledgeEngine:
 
     def search(self, query: str) -> Optional[Dict[str, Any]]:
         clean_q = query.strip().lower()
-        stopwords = {"what", "is", "how", "does", "do", "the", "a", "an", "why", "work", "works", "explain", "tell", "me", "about", "in", "of", "and", "or", "for", "to", "on", "at", "by", "with", "from", "it", "its", "are", "can", "be", "this", "that", "who", "was", "were", "which", "where", "when", "there"}
-        tokens = [t for t in self._tokenize(clean_q) if t not in stopwords]
+        if clean_q in self._search_cache:
+            return self._search_cache[clean_q]
+
+        tokens = [t for t in self._tokenize(clean_q) if t not in OMNI_STOPWORDS]
         if not tokens:
             return None
 
+        candidate_indices = set()
+        for t in tokens:
+            if t in self.keyword_index:
+                candidate_indices.update(self.keyword_index[t])
+        candidate_items = [self.topics[i] for i in candidate_indices] if candidate_indices else self.topics
+
         best_item = None
         best_score = 0
-        for item in self.topics:
-            kws = [k.lower() for k in item.get("keywords", [])]
-            for kw in kws:
-                kw_tokens = [t for t in self._tokenize(kw) if t not in stopwords]
+        for item in candidate_items:
+            kws_tokens = item.get('_kw_tokens_list', [])
+            for kw_tokens in kws_tokens:
                 if not kw_tokens:
                     continue
                 if all(t in tokens for t in kw_tokens):
@@ -734,9 +752,9 @@ class OmniKnowledgeEngine:
                             best_score = score
                             best_item = item
 
-        if best_item and best_score >= 2:
-            return best_item
-        return None
+        res = best_item if (best_item and best_score >= 2) else None
+        self._search_cache[clean_q] = res
+        return res
 
     def synthesize_explanation(self, query: str, matched_topic: Optional[Dict[str, Any]] = None, kb_context: str = "") -> str:
         q_clean = query.strip()
@@ -753,7 +771,7 @@ class OmniKnowledgeEngine:
             ]
             return "\n".join(lines)
 
-        subject = re.sub(r'^(what is|how does|how do|why is|explain|tell me about|what are|describe)\s+', '', q_clean, flags=re.IGNORECASE).strip('? .')
+        subject = _OMNI_SUBJECT_RE.sub('', q_clean).strip('? .')
         if not subject:
             subject = q_clean
 

@@ -5,8 +5,16 @@ import re
 from typing import List, Dict, Any, Optional
 
 KNOWLEDGE_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'ai_knowledge_226.json')
+_TOKEN_RE = re.compile(r'[a-z0-9_\-\.\+]+')
+STOPWORDS = frozenset({"what", "is", "how", "does", "do", "the", "a", "an", "why", "work", "works", "explain", "tell", "me", "about", "in", "of", "and", "or", "for", "to", "on", "at", "by", "with", "from", "it", "its", "are", "can", "be", "this", "that", "who", "was", "were", "which", "where", "when", "there"})
+GENERIC_DOMAIN_WORDS = frozenset({"deep", "learning", "neural", "networks", "network", "system", "systems", "model", "models", "architecture", "architectures", "analysis", "method", "methods", "theory", "foundations", "approach", "computing"})
 
 class AIKnowledgeEngine:
+    _shared_domains = None
+    _shared_inverted_index = None
+    _shared_doc_freq = None
+    _shared_categories = None
+    _shared_mtime = None
 
     def __init__(self, json_path: str = KNOWLEDGE_FILE):
         self.json_path = os.path.abspath(json_path)
@@ -20,13 +28,27 @@ class AIKnowledgeEngine:
     def load(self):
         if not os.path.exists(self.json_path):
             raise FileNotFoundError(f'Knowledge database not found at {self.json_path}')
+        mtime = os.path.getmtime(self.json_path)
+        if AIKnowledgeEngine._shared_mtime == mtime and AIKnowledgeEngine._shared_domains is not None:
+            self.domains = AIKnowledgeEngine._shared_domains
+            self.inverted_index = AIKnowledgeEngine._shared_inverted_index
+            self.doc_freq = AIKnowledgeEngine._shared_doc_freq
+            self.categories = AIKnowledgeEngine._shared_categories
+            return
+
         with open(self.json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
             self.domains = data.get('domains', [])
         self._build_index()
 
+        AIKnowledgeEngine._shared_domains = self.domains
+        AIKnowledgeEngine._shared_inverted_index = self.inverted_index
+        AIKnowledgeEngine._shared_doc_freq = self.doc_freq
+        AIKnowledgeEngine._shared_categories = self.categories
+        AIKnowledgeEngine._shared_mtime = mtime
+
     def _tokenize(self, text: str) -> List[str]:
-        raw_tokens = re.findall(r'[a-z0-9_\-\.\+]+', text.lower())
+        raw_tokens = _TOKEN_RE.findall(text.lower())
         tokens = []
         for t in raw_tokens:
             tokens.append(t)
@@ -48,12 +70,17 @@ class AIKnowledgeEngine:
                 self.categories[cat] = []
             self.categories[cat].append(doc)
 
+            name_toks = self._tokenize(doc.get('name', ''))
+            concept_toks = self._tokenize(doc.get('concept', ''))
+            doc['_name_tokens'] = set(name_toks)
+            doc['_concept_tokens'] = set(concept_toks)
+
             weights = {}
-            for t in self._tokenize(doc.get('name', '')):
+            for t in name_toks:
                 weights[t] = weights.get(t, 0.0) + 16.0
             for t in self._tokenize(doc.get('category', '')):
                 weights[t] = weights.get(t, 0.0) + 7.0
-            for t in self._tokenize(doc.get('concept', '')):
+            for t in concept_toks:
                 weights[t] = weights.get(t, 0.0) + 3.5
             for t in self._tokenize(doc.get('mathematical_basis', '')):
                 weights[t] = weights.get(t, 0.0) + 4.5
@@ -80,8 +107,7 @@ class AIKnowledgeEngine:
         if not tokens:
             return []
 
-        stopwords = {"what", "is", "how", "does", "do", "the", "a", "an", "why", "work", "works", "explain", "tell", "me", "about", "in", "of", "and", "or", "for", "to", "on", "at", "by", "with", "from", "it", "its", "are", "can", "be", "this", "that", "who", "was", "were", "which", "where", "when", "there"}
-        substantive_tokens = [t for t in tokens if t not in stopwords]
+        substantive_tokens = [t for t in tokens if t not in STOPWORDS]
         active_tokens = substantive_tokens if substantive_tokens else tokens
 
         scores: Dict[int, float] = {}
@@ -97,15 +123,13 @@ class AIKnowledgeEngine:
         if not scores:
             return []
 
-        generic_domain_words = {"deep", "learning", "neural", "networks", "network", "system", "systems", "model", "models", "architecture", "architectures", "analysis", "method", "methods", "theory", "foundations", "approach", "computing"}
-        core_tokens = [t for t in active_tokens if t not in generic_domain_words and not t.isdigit() and len(t) > 2]
+        core_tokens = [t for t in active_tokens if t not in GENERIC_DOMAIN_WORDS and not t.isdigit() and len(t) > 2]
 
         ranked_indices = sorted(scores.keys(), key=lambda i: scores[i], reverse=True)
         filtered_results = []
         for idx in ranked_indices:
             doc = self.domains[idx]
-            name_tokens = set(self._tokenize(doc.get("name", "")))
-            concept_tokens = set(self._tokenize(doc.get("concept", "")))
+            name_tokens = doc.get('_name_tokens') or set(self._tokenize(doc.get("name", "")))
             if core_tokens:
                 name_overlap = [t for t in core_tokens if t in name_tokens]
                 if len(core_tokens) == 1 and name_overlap:
