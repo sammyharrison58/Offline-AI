@@ -27,10 +27,10 @@ class OfflineLLMEngine:
                 self.active_backend = "ollama"
                 models = [m.get("name") for m in r.json().get("models", [])]
                 if models:
-                    if any("llama3.2:1b" in m.lower() for m in models):
-                        self.ollama_model = next((m for m in models if "llama3.2:1b" in m.lower()))
-                    elif any("grok" in m.lower() for m in models):
+                    if any("grok" in m.lower() for m in models):
                         self.ollama_model = next((m for m in models if "grok" in m.lower()))
+                    elif any("llama3.2:1b" in m.lower() for m in models):
+                        self.ollama_model = next((m for m in models if "llama3.2:1b" in m.lower()))
                     elif any("1b" in m.lower() for m in models):
                         self.ollama_model = next((m for m in models if "1b" in m.lower()))
                     else:
@@ -103,7 +103,7 @@ class OfflineLLMEngine:
             }
             full_response = []
             try:
-                with self.session.post(url, json=payload, stream=True, timeout=60) as resp:
+                with self.session.post(url, json=payload, stream=True, timeout=120) as resp:
                     for line in resp.iter_lines():
                         if line:
                             data = json.loads(line)
@@ -141,7 +141,7 @@ class OfflineLLMEngine:
                     "stop": ["User:", "\nUser:", "Question:"]
                 }
             }
-            res = self.session.post(url, json=payload, timeout=60)
+            res = self.session.post(url, json=payload, timeout=120)
             if res.status_code == 200:
                 return res.json().get("response", "").strip()
             return f"[Ollama Error] HTTP {res.status_code}"
@@ -156,7 +156,7 @@ class OfflineLLMEngine:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
             payload = {"messages": messages, "max_tokens": max_tokens, "temperature": temperature}
-            res = self.session.post(url, json=payload, timeout=60)
+            res = self.session.post(url, json=payload, timeout=120)
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"].strip()
             return f"[OpenAI Error] HTTP {res.status_code}"

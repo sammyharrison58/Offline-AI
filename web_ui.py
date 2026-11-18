@@ -571,7 +571,7 @@ if user_input:
         with st.chat_message("user"):
             st.markdown(user_input)
         with st.chat_message("assistant"):
-            response = st.write_stream(agent.process_request_stream(user_input))
+            response = st.write_stream(agent.process_request_stream(user_input, history=st.session_state.messages))
             st.markdown("<small style='color: #00f0ff;'>🔊 Spoken aloud through audio system.</small>", unsafe_allow_html=True)
             if "generated_graphic.png" in response and os.path.exists("generated_graphic.png"):
                 st.image("generated_graphic.png", caption="Rendered Graphic", use_column_width=True)

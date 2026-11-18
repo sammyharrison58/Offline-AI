@@ -3,7 +3,7 @@ import sys
 import re
 import json
 import threading
-from typing import Dict, Any, Optional, Generator
+from typing import Dict, Any, Optional, Generator, List
 
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if root_dir not in sys.path:
@@ -130,7 +130,7 @@ class Nexus226Agent:
                 return None
         return None
 
-    def process_request(self, user_query: str) -> str:
+    def process_request(self, user_query: str, history: Optional[List[Dict[str, str]]] = None) -> str:
         q = user_query.strip()
         ql = q.lower()
 
@@ -388,7 +388,19 @@ class Nexus226Agent:
             "Never repeat the question, avoid meta-introductions, and speak with confidence and clarity."
         )
 
-        res = self.llm.generate(q, system_prompt=system_instruction, max_tokens=512)
+        prompt_with_history = q
+        if history:
+            prev_turns = []
+            for msg in history[-6:]:
+                role = "User" if msg.get("role") == "user" else "Assistant"
+                content = msg.get("content", "").strip()
+                if content and content != q:
+                    prev_turns.append(f"{role}: {content[:300]}")
+            if prev_turns:
+                prev_turns.append(f"User: {q}")
+                prompt_with_history = "\n".join(prev_turns)
+
+        res = self.llm.generate(prompt_with_history, system_prompt=system_instruction, max_tokens=512)
         if res and not res.startswith("[Ollama Connection Error") and not res.startswith("[Offline"):
             clean = _CLEAN_ANSWER_RE.sub('', res).strip()
             self._cache_set(ql, clean)
@@ -398,7 +410,7 @@ class Nexus226Agent:
         self._cache_set(ql, fallback_msg)
         return fallback_msg
 
-    def process_request_stream(self, user_query: str) -> Generator[str, None, None]:
+    def process_request_stream(self, user_query: str, history: Optional[List[Dict[str, str]]] = None) -> Generator[str, None, None]:
         q = user_query.strip()
         ql = q.lower()
 
@@ -494,9 +506,21 @@ class Nexus226Agent:
             "Never repeat the question, avoid meta-introductions, and speak with confidence and clarity."
         )
 
+        prompt_with_history = q
+        if history:
+            prev_turns = []
+            for msg in history[-6:]:
+                role = "User" if msg.get("role") == "user" else "Assistant"
+                content = msg.get("content", "").strip()
+                if content and content != q:
+                    prev_turns.append(f"{role}: {content[:300]}")
+            if prev_turns:
+                prev_turns.append(f"User: {q}")
+                prompt_with_history = "\n".join(prev_turns)
+
         first_chunk = True
         chunks = []
-        for chunk in self.llm.generate_stream(q, system_prompt=system_instruction, max_tokens=512):
+        for chunk in self.llm.generate_stream(prompt_with_history, system_prompt=system_instruction, max_tokens=512):
             if first_chunk:
                 chunk = _CLEAN_ANSWER_RE.sub('', chunk)
                 first_chunk = False
