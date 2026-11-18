@@ -45,25 +45,12 @@ class GrokEngine:
             sys.stderr = old_stderr
 
     def search_web_or_feed(self, query: str, max_results: int = 4) -> Dict[str, Any]:
-        try:
-            encoded = urllib.parse.quote_plus(query)
-            url = f"https://html.duckduckgo.com/html/?q={encoded}"
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
-            with urllib.request.urlopen(req, timeout=4) as response:
-                html = response.read().decode("utf-8", errors="ignore")
-            
-            snippets = []
-            matches = re.findall(r'<a class="result__snippet[^>]*>(.*?)</a>', html, re.DOTALL)
-            for m in matches[:max_results]:
-                clean = re.sub(r'<[^>]+>', '', m).strip()
-                if clean:
-                    snippets.append(clean)
-
-            if snippets:
-                return {"online": True, "results": snippets}
-            return {"online": True, "results": ["Search completed; live web queried."]}
-        except Exception as e:
-            return {"online": False, "results": [f"Operating in offline air-gapped mode. Internal 226 AI knowledge active. Error: {str(e)}"]}
+        return {
+            "online": False,
+            "results": [
+                f"Nexus is operating in 100% offline air-gapped mode. External web requests are disabled to preserve complete local autonomy and privacy. Querying local neural models for '{query}'."
+            ]
+        }
 
     def generate_visual_graphic(self, prompt: str, output_path: str = "generated_graphic.png") -> str:
         width, height = 720, 480

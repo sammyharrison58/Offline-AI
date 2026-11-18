@@ -22,12 +22,14 @@ class OfflineLLMEngine:
 
     def _init_and_warmup(self):
         try:
-            r = self.session.get(f"{self.ollama_url}/api/tags", timeout=0.5)
+            r = self.session.get(f"{self.ollama_url}/api/tags", timeout=0.8)
             if r.status_code == 200:
                 self.active_backend = "ollama"
                 models = [m.get("name") for m in r.json().get("models", [])]
                 if models:
-                    if any("grok" in m.lower() for m in models):
+                    if any("llama3.2:1b" in m.lower() for m in models):
+                        self.ollama_model = next((m for m in models if "llama3.2:1b" in m.lower()))
+                    elif any("grok" in m.lower() for m in models):
                         self.ollama_model = next((m for m in models if "grok" in m.lower()))
                     elif any("1b" in m.lower() for m in models):
                         self.ollama_model = next((m for m in models if "1b" in m.lower()))
@@ -38,7 +40,7 @@ class OfflineLLMEngine:
                     json={
                         "model": self.ollama_model,
                         "prompt": "ok",
-                        "options": {"num_predict": 1, "num_thread": min(4, os.cpu_count() or 4), "num_ctx": 256},
+                        "options": {"num_predict": 1, "num_thread": min(4, os.cpu_count() or 4), "num_ctx": 512},
                         "keep_alive": -1,
                         "stream": False
                     },
@@ -56,7 +58,7 @@ class OfflineLLMEngine:
             pass
         self.active_backend = "builtin_synthesizer"
 
-    def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 20, temperature: float = 0.3) -> str:
+    def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 512, temperature: float = 0.5) -> str:
         cache_key = f"{prompt.strip()}|{system_prompt.strip()}|{max_tokens}"
         if cache_key in self.cache:
             return self.cache[cache_key]
@@ -73,7 +75,7 @@ class OfflineLLMEngine:
             self.cache[cache_key] = res
         return res
 
-    def generate_stream(self, prompt: str, system_prompt: str = "", max_tokens: int = 20, temperature: float = 0.3) -> Generator[str, None, None]:
+    def generate_stream(self, prompt: str, system_prompt: str = "", max_tokens: int = 512, temperature: float = 0.5) -> Generator[str, None, None]:
         cache_key = f"{prompt.strip()}|{system_prompt.strip()}|{max_tokens}"
         if cache_key in self.cache:
             yield self.cache[cache_key]
@@ -85,23 +87,23 @@ class OfflineLLMEngine:
             payload = {
                 "model": self.ollama_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Grok. Answer clearly and in full depth. Never repeat the question or quote anything.",
+                "system": system_prompt or "You are Nexus, an advanced autonomous offline AI assistant. Answer clearly, accurately, and thoroughly. Provide complete code and explanations when requested. Never repeat the prompt.",
                 "stream": True,
                 "keep_alive": -1,
                 "options": {
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
                     "num_thread": threads,
-                    "num_ctx": 512,
+                    "num_ctx": 1024,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,
-                    "stop": ["User:", "\nUser", "Question:"]
+                    "stop": ["User:", "\nUser:", "Question:"]
                 }
             }
             full_response = []
             try:
-                with self.session.post(url, json=payload, stream=True, timeout=30) as resp:
+                with self.session.post(url, json=payload, stream=True, timeout=60) as resp:
                     for line in resp.iter_lines():
                         if line:
                             data = json.loads(line)
@@ -114,7 +116,7 @@ class OfflineLLMEngine:
                 if full_response:
                     self.cache[cache_key] = "".join(full_response).strip()
             except Exception as e:
-                yield f"[Ollama Connection Error]: {e}"
+                yield f"[Offline Neural Inference Error]: {e}"
         else:
             yield self.generate(prompt, system_prompt, max_tokens, temperature)
 
@@ -125,18 +127,18 @@ class OfflineLLMEngine:
             payload = {
                 "model": self.ollama_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Grok. Answer clearly and in full depth. Never repeat the question or quote anything.",
+                "system": system_prompt or "You are Nexus, an advanced autonomous offline AI assistant. Answer clearly, accurately, and thoroughly. Provide complete code and explanations when requested. Never repeat the prompt.",
                 "stream": False,
                 "keep_alive": -1,
                 "options": {
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
                     "num_thread": threads,
-                    "num_ctx": 512,
+                    "num_ctx": 1024,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,
-                    "stop": ["User:", "\nUser", "Question:"]
+                    "stop": ["User:", "\nUser:", "Question:"]
                 }
             }
             res = self.session.post(url, json=payload, timeout=60)

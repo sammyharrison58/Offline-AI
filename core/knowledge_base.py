@@ -62,17 +62,18 @@ class AIKnowledgeEngine:
         raw_tokens = _TOKEN_RE.findall(text.lower())
         tokens = []
         for t in raw_tokens:
+            if t in STOPWORDS:
+                continue
             tokens.append(t)
-            if t not in STOPWORDS:
-                st = self._stem(t)
-                if st != t and st not in STOPWORDS:
-                    tokens.append(st)
+            st = self._stem(t)
+            if st != t and st not in STOPWORDS:
+                tokens.append(st)
             if '-' in t:
-                parts = [p for p in t.split('-') if p]
+                parts = [p for p in t.split('-') if p and p not in STOPWORDS]
                 tokens.extend(parts)
                 tokens.extend([self._stem(p) for p in parts if p not in STOPWORDS and self._stem(p) != p])
             if '_' in t:
-                parts = [p for p in t.split('_') if p]
+                parts = [p for p in t.split('_') if p and p not in STOPWORDS]
                 tokens.extend(parts)
                 tokens.extend([self._stem(p) for p in parts if p not in STOPWORDS and self._stem(p) != p])
         return tokens
@@ -148,6 +149,9 @@ class AIKnowledgeEngine:
         filtered_results = []
         for idx in ranked_indices:
             doc = self.domains[idx]
+            concept = doc.get("concept", "")
+            if concept.startswith("Comprehensive deep algorithmic paradigm:"):
+                continue
             name_tokens = doc.get('_name_tokens') or set(self._tokenize(doc.get("name", "")))
             if core_tokens:
                 name_overlap = [t for t in core_tokens if t in name_tokens]

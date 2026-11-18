@@ -150,16 +150,16 @@ class Nexus226Agent:
             return "Greetings! Nexus-Jarvis online and listening. Ready for your command."
 
         if any(ql == w or ql == f"{w} grok" or ql == f"{w} nexus" for w in ["who are you", "what are you", "what is your name"]):
-            return "I am Nexus-Grok, your uncensored offline autonomous AI agent equipped with 325+ universal scientific and AI architecture paradigms, OS machine controls, blockchain treasury, and voice duplex."
+            return "I am Nexus-Jarvis, your 100% offline autonomous AI agent equipped with 370+ scientific & coding paradigms, local neural language models, OS machine controls, blockchain treasury, and voice duplex."
 
         if any(ql.startswith(w) for w in ["how are you", "are you ready", "are you online", "status", "are you working"]):
-            return "All systems operational and hot in memory. Ready for commands or complex inquiries."
+            return "All local systems operational, hot in memory, and running completely offline. Ready for commands, coding, or complex inquiries."
 
-        if ql in ["thank you", "thanks", "thanks grok", "appreciate it"]:
-            return "You're welcome! Ready for the next command."
+        if ql in ["thank you", "thanks", "thanks grok", "thanks jarvis", "appreciate it"]:
+            return "You're welcome! Ready for your next query."
 
         if ql in ["help", "what can you do", "commands", "menu"]:
-            return "Capabilities: Full OS control (open/close apps, volume, mute, lock, network, WoL), 325+ scientific paradigms, live web intelligence, python sandbox, crypto wallet, and MongoDB sync."
+            return "Capabilities: 100% offline neural AI assistant, full OS machine control (open/close apps, volume, mute, lock, network, WoL), 370+ scientific & coding dossiers, local python sandbox, crypto wallet, and MongoDB sync."
 
         if any(w in ql for w in ["mute", "silence audio", "unmute"]):
             res = self.sys_controller.toggle_mute()
@@ -222,9 +222,7 @@ class Nexus226Agent:
                 if prefix in ql:
                     search_query = ql.split(prefix, 1)[1].strip()
                     break
-            web_res = self.grok.search_web_or_feed(search_query)
-            snippets = "\n".join([f"- {s}" for s in web_res.get("results", [])[:3]])
-            return f"Live Intel for '{search_query}':\n{snippets}"
+            return f"Nexus is operating in 100% offline air-gapped mode. External web requests are disabled to preserve total privacy. Querying local offline neural models for '{search_query}'."
 
         if any((w in ql for w in ["wake on lan", "wol", "open computer", "open the computer", "wake computer", "power on"])):
             mac_match = re.search("([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})", q)
@@ -383,24 +381,22 @@ class Nexus226Agent:
             self._cache_set(ql, res)
             return res
 
-        expanded_fallback = self.omni.synthesize_explanation(q)
         system_instruction = (
-            f"You are Grok ({self.grok.mode} mode), modeled after the Hitchhiker's Guide to the Galaxy. "
-            "You possess vast scientific knowledge, sharp wit, and deep intellectual clarity. "
-            "Answer the question directly and factually in the very first sentence. State the exact number, name, or fact immediately. "
-            "Do not start with introductory remarks or rhetorical exclamations, and never repeat the question."
+            "You are Nexus, an advanced autonomous offline AI assistant. "
+            "You possess deep scientific, engineering, coding, and general knowledge. "
+            "Answer the question directly, accurately, and thoroughly with clear explanations and complete working code when requested. "
+            "Never repeat the question, avoid meta-introductions, and speak with confidence and clarity."
         )
-        user_prompt = f"Question: {q}\nAnswer:"
 
-        if self.llm.active_backend in ["ollama", "openai_compatible"]:
-            res = self.llm.generate(user_prompt, system_prompt=system_instruction, max_tokens=80)
-            if res and not res.startswith("[Ollama") and not res.startswith("[Local"):
-                clean = _CLEAN_ANSWER_RE.sub('', res).strip()
-                self._cache_set(ql, clean)
-                return clean
+        res = self.llm.generate(q, system_prompt=system_instruction, max_tokens=512)
+        if res and not res.startswith("[Ollama Connection Error") and not res.startswith("[Offline"):
+            clean = _CLEAN_ANSWER_RE.sub('', res).strip()
+            self._cache_set(ql, clean)
+            return clean
 
-        self._cache_set(ql, expanded_fallback)
-        return expanded_fallback
+        fallback_msg = "Nexus is operating in 100% offline air-gapped mode. I can assist you with system controls, coding, science, mathematics, offline research, and local files."
+        self._cache_set(ql, fallback_msg)
+        return fallback_msg
 
     def process_request_stream(self, user_query: str) -> Generator[str, None, None]:
         q = user_query.strip()
@@ -415,19 +411,19 @@ class Nexus226Agent:
             return
 
         if any(ql == w or ql == f"{w} grok" or ql == f"{w} nexus" for w in ["who are you", "what are you", "what is your name"]):
-            yield "I am Nexus-Grok, your uncensored offline autonomous AI agent equipped with 325+ universal scientific and AI architecture paradigms, OS machine controls, blockchain treasury, and voice duplex."
+            yield "I am Nexus-Jarvis, your 100% offline autonomous AI agent equipped with 370+ scientific & coding paradigms, local neural language models, OS machine controls, blockchain treasury, and voice duplex."
             return
 
         if any(ql.startswith(w) for w in ["how are you", "are you ready", "are you online", "status", "are you working"]):
-            yield "All systems operational and hot in memory. Ready for commands or complex inquiries."
+            yield "All local systems operational, hot in memory, and running completely offline. Ready for commands, coding, or complex inquiries."
             return
 
-        if ql in ["thank you", "thanks", "thanks grok", "appreciate it"]:
-            yield "You're welcome! Ready for the next command."
+        if ql in ["thank you", "thanks", "thanks grok", "thanks jarvis", "appreciate it"]:
+            yield "You're welcome! Ready for your next query."
             return
 
         if ql in ["help", "what can you do", "commands", "menu"]:
-            yield "Capabilities: Full OS control (open/close apps, volume, mute, lock, network, WoL), 325+ scientific paradigms, live web intelligence, python sandbox, crypto wallet, and MongoDB sync."
+            yield "Capabilities: 100% offline neural AI assistant, full OS machine control (open/close apps, volume, mute, lock, network, WoL), 370+ scientific & coding dossiers, local python sandbox, crypto wallet, and MongoDB sync."
             return
 
         fast_keywords = [
@@ -491,28 +487,26 @@ class Nexus226Agent:
             yield res
             return
 
-        expanded_fallback = self.omni.synthesize_explanation(q)
         system_instruction = (
-            f"You are Grok ({self.grok.mode} mode), modeled after the Hitchhiker's Guide to the Galaxy. "
-            "You possess vast scientific knowledge, sharp wit, and deep intellectual clarity. "
-            "Answer the question directly and factually in the very first sentence. State the exact number, name, or fact immediately. "
-            "Do not start with introductory remarks or rhetorical exclamations, and never repeat the question."
+            "You are Nexus, an advanced autonomous offline AI assistant. "
+            "You possess deep scientific, engineering, coding, and general knowledge. "
+            "Answer the question directly, accurately, and thoroughly with clear explanations and complete working code when requested. "
+            "Never repeat the question, avoid meta-introductions, and speak with confidence and clarity."
         )
-        user_prompt = f"Question: {q}\nAnswer:"
 
-        if self.llm.active_backend in ["ollama", "openai_compatible"]:
-            first_chunk = True
-            chunks = []
-            for chunk in self.llm.generate_stream(user_prompt, system_prompt=system_instruction, max_tokens=80):
-                if first_chunk:
-                    chunk = _CLEAN_ANSWER_RE.sub('', chunk)
-                    first_chunk = False
-                if chunk:
-                    chunks.append(chunk)
-                    yield chunk
-            if chunks:
-                self._cache_set(ql, "".join(chunks).strip())
+        first_chunk = True
+        chunks = []
+        for chunk in self.llm.generate_stream(q, system_prompt=system_instruction, max_tokens=512):
+            if first_chunk:
+                chunk = _CLEAN_ANSWER_RE.sub('', chunk)
+                first_chunk = False
+            if chunk:
+                chunks.append(chunk)
+                yield chunk
+        if chunks:
+            self._cache_set(ql, "".join(chunks).strip())
             return
 
-        self._cache_set(ql, expanded_fallback)
-        yield expanded_fallback
+        fallback_msg = "Nexus is operating in 100% offline air-gapped mode. I can assist you with system controls, coding, science, mathematics, offline research, and local files."
+        self._cache_set(ql, fallback_msg)
+        yield fallback_msg

@@ -105,7 +105,7 @@ class NexusControlPanelApp:
         time.sleep(1)
         self.is_running = False
         self.lbl_status.config(text='● OFFLINE / STOPPED', fg='#F43F5E')
-        self.log_message('Nexus-226 stopped. All connections closed.')
+        self.log_message('Nexus-226 stopped. Bye Father Looks.')
 
     def open_browser(self):
         if not self.is_running:

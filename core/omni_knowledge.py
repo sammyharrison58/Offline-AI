@@ -879,20 +879,5 @@ class OmniKnowledgeEngine:
                 f"**5. Real-World Applications & Implementations**\n{topic.get('applications')}\n"
             ]
             return "\n".join(lines)
-
-        subject = _OMNI_SUBJECT_RE.sub('', q_clean).strip('? .')
-        if not subject:
-            subject = q_clean
-
-        title_subject = subject.title()
-        res = [
-            f"### 💡 Detailed Conceptual Breakdown: {title_subject}\n",
-            f"**1. Core Definition & Concept**\n{title_subject} represents a fundamental concept spanning modern physical, mathematical, computational, or natural systems. At its essence, it addresses the relationships, operational dynamics, and foundational structures governing this domain.\n",
-            f"**2. Functional Mechanism & How It Operates**\nUnder operational analysis, {title_subject} functions through step-by-step physical or logical processes: inputs or environmental conditions interact according to governing conservation laws and state transitions, yielding measurable outputs, structural changes, or observable phenomena.\n",
-            f"**3. Underlying Scientific & Logical Principles**\nGoverned by first-principles mechanics, thermodynamic constraints, or formal algorithmic logic. The interactions within {title_subject} maintain mathematical consistency and follow rigorous physical or computational invariants.\n",
-            f"**4. Significance & Practical Applications**\nUnderstanding {title_subject} is crucial across engineering, technology, and scientific inquiry, providing the foundational principles necessary to design, predict, and optimize modern technological and natural systems.\n"
-        ]
-        if kb_context:
-            res.append(f"**Cross-Domain Knowledge Context:**\n{kb_context}")
-        return "\n".join(res)
+        return None
 

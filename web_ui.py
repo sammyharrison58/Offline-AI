@@ -245,7 +245,7 @@ if "phone_call_open" not in st.session_state:
 
 if "greeted" not in st.session_state:
     st.session_state.greeted = True
-    voice.speak("Greetings. Nexus-Jarvis online and ready.", block=False)
+    voice.speak("Greetings Father Looks.Jarvis Ready for work.", block=False)
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -449,8 +449,8 @@ with c2:
     if st.button("💰 Wallet"):
         st.session_state.quick_query = "Check my wallet balance and address"
 with c3:
-    if st.button("🌐 Live Web"):
-        st.session_state.quick_query = "search web for latest AI breakthroughs"
+    if st.button("🧠 Offline AI"):
+        st.session_state.quick_query = "explain how offline neural models achieve real-time autonomous intelligence"
 with c4:
     if st.button("💻 Python"):
         st.session_state.quick_query = "python: import math; print('Euler constant:', math.e, 'Pi squared:', math.pi**2)"
