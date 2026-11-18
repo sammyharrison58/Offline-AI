@@ -6,17 +6,17 @@ from typing import Dict, Any, Optional, Generator
 
 class OfflineLLMEngine:
 
-    def __init__(self, backend: str = "auto", ollama_url: str = "http://localhost:11434", ollama_model: str = "llama3.2:1b", openai_compatible_url: str = "http://localhost:1234/v1", gguf_path: Optional[str] = None):
+    def __init__(self, backend: str = "ollama", ollama_url: str = "http://localhost:11434", ollama_model: str = "grok-offline:1b", local_server_url: str = "http://localhost:1234/v1", gguf_path: Optional[str] = None):
         self.backend = backend
         self.ollama_url = ollama_url
         self.ollama_model = ollama_model
-        self.openai_compatible_url = openai_compatible_url
+        self.local_server_url = local_server_url
         self.gguf_path = gguf_path
         self.session = requests.Session()
         adapter = requests.adapters.HTTPAdapter(pool_connections=10, pool_maxsize=10, max_retries=1)
         self.session.mount("http://", adapter)
         self.cache: Dict[str, str] = {}
-        self.active_backend = self.backend if self.backend != "auto" else "ollama"
+        self.active_backend = "ollama"
         self.warmup_thread = threading.Thread(target=self._init_and_warmup, daemon=True)
         self.warmup_thread.start()
 
@@ -50,9 +50,9 @@ class OfflineLLMEngine:
         except Exception:
             pass
         try:
-            r = self.session.get(f"{self.openai_compatible_url}/models", timeout=0.3)
+            r = self.session.get(f"{self.local_server_url}/models", timeout=0.3)
             if r.status_code == 200:
-                self.active_backend = "openai_compatible"
+                self.active_backend = "local_server"
                 return
         except Exception:
             pass
@@ -66,8 +66,8 @@ class OfflineLLMEngine:
         backend = self.active_backend
         if backend == "ollama":
             res = self._call_ollama(prompt, system_prompt, max_tokens, temperature)
-        elif backend == "openai_compatible":
-            res = self._call_openai(prompt, system_prompt, max_tokens, temperature)
+        elif backend == "local_server":
+            res = self._call_local_server(prompt, system_prompt, max_tokens, temperature)
         else:
             res = self._call_builtin(prompt, system_prompt)
 
@@ -148,9 +148,9 @@ class OfflineLLMEngine:
         except Exception as e:
             return f"[Ollama Connection Error]: {e}"
 
-    def _call_openai(self, prompt: str, system_prompt: str, max_tokens: int, temperature: float) -> str:
+    def _call_local_server(self, prompt: str, system_prompt: str, max_tokens: int, temperature: float) -> str:
         try:
-            url = f"{self.openai_compatible_url}/chat/completions"
+            url = f"{self.local_server_url}/chat/completions"
             messages = []
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
@@ -159,17 +159,32 @@ class OfflineLLMEngine:
             res = self.session.post(url, json=payload, timeout=120)
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"].strip()
-            return f"[OpenAI Error] HTTP {res.status_code}"
+            return f"[Local Offline Server Error] HTTP {res.status_code}"
         except Exception as e:
             return f"[Local Server Error]: {e}"
 
     def _call_builtin(self, prompt: str, system_prompt: str) -> str:
-        if "=== RETRIEVED HIGH-END" in prompt:
-            blocks = prompt.split("[Field #")
-            if len(blocks) > 1:
-                body = blocks[1].split("========================================================================")[0].strip()
-                return f"Autonomous Offline Knowledge Synthesis:\n\n[Field #{body}"
-        return "Nexus-Grok neural engine active. 300+ offline scientific, mathematical, and computational domains indexed and ready."
+        clean = prompt.lower().strip()
+        try:
+            from core.omni_knowledge import OmniKnowledgeEngine
+            omni = OmniKnowledgeEngine()
+            match = omni.search(clean)
+            if match:
+                res = omni.synthesize_explanation(clean, matched_topic=match)
+                if res:
+                    return res
+        except Exception:
+            pass
+        try:
+            from core.knowledge_base import AIKnowledgeEngine
+            kb = AIKnowledgeEngine()
+            domains = kb.query(clean, top_k=1)
+            if domains:
+                d = domains[0]
+                return f"### 💡 {d.get('name')} ({d.get('category')})\n\n**Core Concept:**\n{d.get('concept')}\n\n**Mathematical Foundation:**\n```text\n{d.get('mathematical_basis')}\n```\n\n**Frameworks & Implementations:**\n`{d.get('open_source_frameworks')}`"
+        except Exception:
+            pass
+        return "Nexus Autonomous Offline Engine: Operating in 100% local air-gapped mode. Internal neural core ready to process queries, execute machine controls, and analyze 370+ scientific domains."
 
 if __name__ == "__main__":
     engine = OfflineLLMEngine()
