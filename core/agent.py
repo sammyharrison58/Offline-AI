@@ -11,6 +11,7 @@ if root_dir not in sys.path:
 
 from core.knowledge_base import AIKnowledgeEngine
 from core.omni_knowledge import OmniKnowledgeEngine
+from core.code_engine import CodeKnowledgeEngine
 
 _CLEAN_RE = re.compile(r'[^a-z0-9\s]')
 _MATH_PREFIX_RE = re.compile(r'^(what is|calculate|evaluate|solve|compute)\s+')
@@ -34,6 +35,7 @@ class Nexus226Agent:
     def __init__(self):
         self.knowledge = AIKnowledgeEngine()
         self.omni = OmniKnowledgeEngine()
+        self.code_engine = CodeKnowledgeEngine()
         self._sys_controller = None
         self._blockchain = None
         self._llm = None
@@ -354,6 +356,12 @@ class Nexus226Agent:
             pair = q[8:].split(" and ", 1)
             return self.knowledge.compare_paradigms(pair[0].strip(), pair[1].strip())
 
+        code_match = self.code_engine.search_code(q)
+        if code_match:
+            res = self.code_engine.format_solution(code_match)
+            self._cache_set(ql, res)
+            return res
+
         omni_match = self.omni.search(q)
         if omni_match:
             res = self.omni.synthesize_explanation(q, matched_topic=omni_match)
@@ -381,12 +389,21 @@ class Nexus226Agent:
             self._cache_set(ql, res)
             return res
 
-        system_instruction = (
-            "You are Nexus, an advanced autonomous offline AI assistant. "
-            "You possess deep scientific, engineering, coding, and general knowledge. "
-            "Answer the question directly, accurately, and thoroughly with clear explanations and complete working code when requested. "
-            "Never repeat the question, avoid meta-introductions, and speak with confidence and clarity."
-        )
+        is_coding_request = any(w in ql for w in ["write code", "code in ", "function to ", "write a function", "script to ", "solve in ", "implement in ", "how to code", "program to ", "algorithm for ", "class to "])
+        if is_coding_request:
+            system_instruction = (
+                "You are an expert polyglot software engineer and algorithms specialist. "
+                "Write clean, optimal, production-grade code in the requested programming language. "
+                "Provide the complete, self-contained implementation with usage examples and time/space complexity analysis. "
+                "Do not include conversational filler."
+            )
+        else:
+            system_instruction = (
+                "You are Nexus, an advanced autonomous offline AI assistant. "
+                "You possess deep scientific, engineering, coding, and general knowledge. "
+                "Answer the question directly, accurately, and thoroughly with clear explanations and complete working code when requested. "
+                "Never repeat the question, avoid meta-introductions, and speak with confidence and clarity."
+            )
 
         prompt_with_history = q
         if history:
@@ -474,6 +491,13 @@ class Nexus226Agent:
             yield ans
             return
 
+        code_match = self.code_engine.search_code(q)
+        if code_match:
+            res = self.code_engine.format_solution(code_match)
+            self._cache_set(ql, res)
+            yield res
+            return
+
         omni_match = self.omni.search(q)
         if omni_match:
             res = self.omni.synthesize_explanation(q, matched_topic=omni_match)
@@ -499,12 +523,21 @@ class Nexus226Agent:
             yield res
             return
 
-        system_instruction = (
-            "You are Nexus, an advanced autonomous offline AI assistant. "
-            "You possess deep scientific, engineering, coding, and general knowledge. "
-            "Answer the question directly, accurately, and thoroughly with clear explanations and complete working code when requested. "
-            "Never repeat the question, avoid meta-introductions, and speak with confidence and clarity."
-        )
+        is_coding_request = any(w in ql for w in ["write code", "code in ", "function to ", "write a function", "script to ", "solve in ", "implement in ", "how to code", "program to ", "algorithm for ", "class to "])
+        if is_coding_request:
+            system_instruction = (
+                "You are an expert polyglot software engineer and algorithms specialist. "
+                "Write clean, optimal, production-grade code in the requested programming language. "
+                "Provide the complete, self-contained implementation with usage examples and time/space complexity analysis. "
+                "Do not include conversational filler."
+            )
+        else:
+            system_instruction = (
+                "You are Nexus, an advanced autonomous offline AI assistant. "
+                "You possess deep scientific, engineering, coding, and general knowledge. "
+                "Answer the question directly, accurately, and thoroughly with clear explanations and complete working code when requested. "
+                "Never repeat the question, avoid meta-introductions, and speak with confidence and clarity."
+            )
 
         prompt_with_history = q
         if history:

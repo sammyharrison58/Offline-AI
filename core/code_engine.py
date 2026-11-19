@@ -1045,11 +1045,14 @@ class CodeKnowledgeEngine:
                     candidate_scores[idx] = candidate_scores.get(idx, 0) + 3
 
         for idx, recipe in enumerate(self.recipes):
-            if target_lang and target_lang in recipe.get("languages", []):
-                candidate_scores[idx] = candidate_scores.get(idx, 0) + 4
+            if target_lang:
+                if target_lang in recipe.get("languages", []):
+                    candidate_scores[idx] = candidate_scores.get(idx, 0) + 30
+                else:
+                    candidate_scores[idx] = candidate_scores.get(idx, 0) - 25
             for kw in recipe.get("keywords", []):
                 if kw in clean:
-                    candidate_scores[idx] = candidate_scores.get(idx, 0) + 12
+                    candidate_scores[idx] = candidate_scores.get(idx, 0) + 15
 
         if not candidate_scores:
             return None
