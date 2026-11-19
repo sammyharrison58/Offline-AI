@@ -120,11 +120,19 @@ class Nexus226Agent:
     def _solve_math(self, q: str) -> Optional[str]:
         clean = q.lower().strip().rstrip('? .')
         clean = _MATH_PREFIX_RE.sub('', clean).strip()
-        clean = clean.replace('plus', '+').replace('minus', '-').replace('times', '*').replace('multiplied by', '*').replace('divided by', '/').replace('x', '*')
-        if _MATH_EXPR_RE.match(clean) and any(op in clean for op in '+-*/^%'):
+        clean = clean.replace(',', '').replace('plus', '+').replace('minus', '-').replace('times', '*').replace('multiplied by', '*').replace('divided by', '/').replace('x', '*')
+        pct_match = re.match(r'^(\d+(?:\.\d+)?)\s*%\s*(?:of)\s*(\d+(?:\.\d+)?)$', clean)
+        if pct_match:
+            pct = float(pct_match.group(1))
+            total = float(pct_match.group(2))
+            val = (pct / 100.0) * total
+            return str(int(val) if val.is_integer() else round(val, 4))
+        if (_MATH_EXPR_RE.match(clean) and any(op in clean for op in '+-*/^%')) or any(fn in clean for fn in ['sqrt(', 'pow(', 'abs(']):
             clean_expr = clean.replace('^', '**')
             try:
-                val = eval(clean_expr, {'__builtins__': None}, {})
+                import math
+                safe_math = {'sqrt': math.sqrt, 'abs': abs, 'round': round, 'pow': pow, 'sin': math.sin, 'cos': math.cos, 'tan': math.tan, 'pi': math.pi, 'e': math.e, 'log': math.log}
+                val = eval(clean_expr, {'__builtins__': None}, safe_math)
                 if isinstance(val, float) and val.is_integer():
                     val = int(val)
                 return str(val)

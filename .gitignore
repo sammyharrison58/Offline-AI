@@ -12,5 +12,6 @@ venv/
 *.jpg
 *.log
 *.tmp
+*.bin
 !assets/*.png
 !assets/*.jpg

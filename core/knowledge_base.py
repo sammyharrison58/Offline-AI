@@ -36,10 +36,32 @@ class AIKnowledgeEngine:
             self.categories = AIKnowledgeEngine._shared_categories
             return
 
+        cache_bin = self.json_path + ".bin"
+        if os.path.exists(cache_bin) and os.path.getmtime(cache_bin) >= mtime:
+            try:
+                import pickle
+                with open(cache_bin, 'rb') as f:
+                    self.domains, self.inverted_index, self.doc_freq, self.categories = pickle.load(f)
+                AIKnowledgeEngine._shared_domains = self.domains
+                AIKnowledgeEngine._shared_inverted_index = self.inverted_index
+                AIKnowledgeEngine._shared_doc_freq = self.doc_freq
+                AIKnowledgeEngine._shared_categories = self.categories
+                AIKnowledgeEngine._shared_mtime = mtime
+                return
+            except Exception:
+                pass
+
         with open(self.json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
             self.domains = data.get('domains', [])
         self._build_index()
+
+        try:
+            import pickle
+            with open(cache_bin, 'wb') as f:
+                pickle.dump((self.domains, self.inverted_index, self.doc_freq, self.categories), f, protocol=pickle.HIGHEST_PROTOCOL)
+        except Exception:
+            pass
 
         AIKnowledgeEngine._shared_domains = self.domains
         AIKnowledgeEngine._shared_inverted_index = self.inverted_index
@@ -142,6 +164,11 @@ class AIKnowledgeEngine:
 
         if not scores:
             return []
+
+        for doc_idx in scores:
+            d_name = self.domains[doc_idx].get("name", "").lower()
+            if d_name in clean_q:
+                scores[doc_idx] += 50.0
 
         core_tokens = [t for t in active_tokens if t not in GENERIC_DOMAIN_WORDS and not t.isdigit() and len(t) > 2]
 
