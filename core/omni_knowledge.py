@@ -807,15 +807,21 @@ class OmniKnowledgeEngine:
         self._search_cache.clear()
         for idx, item in enumerate(self.topics):
             kw_tokens_list = []
+            all_kw_set = set()
             for kw in item.get("keywords", []):
                 toks = [t for t in self._tokenize(kw) if t not in OMNI_STOPWORDS]
                 if toks:
                     kw_tokens_list.append(toks)
+                    all_kw_set.update(toks)
                 for token in self._tokenize(kw):
                     if token not in self.keyword_index:
                         self.keyword_index[token] = set()
                     self.keyword_index[token].add(idx)
             item['_kw_tokens_list'] = kw_tokens_list
+            item['_all_kw_set'] = all_kw_set
+            name_toks = [t for t in self._tokenize(item.get("name", "")) if t not in OMNI_STOPWORDS]
+            item['_name_tokens_clean'] = name_toks
+            all_kw_set.update(name_toks)
             for token in self._tokenize(item.get("name", "")):
                 if token not in self.keyword_index:
                     self.keyword_index[token] = set()
@@ -839,6 +845,26 @@ class OmniKnowledgeEngine:
         best_item = None
         best_score = 0
         for item in candidate_items:
+            name_tokens = item.get('_name_tokens_clean', [])
+            name_overlap = [t for t in tokens if t in name_tokens]
+            if len(tokens) >= 2 and all(t in name_tokens for t in tokens):
+                score = len(tokens) * 8
+                if score > best_score:
+                    best_score = score
+                    best_item = item
+            elif len(name_overlap) >= 2 and len(name_overlap) / len(tokens) >= 0.5:
+                score = len(name_overlap) * 5
+                if score > best_score:
+                    best_score = score
+                    best_item = item
+
+            all_kw = item.get('_all_kw_set', set())
+            if len(tokens) >= 2 and all(t in all_kw for t in tokens):
+                score = len(tokens) * 4
+                if score > best_score:
+                    best_score = score
+                    best_item = item
+
             kws_tokens = item.get('_kw_tokens_list', [])
             for kw_tokens in kws_tokens:
                 if not kw_tokens:
