@@ -16,7 +16,7 @@ from core.code_engine import CodeKnowledgeEngine
 
 _CLEAN_RE = re.compile(r'[^a-z0-9\s]')
 _MATH_PREFIX_RE = re.compile(r'^(what is|calculate|evaluate|solve|compute)\s+')
-_MATH_EXPR_RE = re.compile(r'^[0-9\.\s\+\-\*\/\(\)\^\%]+$')
+_MATH_EXPR_RE = re.compile(r'^[a-z0-9\.\s\+\-\*\/\(\)\^\%\,]+$', re.IGNORECASE)
 _APP_RE = re.compile(r'^(open|launch|start)\s+(app\s+)?', re.IGNORECASE)
 _KILL_RE = re.compile(r'^(close|kill|terminate|quit)\s+(app\s+)?', re.IGNORECASE)
 _DEL_FILE_RE = re.compile(r'^(delete file|remove file)\s+', re.IGNORECASE)
@@ -153,6 +153,8 @@ class Nexus226Agent:
             pass
 
     def _cache_set(self, key: str, value: str):
+        if not value or value.startswith("Nexus is operating in 100% offline air-gapped mode") or value.startswith("[Ollama") or value.startswith("[Offline"):
+            return
         self.response_cache[key] = value
         threading.Thread(target=self._save_cache, daemon=True).start()
 
@@ -182,11 +184,16 @@ class Nexus226Agent:
         clean = ql.replace("c++", "cpp").replace("c#", "csharp")
         tokens = set(_CLEAN_RE.sub(" ", clean).split())
 
+        if any(target in clean for target in ["who created", "who made", "who invented", "when was", "history of"]):
+            return False
+
         if any(w in clean for w in CODING_INDICATORS):
             return True
 
         has_lang = bool(tokens.intersection(PROGRAMMING_LANGS))
-        if has_lang and any(v in clean for v in ["how to", "how do i", "example", "code", "function", "script", "create", "write", "print", "loop", "array", "list", "dict", "open", "read", "file", "sort"]):
+        if has_lang and any(v in tokens for v in ["code", "function", "script", "program", "class", "method", "syntax", "loop", "array", "list", "dict", "sort", "algorithm", "implement", "write"]):
+            return True
+        if has_lang and any(phrase in clean for phrase in ["how to", "how do i", "example of"]):
             return True
 
         code_match = self.code_engine.search_code(q)
@@ -198,17 +205,20 @@ class Nexus226Agent:
     def _solve_math(self, q: str) -> Optional[str]:
         clean = q.lower().strip().rstrip('? .')
         clean = _MATH_PREFIX_RE.sub('', clean).strip()
-        clean = clean.replace(',', '').replace('plus', '+').replace('minus', '-').replace('times', '*').replace('multiplied by', '*').replace('divided by', '/').replace('x', '*')
+        clean = re.sub(r'(\d+),(\d+)', r'\1\2', clean)
+        clean = re.sub(r'(\d+)\s*x\s*(\d+)', r'\1 * \2', clean)
+        clean = re.sub(r'(?<=\s)x(?=\s)', '*', clean)
+        clean = clean.replace('plus', '+').replace('minus', '-').replace('times', '*').replace('multiplied by', '*').replace('divided by', '/')
         pct_match = re.match(r'^(\d+(?:\.\d+)?)\s*%\s*(?:of)\s*(\d+(?:\.\d+)?)$', clean)
         if pct_match:
             pct = float(pct_match.group(1))
             total = float(pct_match.group(2))
             val = (pct / 100.0) * total
             return str(int(val) if val.is_integer() else round(val, 4))
-        if (_MATH_EXPR_RE.match(clean) and any(op in clean for op in '+-*/^%')) or any(fn in clean for fn in ['sqrt(', 'pow(', 'abs(']):
+        if (_MATH_EXPR_RE.match(clean) and any(op in clean for op in '+-*/^%')) or any(fn in clean for fn in ['sqrt(', 'pow(', 'abs(', 'max(', 'min(', 'round(', 'log(']):
             clean_expr = clean.replace('^', '**')
             try:
-                safe_math = {'sqrt': math.sqrt, 'abs': abs, 'round': round, 'pow': pow, 'sin': math.sin, 'cos': math.cos, 'tan': math.tan, 'pi': math.pi, 'e': math.e, 'log': math.log}
+                safe_math = {'sqrt': math.sqrt, 'abs': abs, 'round': round, 'pow': pow, 'sin': math.sin, 'cos': math.cos, 'tan': math.tan, 'pi': math.pi, 'e': math.e, 'log': math.log, 'log2': math.log2, 'log10': math.log10, 'max': max, 'min': min, 'sum': sum}
                 val = eval(clean_expr, {'__builtins__': None}, safe_math)
                 if isinstance(val, float) and val.is_integer():
                     val = int(val)
@@ -239,8 +249,8 @@ class Nexus226Agent:
         if self._is_greeting(ql) or self._is_greeting(norm_ql):
             return "Greetings! Nexus-Jarvis online and listening. Ready for your command."
 
-        if any(target in ql or target in norm_ql for target in ["who are you", "what are you", "what is your name"]):
-            return "I am Nexus-Jarvis, your 100% offline autonomous AI agent equipped with 370+ scientific & coding paradigms, local neural language models, OS machine controls, blockchain treasury, and voice duplex."
+        if any(target in ql or target in norm_ql for target in ["who are you", "what are you", "what is your name", "who made you", "who created you", "who built you", "tell me about yourself"]):
+            return "I am Nexus-Jarvis, your 100% offline autonomous AI assistant and polyglot software engineering agent equipped with 370+ scientific paradigms, local neural language models, OS machine controls, and offline code generation."
 
         if any(ql.startswith(w) or norm_ql.startswith(w) for w in ["how are you", "are you ready", "are you online", "status", "are you working"]):
             return "All local systems operational, hot in memory, and running completely offline. Ready for commands, coding, or complex inquiries."
@@ -515,7 +525,6 @@ class Nexus226Agent:
             return clean
 
         fallback_msg = "Nexus is operating in 100% offline air-gapped mode. I can assist you with system controls, coding, science, mathematics, offline research, and local files."
-        self._cache_set(ql, fallback_msg)
         return fallback_msg
 
     def process_request_stream(self, user_query: str, history: Optional[List[Dict[str, str]]] = None) -> Generator[str, None, None]:
@@ -533,8 +542,8 @@ class Nexus226Agent:
             yield "Greetings! Nexus-Jarvis online and listening. Ready for your command."
             return
 
-        if any(target in ql or target in norm_ql for target in ["who are you", "what are you", "what is your name"]):
-            yield "I am Nexus-Jarvis, your 100% offline autonomous AI agent equipped with 370+ scientific & coding paradigms, local neural language models, OS machine controls, blockchain treasury, and voice duplex."
+        if any(target in ql or target in norm_ql for target in ["who are you", "what are you", "what is your name", "who made you", "who created you", "who built you", "tell me about yourself"]):
+            yield "I am Nexus-Jarvis, your 100% offline autonomous AI assistant and polyglot software engineering agent equipped with 370+ scientific paradigms, local neural language models, OS machine controls, and offline code generation."
             return
 
         if any(ql.startswith(w) or norm_ql.startswith(w) for w in ["how are you", "are you ready", "are you online", "status", "are you working"]):
@@ -653,19 +662,29 @@ class Nexus226Agent:
                 prev_turns.append(f"User: {q}")
                 prompt_with_history = "\n".join(prev_turns)
 
-        first_chunk = True
-        chunks = []
+        prefix_buffer = []
+        prefix_cleared = False
+        full_tokens = []
         for chunk in self.llm.generate_stream(prompt_with_history, system_prompt=system_instruction, max_tokens=512):
-            if first_chunk:
-                chunk = _CLEAN_ANSWER_RE.sub('', chunk)
-                first_chunk = False
-            if chunk:
-                chunks.append(chunk)
-                yield chunk
-        if chunks:
-            self._cache_set(ql, "".join(chunks).strip())
+            full_tokens.append(chunk)
+            if not prefix_cleared:
+                prefix_buffer.append(chunk)
+                buffered_text = "".join(prefix_buffer)
+                if len(buffered_text) >= 25 or ":" in buffered_text or "\n" in buffered_text:
+                    cleaned_start = _CLEAN_ANSWER_RE.sub('', buffered_text)
+                    prefix_cleared = True
+                    if cleaned_start:
+                        yield cleaned_start
+            else:
+                if chunk:
+                    yield chunk
+
+        if not prefix_cleared and prefix_buffer:
+            yield _CLEAN_ANSWER_RE.sub('', "".join(prefix_buffer))
+
+        if full_tokens:
+            self._cache_set(ql, "".join(full_tokens).strip())
             return
 
         fallback_msg = "Nexus is operating in 100% offline air-gapped mode. I can assist you with system controls, coding, science, mathematics, offline research, and local files."
-        self._cache_set(ql, fallback_msg)
         yield fallback_msg

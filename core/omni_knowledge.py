@@ -391,7 +391,7 @@ OMNI_TOPICS = [
     },
     {
         "name": "Python Architecture, CPython & GIL Mechanics",
-        "keywords": ["what is python", "python programming", "python programming language", "how python works", "cpython runtime", "global interpreter lock"],
+        "keywords": ["what is python", "python programming", "python programming language", "how python works", "cpython runtime", "global interpreter lock", "who created python", "who invented python", "guido van rossum"],
         "definition": "A high-level, dynamically typed, multi-paradigm interpreted programming language created by Guido van Rossum, known for clean syntax, rich ecosystem, and extensive application in AI, data science, and backend engineering.",
         "mechanism": "Python code (.py) is compiled by the reference CPython implementation into bytecode (.pyc) instructions. The CPython Virtual Machine executes these bytecode instructions sequentially using a stack-based architecture. Memory is managed automatically via PyObject reference counting combined with a cyclic garbage collector (generational gc). In standard CPython, thread safety around interpreter internals is governed by the Global Interpreter Lock (GIL), which permits only one OS thread to execute Python bytecode at a time, making multiprocessing, native C-extensions, or async I/O necessary for CPU-bound multi-core concurrency.",
         "principles": "Duck typing and dynamic dispatch. Bytecode evaluation loop (ceval.c). PyObject struct header: ob_refcnt and ob_type. Lexical scoping and namespace resolution via LEGB (Local, Enclosing, Global, Built-in).",
@@ -400,7 +400,7 @@ OMNI_TOPICS = [
     },
     {
         "name": "JavaScript, V8 Engine & Event Loop Architecture",
-        "keywords": ["what is javascript", "javascript programming", "how javascript works", "v8 engine", "js event loop", "ecmascript"],
+        "keywords": ["what is javascript", "javascript programming", "how javascript works", "v8 engine", "js event loop", "ecmascript", "who created javascript", "who invented javascript", "brendan eich"],
         "definition": "A high-level, just-in-time compiled, multi-paradigm programming language conforming to the ECMAScript standard, serving as the foundational programming language of the World Wide Web.",
         "mechanism": "Modern JavaScript engines like Google V8 parse source code into an Abstract Syntax Tree (AST), compile it to bytecode via an interpreter (Ignition), and optimize hot execution paths into native machine code using an adaptive optimizing compiler (TurboFan) with hidden classes and inline caching. JavaScript execution is single-threaded and non-blocking, driven by the Event Loop. When asynchronous tasks (timers, fetch requests, DOM events) occur, their callbacks are placed into the Task Queue (macro-tasks) or Microtask Queue (Promises, queueMicrotask). Once the main Call Stack is empty, the Event Loop drains all microtasks before executing the next macro-task.",
         "principles": "Prototype-based inheritance. Asynchronous non-blocking event-driven I/O. Just-In-Time (JIT) compilation and deoptimization bailouts. Microtask vs macrotask execution order.",
@@ -409,7 +409,7 @@ OMNI_TOPICS = [
     },
     {
         "name": "Rust Systems Programming, Borrow Checker & Memory Safety",
-        "keywords": ["what is rust", "rust programming", "rust language", "borrow checker", "rust memory safety", "rust vs c++"],
+        "keywords": ["what is rust", "rust programming", "rust language", "borrow checker", "rust memory safety", "rust vs c++", "who created rust", "graydon hoare"],
         "definition": "A multi-paradigm, statically typed systems programming language designed for performance, memory safety, and thread concurrency without requiring an automated garbage collector.",
         "mechanism": "Rust achieves memory safety at compile time using an affine type system enforced by the Borrow Checker based on three fundamental ownership rules: 1) Every value has a single owner variable. 2) When the owner goes out of scope, the memory is immediately deallocated (RAII). 3) You may have either any number of immutable references (&T) or exactly one mutable reference (&mut T) to a resource, but never both simultaneously. This compile-time analysis completely prevents null pointer dereferences, dangling pointers, buffer overflows, and data races before the binary is ever compiled, yielding execution speeds comparable to C and C++.",
         "principles": "Linear/affine ownership types and lifetime annotations ('a). Resource Acquisition Is Initialization (RAII). Zero-cost abstractions: traits, generics, monomorphization. Fearless concurrency without data races.",
@@ -418,7 +418,7 @@ OMNI_TOPICS = [
     },
     {
         "name": "C++ Systems Programming, RAII & Zero-Cost Abstractions",
-        "keywords": ["what is c++", "c++ programming", "how c++ works", "c plus plus", "cpp programming", "raii in c++"],
+        "keywords": ["what is c++", "c++ programming", "how c++ works", "c plus plus", "cpp programming", "raii in c++", "who created c++", "bjarne stroustrup"],
         "definition": "A high-performance, statically typed, compiled systems programming language created by Bjarne Stroustrup as an extension of C, providing fine-grained direct hardware and memory control with high-level object-oriented and generic abstractions.",
         "mechanism": "C++ compiles directly to native CPU machine code via optimizing toolchains (GCC, Clang, MSVC) without an intermediate virtual machine or runtime interpreter. Memory is managed deterministically through the Resource Acquisition Is Initialization (RAII) idiom, where constructors acquire resources and destructors release them deterministically when objects exit scope. Modern C++ (C++11 through C++23) eliminates raw manual memory manipulation through smart pointers (std::unique_ptr, std::shared_ptr), move semantics with rvalue references (T&&) eliminating deep copies, and compile-time template metaprogramming via constexpr and concepts.",
         "principles": "Zero-overhead principle: what you don't use, you don't pay for; what you do use, you couldn't hand-code any better. Direct pointer arithmetic and memory addressing. Virtual method tables (vtables) for polymorphic dynamic dispatch.",
@@ -436,7 +436,7 @@ OMNI_TOPICS = [
     },
     {
         "name": "Git Distributed Version Control & Directed Acyclic Graph (DAG) Mechanics",
-        "keywords": ["how git works", "what is git", "git version control", "git commit", "git merge", "version control system"],
+        "keywords": ["how git works", "what is git", "git version control", "git commit", "git merge", "version control system", "who created git", "linus torvalds git"],
         "definition": "A distributed version control system designed by Linus Torvalds for tracking changes in source code across distributed teams of software developers.",
         "mechanism": "Unlike older version control systems that track delta differences between file revisions, Git models repository history as a content-addressable storage filesystem and Directed Acyclic Graph (DAG) of immutable snapshots. Every file is stored as a compressed 'blob' hashed with SHA-1 or SHA-256; directories are stored as 'tree' objects pointing to blobs and subtrees; and a 'commit' object points to a root tree, parent commit hashes, author metadata, and a log message. Branches in Git are lightweight 41-byte pointer files containing the commit hash of the branch tip. Merging creates a commit with two parent hashes, and rebasing replays a sequence of commits onto a new base commit by generating new commit objects with updated parent references.",
         "principles": "Cryptographic content-addressable storage (hash-addressed objects). Merkle tree integrity verification. Directed Acyclic Graph (DAG) revision history. 3-way merge algorithms and fast-forward branch resolution.",
@@ -481,7 +481,7 @@ OMNI_TOPICS = [
     },
     {
         "name": "Java Virtual Machine (JVM) Architecture & Enterprise Ecosystem",
-        "keywords": ["what is java", "java programming", "jvm architecture", "how java works", "java virtual machine", "garbage collection java", "what is garbage collection", "garbage collection", "how garbage collection works"],
+        "keywords": ["what is java", "java programming", "jvm architecture", "how java works", "java virtual machine", "garbage collection java", "what is garbage collection", "garbage collection", "how garbage collection works", "who created java", "james gosling"],
         "definition": "A class-based, object-oriented, statically typed programming language designed by James Gosling with the 'Write Once, Run Anywhere' (WORA) philosophy, executing atop the cross-platform Java Virtual Machine.",
         "mechanism": "Java source code (.java) compiles via javac into platform-independent Bytecode (.class). The JVM executes bytecode using a hybrid execution model: an interpreter executes cold bytecode initially, while the HotSpot Just-In-Time (JIT) compiler (C1 client and C2 server compilers) dynamically monitors runtime execution, identifies hot methods, inlines method calls, and compiles them into heavily optimized native CPU instructions. Memory is managed automatically across generational heap spaces (Young, Old, Metaspace) using advanced low-latency garbage collectors (G1GC, ZGC, Shenandoah) that minimize stop-the-world pauses.",
         "principles": "Write Once, Run Anywhere (WORA). Tiered compilation (Interpreter -> C1 -> C2). Generational garbage collection hypothesis. Strongly typed object-oriented polymorphism via vtables.",
@@ -634,7 +634,7 @@ OMNI_TOPICS = [
     },
     {
         "name": "Linux Operating System Internals, POSIX Systems Programming & Shell Scripting",
-        "keywords": ["what is linux shell", "linux internals", "posix systems programming", "bash scripting mechanics", "linux process fork exec", "unix pipes and signals", "shell scripting"],
+        "keywords": ["what is linux shell", "linux internals", "posix systems programming", "bash scripting mechanics", "linux process fork exec", "unix pipes and signals", "shell scripting", "who created linux", "linus torvalds linux"],
         "definition": "The foundational architecture of the Linux Unix-like operating system kernel, user-space system calls, process lifecycles, and POSIX shell scripting execution environments.",
         "mechanism": "Linux operates in two distinct privilege modes: Kernel Space (controlling hardware, memory, and devices via ring 0) and User Space (where applications and shells run in ring 3). Interaction occurs through the System Call interface: 1) Process Management: New processes are spawned via fork() (which duplicates the parent process address space using Copy-on-Write) followed by execve() (which loads and executes a new binary ELF file), with parent processes awaiting exit codes via waitpid(). 2) File System & I/O: Linux abstracts resources as files under the Virtual File System (VFS); each open file is tracked by an integer File Descriptor (FD 0: stdin, 1: stdout, 2: stderr). System calls like open(), read(), write(), and mmap() perform direct kernel I/O. 3) Shell & Pipelines: POSIX shells (Bash, Zsh) parse commands, expand environment variables, and chain processes using IPC pipes (pipe() system call), redirecting stdout of process A directly into stdin of process B. 4) Signal Handling: Kernels dispatch asynchronous notifications (SIGINT 2, SIGTERM 15, SIGKILL 9, SIGHUP 1) to process signal tables.",
         "principles": "The Unix Philosophy: Write programs that do one thing and do it well; Write programs to work together; Write programs to handle text streams, because that is a universal interface. Everything is a file abstraction.",
@@ -670,7 +670,7 @@ OMNI_TOPICS = [
     },
     {
         "name": "C Programming Language Architecture, Pointers & Memory Management",
-        "keywords": ["what is c", "c programming", "c language", "how c works", "pointers in c", "c memory management", "stack vs heap in c", "malloc and free"],
+        "keywords": ["what is c", "c programming", "c language", "how c works", "pointers in c", "c memory management", "stack vs heap in c", "malloc and free", "who created c", "dennis ritchie"],
         "definition": "The foundational, statically typed procedural systems programming language created by Dennis Ritchie at Bell Labs, providing low-level hardware access, raw memory address manipulation via pointers, and minimal runtime overhead.",
         "mechanism": "C translates directly to CPU assembly language through a multi-stage compilation pipeline: 1) Preprocessing: handles directives (#include, #define macros, conditional compilation). 2) Compilation: parses source into AST and produces native assembly code. 3) Assembly: assembles instructions into relocatable machine-code object files (.o/.obj). 4) Linking: resolves external symbols and combines objects and libraries into executable binaries. Memory is organized into distinct segments: Text (read-only executable machine code), Data/BSS (global and static variables), Stack (automatic allocation for function call frames, local variables, and return addresses with LIFO cleanup), and Heap (dynamic runtime allocation via malloc/calloc/realloc and manual deallocation via free). Raw memory addresses are manipulated via typed Pointers, with pointer arithmetic scaling by sizeof(T).",
         "principles": "Direct physical memory mapping. Explicit manual memory management. Zero runtime safety checks (no garbage collection, bounds checking, or borrow checker). Undefined Behavior (UB) optimization leeway for optimizing compilers.",
@@ -869,7 +869,12 @@ class OmniKnowledgeEngine:
             for kw_tokens in kws_tokens:
                 if not kw_tokens:
                     continue
-                if all(t in tokens for t in kw_tokens):
+                if set(tokens) == set(kw_tokens):
+                    score = len(kw_tokens) * 12 + 20
+                    if score > best_score:
+                        best_score = score
+                        best_item = item
+                elif all(t in tokens for t in kw_tokens):
                     score = len(kw_tokens) * 3 if (len(kw_tokens) >= 2 or len(tokens) == 1) else 1
                     if score > best_score:
                         best_score = score
