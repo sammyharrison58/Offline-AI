@@ -575,7 +575,10 @@ if user_input:
             st.markdown("<small style='color: #00f0ff;'>🔊 Spoken aloud through audio system.</small>", unsafe_allow_html=True)
             if "generated_graphic.png" in response and os.path.exists("generated_graphic.png"):
                 st.image("generated_graphic.png", caption="Rendered Graphic", use_column_width=True)
-            voice.speak(response, block=False)
+            if "```" in response:
+                voice.speak("Code generated and ready on your screen, Sir.", block=False)
+            else:
+                voice.speak(response[:300], block=False)
     st.session_state.messages.append({"role": "assistant", "content": response})
 
 st.markdown("---")

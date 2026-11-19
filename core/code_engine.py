@@ -996,6 +996,289 @@ int main() {
     return 0;
 }
 ```"""
+    },
+    {
+        "id": "py_merge_sort",
+        "languages": ["python"],
+        "keywords": ["merge sort", "mergesort", "merge sort algorithm", "divide conquer sort"],
+        "title": "Merge Sort Algorithm (O(n log n) Guaranteed Time)",
+        "description": "Stable divide-and-conquer sorting algorithm that recursively splits arrays and merges sorted halves.",
+        "code": """```python
+def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+    mid = len(arr) // 2
+    left = merge_sort(arr[:mid])
+    right = merge_sort(arr[mid:])
+    return merge(left, right)
+
+def merge(left, right):
+    result = []
+    i = j = 0
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            result.append(left[i])
+            i += 1
+        else:
+            result.append(right[j])
+            j += 1
+    result.extend(left[i:])
+    result.extend(right[j:])
+    return result
+
+data = [38, 27, 43, 3, 9, 82, 10]
+print("Sorted:", merge_sort(data))
+```"""
+    },
+    {
+        "id": "py_fibonacci",
+        "languages": ["python"],
+        "keywords": ["fibonacci", "fibonacci dp", "fibonacci memoization", "fibonacci sequence"],
+        "title": "Fibonacci Sequence (Memoization & O(1) Space Iterative)",
+        "description": "Computes the Nth Fibonacci number using linear memoization and constant space iteration.",
+        "code": """```python
+def fibonacci_iterative(n: int) -> int:
+    if n <= 0:
+        return 0
+    elif n == 1:
+        return 1
+    prev, curr = 0, 1
+    for _ in range(2, n + 1):
+        prev, curr = curr, prev + curr
+    return curr
+
+memo = {}
+def fibonacci_memo(n: int) -> int:
+    if n in memo:
+        return memo[n]
+    if n <= 0:
+        return 0
+    elif n == 1:
+        return 1
+    memo[n] = fibonacci_memo(n - 1) + fibonacci_memo(n - 2)
+    return memo[n]
+
+for i in range(12):
+    print(f"Fib({i}) = {fibonacci_iterative(i)}")
+```"""
+    },
+    {
+        "id": "js_promise_all",
+        "languages": ["javascript", "typescript"],
+        "keywords": ["promise all", "implement promise all", "promise all scratch", "promise all javascript"],
+        "title": "Promise.all Implementation from Scratch (JavaScript)",
+        "description": "Resolves when all promises resolve, or rejects immediately upon the first rejected promise.",
+        "code": """```javascript
+function promiseAll(promises) {
+    return new Promise((resolve, reject) => {
+        if (!Array.isArray(promises)) {
+            return reject(new TypeError("Argument must be an array"));
+        }
+        if (promises.length === 0) {
+            return resolve([]);
+        }
+        const results = new Array(promises.length);
+        let completed = 0;
+
+        promises.forEach((p, index) => {
+            Promise.resolve(p).then(value => {
+                results[index] = value;
+                completed += 1;
+                if (completed === promises.length) {
+                    resolve(results);
+                }
+            }).catch(err => {
+                reject(err);
+            });
+        });
+    });
+}
+
+const p1 = Promise.resolve(42);
+const p2 = new Promise(resolve => setTimeout(() => resolve("Nexus"), 100));
+const p3 = Promise.resolve(true);
+
+promiseAll([p1, p2, p3]).then(values => {
+    console.log("All resolved:", values);
+});
+```"""
+    },
+    {
+        "id": "c_quicksort",
+        "languages": ["c"],
+        "keywords": ["quicksort in c", "c quicksort", "quicksort algorithm c"],
+        "title": "In-Place Quicksort Algorithm in Pure C",
+        "description": "Standard Lomuto partition scheme sorting an integer array in-place.",
+        "code": """```c
+#include <stdio.h>
+
+void swap(int* a, int* b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int partition(int arr[], int low, int high) {
+    int pivot = arr[high];
+    int i = (low - 1);
+    for (int j = low; j < high; j++) {
+        if (arr[j] <= pivot) {
+            i++;
+            swap(&arr[i], &arr[j]);
+        }
+    }
+    swap(&arr[i + 1], &arr[high]);
+    return (i + 1);
+}
+
+void quicksort(int arr[], int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);
+        quicksort(arr, low, pi - 1);
+        quicksort(arr, pi + 1, high);
+    }
+}
+
+int main() {
+    int arr[] = {10, 7, 8, 9, 1, 5};
+    int n = sizeof(arr) / sizeof(arr[0]);
+    quicksort(arr, 0, n - 1);
+    printf("Sorted array: ");
+    for (int i = 0; i < n; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\\n");
+    return 0;
+}
+```"""
+    },
+    {
+        "id": "c_binary_search",
+        "languages": ["c"],
+        "keywords": ["binary search c", "c binary search", "bsearch in c"],
+        "title": "Binary Search Algorithm in Pure C",
+        "description": "Searches for an element in a sorted integer array with logarithmic time complexity.",
+        "code": """```c
+#include <stdio.h>
+
+int binarySearch(int arr[], int size, int target) {
+    int low = 0;
+    int high = size - 1;
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+        if (arr[mid] == target) return mid;
+        if (arr[mid] < target) low = mid + 1;
+        else high = mid - 1;
+    }
+    return -1;
+}
+
+int main() {
+    int data[] = {3, 9, 14, 19, 25, 31, 42, 55, 68, 77, 89};
+    int size = sizeof(data) / sizeof(data[0]);
+    int target = 42;
+    int index = binarySearch(data, size, target);
+    if (index != -1) {
+        printf("Found %d at index %d\\n", target, index);
+    } else {
+        printf("Element not found\\n");
+    }
+    return 0;
+}
+```"""
+    },
+    {
+        "id": "rust_binary_search",
+        "languages": ["rust"],
+        "keywords": ["rust binary search", "binary search rust", "bsearch rust"],
+        "title": "Binary Search in Rust (Idiomatic & Safe)",
+        "description": "Safe logarithmic search over sorted slices returning Option<usize>.",
+        "code": """```rust
+pub fn binary_search<T: Ord>(arr: &[T], target: &T) -> Option<usize> {
+    let mut low = 0;
+    let mut high = arr.len();
+
+    while low < high {
+        let mid = low + (high - low) / 2;
+        match arr[mid].cmp(target) {
+            std::cmp::Ordering::Equal => return Some(mid),
+            std::cmp::Ordering::Less => low = mid + 1,
+            std::cmp::Ordering::Greater => high = mid,
+        }
+    }
+    None
+}
+
+fn main() {
+    let numbers = vec![2, 4, 6, 8, 10, 12, 14, 16, 18, 20];
+    let target = 14;
+    match binary_search(&numbers, &target) {
+        Some(idx) => println!("Target {} found at index {}", target, idx),
+        None => println!("Target {} not found", target),
+    }
+}
+```"""
+    },
+    {
+        "id": "java_singleton",
+        "languages": ["java"],
+        "keywords": ["java singleton", "singleton pattern java", "double checked locking singleton"],
+        "title": "Thread-Safe Singleton with Double-Checked Locking (Java)",
+        "description": "Guarantees a single instance with lazy initialization and volatile memory barriers.",
+        "code": """```java
+public class NexusManager {
+    private static volatile NexusManager instance;
+    private final String systemId;
+
+    private NexusManager() {
+        this.systemId = "NEXUS-226-OFFLINE";
+    }
+
+    public static NexusManager getInstance() {
+        if (instance == null) {
+            synchronized (NexusManager.class) {
+                if (instance == null) {
+                    instance = new NexusManager();
+                }
+            }
+        }
+        return instance;
+    }
+
+    public String getSystemId() {
+        return this.systemId;
+    }
+
+    public static void main(String[] args) {
+        NexusManager s1 = NexusManager.getInstance();
+        NexusManager s2 = NexusManager.getInstance();
+        System.out.println("Same instance: " + (s1 == s2));
+        System.out.println("System ID: " + s1.getSystemId());
+    }
+}
+```"""
+    },
+    {
+        "id": "sql_top_n_per_group",
+        "languages": ["sql"],
+        "keywords": ["top n per group", "top salaries department", "top records group", "dense_rank partition by"],
+        "title": "Top N Records Per Group (SQL DENSE_RANK Window Function)",
+        "description": "Finds the top 3 highest earning employees in each department using window partition ranking.",
+        "code": """```sql
+WITH RankedSalaries AS (
+    SELECT 
+        d.name AS Department,
+        e.name AS Employee,
+        e.salary AS Salary,
+        DENSE_RANK() OVER (PARTITION BY e.department_id ORDER BY e.salary DESC) AS rnk
+    FROM Employee e
+    JOIN Department d ON e.department_id = d.id
+)
+SELECT Department, Employee, Salary
+FROM RankedSalaries
+WHERE rnk <= 3
+ORDER BY Department, Salary DESC;
+```"""
     }
 ]
 
@@ -1038,27 +1321,30 @@ class CodeKnowledgeEngine:
                 target_lang = LANG_ALIASES[tok]
                 break
 
-        candidate_scores: Dict[int, int] = {}
-        for tok in tokens:
-            if tok in self.inverted_index:
-                for idx in self.inverted_index[tok]:
-                    candidate_scores[idx] = candidate_scores.get(idx, 0) + 3
-
+        matched_indices: Dict[int, int] = {}
         for idx, recipe in enumerate(self.recipes):
-            if target_lang:
-                if target_lang in recipe.get("languages", []):
-                    candidate_scores[idx] = candidate_scores.get(idx, 0) + 30
-                else:
-                    candidate_scores[idx] = candidate_scores.get(idx, 0) - 25
+            kw_match = False
             for kw in recipe.get("keywords", []):
                 if kw in clean:
-                    candidate_scores[idx] = candidate_scores.get(idx, 0) + 15
+                    matched_indices[idx] = matched_indices.get(idx, 0) + 25
+                    kw_match = True
+                else:
+                    kw_parts = [p for p in _CODE_TOKEN_RE.findall(kw.lower()) if p not in _CODE_STOPWORDS and len(p) > 2]
+                    if len(kw_parts) >= 2 and all(p in tokens for p in kw_parts):
+                        matched_indices[idx] = matched_indices.get(idx, 0) + 20
+                        kw_match = True
+            if kw_match:
+                if target_lang:
+                    if target_lang in recipe.get("languages", []):
+                        matched_indices[idx] += 30
+                    else:
+                        matched_indices[idx] -= 25
 
-        if not candidate_scores:
+        if not matched_indices:
             return None
 
-        best_idx = max(candidate_scores.keys(), key=lambda i: candidate_scores[i])
-        if candidate_scores[best_idx] >= 6:
+        best_idx = max(matched_indices.keys(), key=lambda i: matched_indices[i])
+        if matched_indices[best_idx] >= 15:
             return self.recipes[best_idx]
         return None
 

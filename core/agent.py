@@ -356,40 +356,52 @@ class Nexus226Agent:
             pair = q[8:].split(" and ", 1)
             return self.knowledge.compare_paradigms(pair[0].strip(), pair[1].strip())
 
+        is_coding_request = any(w in ql for w in [
+            "write code", "code in ", "function to ", "write a function", "script to ", 
+            "solve in ", "implement in ", "how to code", "program to ", "algorithm for ", 
+            "class to ", "how to write", "how do i code", "create a function", 
+            "create a script", "code for ", "build a script", "build an app", 
+            "write a query", "write sql", "write python", "write javascript", 
+            "write typescript", "write c++", "write cpp", "write rust", "write go", 
+            "write bash", "write html", "write css", "write java", "write c#",
+            "in python", "in javascript", "in typescript", "in c++", "in rust", 
+            "in golang", "in java", "in sql", "in bash", "fizzbuzz", "leetcode"
+        ])
+
         code_match = self.code_engine.search_code(q)
         if code_match:
             res = self.code_engine.format_solution(code_match)
             self._cache_set(ql, res)
             return res
 
-        omni_match = self.omni.search(q)
-        if omni_match:
-            res = self.omni.synthesize_explanation(q, matched_topic=omni_match)
-            self._cache_set(ql, res)
-            return res
-
-        matched_domains = self.knowledge.query(q, top_k=3)
-        if matched_domains:
-            top_d = matched_domains[0]
-            sec_d = matched_domains[1] if len(matched_domains) > 1 else None
-            if any(w in ql for w in ["research", "deep dive", "details", "formula", "math", "dossier"]):
-                res = self.knowledge.deep_research(top_d.get("name"))["markdown"]
+        if not is_coding_request:
+            omni_match = self.omni.search(q)
+            if omni_match:
+                res = self.omni.synthesize_explanation(q, matched_topic=omni_match)
                 self._cache_set(ql, res)
                 return res
-            exp_lines = [
-                f"### 💡 {top_d.get('name')} ({top_d.get('category')})\n",
-                f"**Core Concept & Mechanism:**\n{top_d.get('concept')}\n",
-                f"**Scientific & Mathematical Foundation:**\n```text\n{top_d.get('mathematical_basis')}\n```\n",
-                f"**Key Insights & Edge Invariants:**\n{top_d.get('obscure_insights')}\n",
-                f"**Frameworks & Implementations:**\n`{top_d.get('open_source_frameworks')}`\n"
-            ]
-            if sec_d:
-                exp_lines.append(f"\n---\n**🔗 Cross-Domain Correlated Field:** #{sec_d.get('id')} {sec_d.get('name')} ({sec_d.get('category')})\n{sec_d.get('concept')}")
-            res = "\n".join(exp_lines)
-            self._cache_set(ql, res)
-            return res
 
-        is_coding_request = any(w in ql for w in ["write code", "code in ", "function to ", "write a function", "script to ", "solve in ", "implement in ", "how to code", "program to ", "algorithm for ", "class to "])
+            matched_domains = self.knowledge.query(q, top_k=3)
+            if matched_domains:
+                top_d = matched_domains[0]
+                sec_d = matched_domains[1] if len(matched_domains) > 1 else None
+                if any(w in ql for w in ["research", "deep dive", "details", "formula", "math", "dossier"]):
+                    res = self.knowledge.deep_research(top_d.get("name"))["markdown"]
+                    self._cache_set(ql, res)
+                    return res
+                exp_lines = [
+                    f"### 💡 {top_d.get('name')} ({top_d.get('category')})\n",
+                    f"**Core Concept & Mechanism:**\n{top_d.get('concept')}\n",
+                    f"**Scientific & Mathematical Foundation:**\n```text\n{top_d.get('mathematical_basis')}\n```\n",
+                    f"**Key Insights & Edge Invariants:**\n{top_d.get('obscure_insights')}\n",
+                    f"**Frameworks & Implementations:**\n`{top_d.get('open_source_frameworks')}`\n"
+                ]
+                if sec_d:
+                    exp_lines.append(f"\n---\n**🔗 Cross-Domain Correlated Field:** #{sec_d.get('id')} {sec_d.get('name')} ({sec_d.get('category')})\n{sec_d.get('concept')}")
+                res = "\n".join(exp_lines)
+                self._cache_set(ql, res)
+                return res
+
         if is_coding_request:
             system_instruction = (
                 "You are an expert polyglot software engineer and algorithms specialist. "
@@ -491,6 +503,18 @@ class Nexus226Agent:
             yield ans
             return
 
+        is_coding_request = any(w in ql for w in [
+            "write code", "code in ", "function to ", "write a function", "script to ", 
+            "solve in ", "implement in ", "how to code", "program to ", "algorithm for ", 
+            "class to ", "how to write", "how do i code", "create a function", 
+            "create a script", "code for ", "build a script", "build an app", 
+            "write a query", "write sql", "write python", "write javascript", 
+            "write typescript", "write c++", "write cpp", "write rust", "write go", 
+            "write bash", "write html", "write css", "write java", "write c#",
+            "in python", "in javascript", "in typescript", "in c++", "in rust", 
+            "in golang", "in java", "in sql", "in bash", "fizzbuzz", "leetcode"
+        ])
+
         code_match = self.code_engine.search_code(q)
         if code_match:
             res = self.code_engine.format_solution(code_match)
@@ -498,32 +522,37 @@ class Nexus226Agent:
             yield res
             return
 
-        omni_match = self.omni.search(q)
-        if omni_match:
-            res = self.omni.synthesize_explanation(q, matched_topic=omni_match)
-            self._cache_set(ql, res)
-            yield res
-            return
+        if not is_coding_request:
+            omni_match = self.omni.search(q)
+            if omni_match:
+                res = self.omni.synthesize_explanation(q, matched_topic=omni_match)
+                self._cache_set(ql, res)
+                yield res
+                return
 
-        matched_domains = self.knowledge.query(q, top_k=3)
-        if matched_domains:
-            top_d = matched_domains[0]
-            sec_d = matched_domains[1] if len(matched_domains) > 1 else None
-            exp_lines = [
-                f"### 💡 {top_d.get('name')} ({top_d.get('category')})\n",
-                f"**Core Concept & Mechanism:**\n{top_d.get('concept')}\n",
-                f"**Scientific & Mathematical Foundation:**\n```text\n{top_d.get('mathematical_basis')}\n```\n",
-                f"**Key Insights & Edge Invariants:**\n{top_d.get('obscure_insights')}\n",
-                f"**Frameworks & Implementations:**\n`{top_d.get('open_source_frameworks')}`\n"
-            ]
-            if sec_d:
-                exp_lines.append(f"\n---\n**🔗 Cross-Domain Correlated Field:** #{sec_d.get('id')} {sec_d.get('name')} ({sec_d.get('category')})\n{sec_d.get('concept')}")
-            res = "\n".join(exp_lines)
-            self._cache_set(ql, res)
-            yield res
-            return
+            matched_domains = self.knowledge.query(q, top_k=3)
+            if matched_domains:
+                top_d = matched_domains[0]
+                sec_d = matched_domains[1] if len(matched_domains) > 1 else None
+                if any(w in ql for w in ["research", "deep dive", "details", "formula", "math", "dossier"]):
+                    res = self.knowledge.deep_research(top_d.get("name"))["markdown"]
+                    self._cache_set(ql, res)
+                    yield res
+                    return
+                exp_lines = [
+                    f"### 💡 {top_d.get('name')} ({top_d.get('category')})\n",
+                    f"**Core Concept & Mechanism:**\n{top_d.get('concept')}\n",
+                    f"**Scientific & Mathematical Foundation:**\n```text\n{top_d.get('mathematical_basis')}\n```\n",
+                    f"**Key Insights & Edge Invariants:**\n{top_d.get('obscure_insights')}\n",
+                    f"**Frameworks & Implementations:**\n`{top_d.get('open_source_frameworks')}`\n"
+                ]
+                if sec_d:
+                    exp_lines.append(f"\n---\n**🔗 Cross-Domain Correlated Field:** #{sec_d.get('id')} {sec_d.get('name')} ({sec_d.get('category')})\n{sec_d.get('concept')}")
+                res = "\n".join(exp_lines)
+                self._cache_set(ql, res)
+                yield res
+                return
 
-        is_coding_request = any(w in ql for w in ["write code", "code in ", "function to ", "write a function", "script to ", "solve in ", "implement in ", "how to code", "program to ", "algorithm for ", "class to "])
         if is_coding_request:
             system_instruction = (
                 "You are an expert polyglot software engineer and algorithms specialist. "
