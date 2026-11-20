@@ -193,6 +193,18 @@ class AIKnowledgeEngine:
                 if name_overlap:
                     filtered_results.append(doc)
 
+        if not filtered_results and ranked_indices:
+            if scores[ranked_indices[0]] >= 18.0:
+                for idx in ranked_indices:
+                    doc = self.domains[idx]
+                    concept = doc.get("concept", "")
+                    if concept.startswith("Comprehensive deep algorithmic paradigm:"):
+                        continue
+                    if scores[idx] >= 18.0:
+                        filtered_results.append(doc)
+                    if len(filtered_results) >= top_k:
+                        break
+
         if not filtered_results:
             return []
 

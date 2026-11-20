@@ -4,8 +4,6 @@ import io
 import re
 import time
 import json
-import urllib.request
-import urllib.parse
 from typing import Dict, Any, List, Optional
 from PIL import Image, ImageDraw
 

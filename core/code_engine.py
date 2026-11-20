@@ -2615,6 +2615,173 @@ log_info "Executing pipeline on directory: ${TARGET_DIR}"
 </body>
 </html>
 ```"""
+    },
+{
+        "id": "py_linked_list_cycle",
+        "languages": ["python"],
+        "keywords": ["linked list cycle", "detect cycle in linked list", "has cycle linked list", "floyd cycle detection", "tortoise and hare algorithm"],
+        "title": "Detect Cycle in Linked List (Floyd's Tortoise & Hare O(n) Time, O(1) Space)",
+        "description": "Determines whether a singly linked list contains a cycle using two pointers moving at different speeds.",
+        "code": """```python
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def has_cycle(head: ListNode) -> bool:
+    if not head or not head.next:
+        return False
+    slow = head
+    fast = head.next
+    while slow != fast:
+        if not fast or not fast.next:
+            return False
+        slow = slow.next
+        fast = fast.next.next
+    return True
+
+node1 = ListNode(3)
+node2 = ListNode(2)
+node3 = ListNode(0)
+node4 = ListNode(-4)
+node1.next = node2
+node2.next = node3
+node3.next = node4
+node4.next = node2
+print("Cycle detected:", has_cycle(node1))
+```"""
+    },
+    {
+        "id": "py_binary_search_tree",
+        "languages": ["python"],
+        "keywords": ["binary search tree", "bst implementation", "insert into bst", "search bst", "bst python"],
+        "title": "Binary Search Tree (BST) Implementation with In-Order Traversal",
+        "description": "Complete Binary Search Tree with node insertion, search, and sorted in-order traversal in O(log n) average time.",
+        "code": """```python
+class BSTNode:
+    def __init__(self, val):
+        self.val = val
+        self.left = None
+        self.right = None
+
+class BinarySearchTree:
+    def __init__(self):
+        self.root = None
+
+    def insert(self, val):
+        if not self.root:
+            self.root = BSTNode(val)
+            return
+        curr = self.root
+        while True:
+            if val < curr.val:
+                if not curr.left:
+                    curr.left = BSTNode(val)
+                    break
+                curr = curr.left
+            else:
+                if not curr.right:
+                    curr.right = BSTNode(val)
+                    break
+                curr = curr.right
+
+    def search(self, val) -> bool:
+        curr = self.root
+        while curr:
+            if curr.val == val:
+                return True
+            curr = curr.left if val < curr.val else curr.right
+        return False
+
+    def in_order(self):
+        res = []
+        def traverse(node):
+            if not node:
+                return
+            traverse(node.left)
+            res.append(node.val)
+            traverse(node.right)
+        traverse(self.root)
+        return res
+
+bst = BinarySearchTree()
+for num in [8, 3, 10, 1, 6, 14, 4, 7]:
+    bst.insert(num)
+print("In-order (sorted):", bst.in_order())
+print("Search 6:", bst.search(6))
+print("Search 15:", bst.search(15))
+```"""
+    },
+    {
+        "id": "py_longest_increasing_subsequence",
+        "languages": ["python"],
+        "keywords": ["longest increasing subsequence", "lis algorithm", "lis leetcode", "patience sorting", "lis bisect"],
+        "title": "Longest Increasing Subsequence (Patience Sorting O(n log n))",
+        "description": "Calculates the length of the longest strictly increasing subsequence using binary search (bisect) and patience sorting.",
+        "code": """```python
+import bisect
+
+def length_of_lis(nums):
+    tails = []
+    for x in nums:
+        idx = bisect.bisect_left(tails, x)
+        if idx == len(tails):
+            tails.append(x)
+        else:
+            tails[idx] = x
+    return len(tails)
+
+nums = [10, 9, 2, 5, 3, 7, 101, 18]
+print(f"Length of LIS for {nums}: {length_of_lis(nums)}")
+```"""
+    },
+    {
+        "id": "py_knapsack_01",
+        "languages": ["python"],
+        "keywords": ["0/1 knapsack", "knapsack problem", "knapsack dynamic programming", "knapsack python", "01 knapsack dp"],
+        "title": "0/1 Knapsack Problem (Bottom-Up Dynamic Programming O(n * W))",
+        "description": "Maximizes the total value of items that can fit into a knapsack of fixed capacity W using iterative dynamic programming.",
+        "code": """```python
+def knapsack(weights, values, capacity):
+    n = len(weights)
+    dp = [[0] * (capacity + 1) for _ in range(n + 1)]
+    for i in range(1, n + 1):
+        for w in range(1, capacity + 1):
+            if weights[i - 1] <= w:
+                dp[i][w] = max(dp[i - 1][w], values[i - 1] + dp[i - 1][w - weights[i - 1]])
+            else:
+                dp[i][w] = dp[i - 1][w]
+    return dp[n][capacity]
+
+weights = [1, 3, 4, 5]
+values = [1, 4, 5, 7]
+capacity = 7
+print(f"Maximum knapsack value (capacity {capacity}): {knapsack(weights, values, capacity)}")
+```"""
+    },
+    {
+        "id": "py_lcs",
+        "languages": ["python"],
+        "keywords": ["longest common subsequence", "lcs algorithm", "lcs dynamic programming", "lcs leetcode", "lcs python"],
+        "title": "Longest Common Subsequence (2D Dynamic Programming O(m * n))",
+        "description": "Finds the length of the longest subsequence present in both strings in the same relative order using dynamic programming.",
+        "code": """```python
+def longest_common_subsequence(text1: str, text2: str) -> int:
+    m = len(text1)
+    n = len(text2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if text1[i - 1] == text2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1] + 1
+            else:
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+    return dp[m][n]
+
+s1 = "abcde"
+s2 = "ace"
+print(f"LCS between '{s1}' and '{s2}': {longest_common_subsequence(s1, s2)}")
+```"""
     }
 
 ]
@@ -2663,12 +2830,12 @@ class CodeKnowledgeEngine:
             kw_match = False
             for kw in recipe.get("keywords", []):
                 if kw in clean:
-                    matched_indices[idx] = matched_indices.get(idx, 0) + 25
+                    matched_indices[idx] = matched_indices.get(idx, 0) + 25 + len(kw)
                     kw_match = True
                 else:
                     kw_parts = [p for p in _CODE_TOKEN_RE.findall(kw.lower()) if p not in _CODE_STOPWORDS and len(p) > 2]
                     if len(kw_parts) >= 2 and all(p in tokens for p in kw_parts):
-                        matched_indices[idx] = matched_indices.get(idx, 0) + 20
+                        matched_indices[idx] = matched_indices.get(idx, 0) + 20 + sum(len(p) for p in kw_parts)
                         kw_match = True
             if kw_match:
                 if target_lang:

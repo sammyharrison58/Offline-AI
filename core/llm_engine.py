@@ -64,11 +64,13 @@ class OfflineLLMEngine:
             return self.cache[cache_key]
 
         backend = self.active_backend
+        res = None
         if backend == "ollama":
             res = self._call_ollama(prompt, system_prompt, max_tokens, temperature)
         elif backend == "local_server":
             res = self._call_local_server(prompt, system_prompt, max_tokens, temperature)
-        else:
+
+        if not res or res.startswith("["):
             res = self._call_builtin(prompt, system_prompt)
 
         if res and not res.startswith("["):
@@ -115,8 +117,9 @@ class OfflineLLMEngine:
                                 break
                 if full_response:
                     self.cache[cache_key] = "".join(full_response).strip()
-            except Exception as e:
-                yield f"[Offline Neural Inference Error]: {e}"
+            except Exception:
+                builtin_fallback = self._call_builtin(prompt, system_prompt)
+                yield builtin_fallback
         else:
             yield self.generate(prompt, system_prompt, max_tokens, temperature)
 
@@ -165,6 +168,14 @@ class OfflineLLMEngine:
 
     def _call_builtin(self, prompt: str, system_prompt: str) -> str:
         clean = prompt.lower().strip()
+        try:
+            from core.code_engine import CodeKnowledgeEngine
+            ce = CodeKnowledgeEngine()
+            cm = ce.search_code(clean)
+            if cm:
+                return ce.format_solution(cm)
+        except Exception:
+            pass
         try:
             from core.omni_knowledge import OmniKnowledgeEngine
             omni = OmniKnowledgeEngine()

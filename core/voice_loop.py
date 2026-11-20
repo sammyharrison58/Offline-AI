@@ -31,6 +31,7 @@ class OfflineVoiceEngine:
     def __init__(self, voice_speed: int = 3):
         self.voice_speed = voice_speed
         self.lock = threading.Lock()
+        self.sapi_voice = None
 
     def clean_text_for_speech(self, text: str) -> str:
         t = re.sub(r'```.*?```', 'code block executed.', text, flags=re.DOTALL)
@@ -58,6 +59,7 @@ class OfflineVoiceEngine:
                     except Exception:
                         pass
                     v = win32com.client.Dispatch('SAPI.SpVoice')
+                    self.sapi_voice = v
                     v.Rate = self.voice_speed
                     v.Speak(clean_text, 0)
                 except Exception as e:
@@ -69,7 +71,7 @@ class OfflineVoiceEngine:
             threading.Thread(target=_run_speak, daemon=True).start()
 
     def stop_speaking(self):
-        if self.sapi_voice:
+        if hasattr(self, 'sapi_voice') and self.sapi_voice:
             try:
                 self.sapi_voice.Speak('', 2)
             except Exception:
