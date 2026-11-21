@@ -34,15 +34,34 @@ class OfflineVoiceEngine:
         self.sapi_voice = None
 
     def clean_text_for_speech(self, text: str) -> str:
-        t = re.sub(r'```.*?```', 'code block executed.', text, flags=re.DOTALL)
-        t = re.sub(r'https?://\S+', 'link', t)
-        t = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Query analyzed:[^.]*\.\s*)', '', text, flags=re.IGNORECASE)
-        t = re.sub(r'[#*`_~>\-]', ' ', t)
+        if not text:
+            return ""
+        t = re.sub(r'```[a-zA-Z0-9_]*\n?.*?```', ' I have prepared the complete code implementation for you on your screen. ', text, flags=re.DOTALL)
+        t = re.sub(r'https?://\S+', ' link ', t)
+        t = re.sub(r'[\U00010000-\U0010ffff]', '', t)
+        t = re.sub(r'[\u2600-\u27bf]', '', t)
+        t = re.sub(r'^(Direct Answer:|Answer:|Grok:|Response:|Nexus:|Query analyzed:[^.]*\.\s*)', '', t, flags=re.IGNORECASE)
+        t = t.replace('O(1)', 'constant time')
+        t = t.replace('O(log n)', 'order log n')
+        t = t.replace('O(n)', 'order n')
+        t = t.replace('O(n log n)', 'order n log n')
+        t = t.replace('O(n^2)', 'order n squared')
+        t = re.sub(r'[*#`_~>\-]', ' ', t)
         t = re.sub(r'\s+', ' ', t).strip()
-        if len(t) > 220:
-            sentences = t.split('. ')
-            if len(sentences) > 1:
-                t = sentences[0] + '.'
+        if len(t) > 380:
+            sentences = re.split(r'(?<=[.!?])\s+', t)
+            accumulated = []
+            cur_len = 0
+            for s in sentences:
+                if cur_len + len(s) <= 380:
+                    accumulated.append(s)
+                    cur_len += len(s)
+                else:
+                    break
+            if accumulated:
+                t = ' '.join(accumulated)
+            else:
+                t = sentences[0]
         return t
 
     def speak(self, text: str, block: bool = False):
@@ -104,7 +123,7 @@ class ConversationalCallLoop:
     def start_call(self, on_turn: Optional[Callable[[str, str], None]] = None):
         self._init_mic()
         self.is_active = True
-        greeting = 'Call connected. Nexus-Jarvis online and listening. Go ahead.'
+        greeting = "Call connected. Hey, Nexus here! I'm on the line and listening. What are we working on?"
         print(f'\nAI: {greeting}\n')
         self.voice.speak(greeting, block=True)
         if self.recognizer and self.mic:
@@ -120,7 +139,7 @@ class ConversationalCallLoop:
 
                         clean_input = user_input.strip().lower()
                         if any(w in clean_input for w in ['hang up', 'end call', 'close call', 'disconnect', 'goodbye', 'bye jarvis', 'bye', 'terminate call']):
-                            farewell = 'Call ended. Standby.'
+                            farewell = 'Call ended. Talk to you soon!'
                             print(f'\nAI: {farewell}\n')
                             self.voice.speak(farewell, block=True)
                             self.is_active = False
@@ -153,7 +172,7 @@ class ConversationalCallLoop:
 
             clean_input = user_input.strip().lower()
             if any(w in clean_input for w in ['hang up', 'end call', 'close call', 'disconnect', 'goodbye', 'bye jarvis', 'bye', 'terminate call']):
-                farewell = 'Call ended. Standby.'
+                farewell = 'Call ended. Talk to you soon!'
                 print(f'\nAI: {farewell}\n')
                 self.voice.speak(farewell, block=True)
                 self.is_active = False

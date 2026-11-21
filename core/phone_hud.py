@@ -334,14 +334,30 @@ function updateTimer() {{
 }}
 
 function cleanForSpeech(raw) {{
-    let t = raw.replace(/```[\s\S]*?```/g, 'Code block executed.');
+    let t = raw.replace(/```[\s\S]*?```/g, ' I have prepared the code implementation for you on your screen. ');
     t = t.replace(/https?:\/\/\S+/g, 'link');
+    t = t.replace(/O\(1\)/g, 'constant time');
+    t = t.replace(/O\(log n\)/g, 'order log n');
+    t = t.replace(/O\(n\)/g, 'order n');
+    t = t.replace(/O\(n log n\)/g, 'order n log n');
+    t = t.replace(/O\(n\^2\)/g, 'order n squared');
     t = t.replace(/[#*`_~>\-]/g, ' ');
-    t = t.replace(/^(Direct Answer:|Answer:|Grok:|Response:|Query analyzed:[^.]*\.\s*)/i, '');
+    t = t.replace(/^(Direct Answer:|Answer:|Grok:|Response:|Nexus:|Query analyzed:[^.]*\.\s*)/i, '');
     t = t.replace(/\s+/g, ' ').trim();
-    if (t.length > 220) {{
-        let parts = t.split('. ');
-        if (parts.length > 1) t = parts[0] + '.';
+    if (t.length > 380) {{
+        let parts = t.split(/(?<=[.!?])\s+/);
+        let acc = [];
+        let len = 0;
+        for (let p of parts) {{
+            if (len + p.length <= 380) {{
+                acc.push(p);
+                len += p.length;
+            }} else {{
+                break;
+            }}
+        }}
+        if (acc.length > 0) t = acc.join(' ');
+        else t = parts[0];
     }}
     return t;
 }}
@@ -388,9 +404,10 @@ function queryAgent(userInput) {{
     .then(r => r.json())
     .then(data => {{
         const aiText = data.response || 'Understood.';
+        const spokenText = data.spoken || aiText;
         const aiEl = document.getElementById('aiSubtitle');
-        if (aiEl) aiEl.innerText = 'Jarvis: ' + aiText;
-        speakResponse(aiText);
+        if (aiEl) aiEl.innerText = 'Nexus: ' + aiText;
+        speakResponse(spokenText);
     }})
     .catch(err => {{
         const errMsg = 'Error connecting to Nexus bridge: ' + err.message;
@@ -503,13 +520,13 @@ function initCallComponent() {{
     }})
     .then(r => r.json())
     .then(data => {{
-        const greeting = data.greeting || 'Call connected. Nexus-Jarvis online and listening. Go ahead.';
+        const greeting = data.greeting || "Call connected. Hey, Nexus here! I'm on the line and listening. What are we working on?";
         const aiEl = document.getElementById('aiSubtitle');
-        if (aiEl) aiEl.innerText = 'Jarvis: ' + greeting;
+        if (aiEl) aiEl.innerText = 'Nexus: ' + greeting;
         speakResponse(greeting);
     }})
     .catch(() => {{
-        speakResponse('Call connected. Nexus-Jarvis ready. Go ahead.');
+        speakResponse("Call connected. Hey, Nexus here! I'm on the line and listening. What are we working on?");
     }});
 
     const btnEnd = document.getElementById('btnEnd');

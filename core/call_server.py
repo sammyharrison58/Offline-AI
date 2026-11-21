@@ -49,18 +49,26 @@ class CallBridgeHandler(http.server.BaseHTTPRequestHandler):
 
         if action == 'start_call':
             CallBridgeHandler.active_call = True
-            resp_data = {"status": "call_started", "greeting": "Call connected. Nexus-Jarvis online and listening. Go ahead."}
+            resp_data = {"status": "call_started", "greeting": "Call connected. Hey, Nexus here! I'm on the line and listening. What are we working on?"}
         elif action == 'end_call':
             CallBridgeHandler.active_call = False
-            resp_data = {"status": "call_ended", "farewell": "Call ended. Standing by."}
+            resp_data = {"status": "call_ended", "farewell": "Call ended. Talk to you soon!"}
         elif query:
             if CallBridgeHandler.server_agent:
                 response = CallBridgeHandler.server_agent.process_request(query)
             else:
                 response = f"Echo: {query}"
 
-            CallBridgeHandler.call_history.append({"user": query, "ai": response})
-            resp_data = {"response": response, "user": query}
+            spoken_text = response
+            try:
+                from core.voice_loop import OfflineVoiceEngine
+                ve = OfflineVoiceEngine()
+                spoken_text = ve.clean_text_for_speech(response)
+            except Exception:
+                pass
+
+            CallBridgeHandler.call_history.append({"user": query, "ai": response, "spoken": spoken_text})
+            resp_data = {"response": response, "spoken": spoken_text, "user": query}
         else:
             resp_data = {"error": "Empty query or invalid action"}
 
