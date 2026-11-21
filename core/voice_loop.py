@@ -28,8 +28,9 @@ def _get_sr():
 
 class OfflineVoiceEngine:
 
-    def __init__(self, voice_speed: int = 3):
+    def __init__(self, voice_speed: int = 1, feminine: bool = True):
         self.voice_speed = voice_speed
+        self.feminine = feminine
         self.lock = threading.Lock()
         self.sapi_voice = None
 
@@ -79,6 +80,13 @@ class OfflineVoiceEngine:
                         pass
                     v = win32com.client.Dispatch('SAPI.SpVoice')
                     self.sapi_voice = v
+                    if self.feminine:
+                        for i in range(v.GetVoices().Count):
+                            vc = v.GetVoices().Item(i)
+                            desc = vc.GetDescription().lower()
+                            if any(k in desc for k in ['zira', 'female', 'eva', 'jenny', 'aria', 'hazel', 'susan', 'catherine']):
+                                v.Voice = vc
+                                break
                     v.Rate = self.voice_speed
                     v.Speak(clean_text, 0)
                 except Exception as e:
@@ -100,7 +108,7 @@ class ConversationalCallLoop:
 
     def __init__(self, agent_responder: Callable[[str], str]):
         self.agent_responder = agent_responder
-        self.voice = OfflineVoiceEngine(voice_speed=3)
+        self.voice = OfflineVoiceEngine(voice_speed=1, feminine=True)
         self.is_active = False
         self.recognizer = None
         self.mic = None

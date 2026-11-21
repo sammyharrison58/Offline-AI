@@ -362,15 +362,43 @@ function cleanForSpeech(raw) {{
     return t;
 }}
 
+function getFeminineVoice() {{
+    if (!window.speechSynthesis) return null;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return null;
+    let v = voices.find(function(v) {{
+        const name = (v.name || '').toLowerCase();
+        return (
+            name.includes('zira') ||
+            name.includes('jenny') ||
+            name.includes('aria') ||
+            name.includes('samantha') ||
+            name.includes('victoria') ||
+            name.includes('karen') ||
+            name.includes('female')
+        );
+    }});
+    if (!v) {{
+        v = voices.find(function(v) {{
+            return (v.lang || '').startsWith('en') && (v.name || '').toLowerCase().includes('female');
+        }});
+    }}
+    return v || voices[0];
+}}
+
 function speakResponse(text) {{
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     isAiSpeaking = true;
-    setStatus('JARVIS IS SPEAKING...', 'speaking', '#06b6d4');
+    setStatus('NEXUS IS SPEAKING...', 'speaking', '#06b6d4');
     const spoken = cleanForSpeech(text);
     const u = new SpeechSynthesisUtterance(spoken || text);
-    u.rate = 1.05;
-    u.pitch = 1.0;
+    const fVoice = getFeminineVoice();
+    if (fVoice) {{
+        u.voice = fVoice;
+    }}
+    u.rate = 1.0;
+    u.pitch = 1.15;
     u.onend = function() {{
         isAiSpeaking = false;
         if (isCallActive) {{

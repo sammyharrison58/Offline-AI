@@ -225,7 +225,7 @@ def get_agent():
 
 @st.cache_resource
 def get_voice():
-    return OfflineVoiceEngine(voice_speed=3)
+    return OfflineVoiceEngine(voice_speed=1, feminine=True)
 
 agent = get_agent()
 voice = get_voice()
