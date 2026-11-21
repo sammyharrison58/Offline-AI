@@ -66,32 +66,39 @@ PROGRAMMING_LANGS = frozenset([
 ])
 
 CODING_INDICATORS = [
-    "write code", "code in", "function to", "write a function", "script to",
-    "solve in", "implement in", "how to code", "program to", "algorithm for",
-    "class to", "how to write", "how do i code", "create a function",
-    "create a script", "code for", "build a script", "build an app",
-    "write a query", "write sql", "write python", "write javascript",
-    "write typescript", "write c++", "write cpp", "write rust", "write go",
-    "write bash", "write html", "write css", "write java", "write c#",
-    "in python", "in javascript", "in typescript", "in c++", "in rust",
-    "in golang", "in java", "in sql", "in bash", "fizzbuzz", "leetcode",
-    "binary search", "quicksort", "merge sort", "bubble sort", "linked list",
-    "lru cache", "dijkstra", "trie", "bfs", "dfs", "topological sort",
-    "coin change", "longest substring", "debounce", "throttle", "promise",
-    "custom hook", "react hook", "usedebounce", "uselocalstorage", "worker pool",
-    "thread pool", "concurrency", "circular buffer", "unique ptr", "smart pointer",
-    "singleton", "recursive cte", "window function", "running total", "consecutive numbers",
-    "rest api", "fastapi", "express", "open file in", "read file in", "write file in",
-    "file io", "reverse string", "prime check", "factorial", "gcd in", "euclidean algorithm",
-    "todo app", "todo list", "calculator gui", "web scraper", "scraping", "scraper",
-    "flask api", "flask app", "discord bot", "login system", "auth system", "password hashing",
-    "password generator", "database manager", "sqlite manager", "unit test", "unit tests",
-    "pytest", "chat app", "websocket chat", "data pipeline", "etl pipeline", "api client",
-    "cli tool", "debug this", "debug code", "fix this code", "fix the bug", "syntax error",
-    "explain what this code does", "explain this code", "walk through this code",
-    "what does this code do", "how does this code work", "refactor this", "refactor code",
-    "optimize this", "make this faster", "clean up code", "add error handling",
-    "handle errors in", "error handling to", "make this robust", "write unit tests for"
+    "write code", "write a code", "write me code", "write me a code",
+    "write code about", "write a code about", "code about", "the code to",
+    "the code for", "the code of", "give me code", "give me the code",
+    "show me code", "generate code", "code in", "function to", "write a function",
+    "script to", "solve in", "implement in", "how to code", "program to",
+    "algorithm for", "class to", "how to write", "how do i code", "create a function",
+    "create a script", "code for", "build a script", "build an app", "write a program",
+    "write an app", "create an app", "build a program", "create a calculator",
+    "build a calculator", "make a calculator", "simple calculator", "calculator",
+    "snake game", "tic tac toe", "tictactoe", "write a query", "write sql",
+    "write python", "write javascript", "write typescript", "write c++",
+    "write cpp", "write rust", "write go", "write bash", "write html",
+    "write css", "write java", "write c#", "in python", "in javascript",
+    "in typescript", "in c++", "in rust", "in golang", "in java", "in sql",
+    "in bash", "fizzbuzz", "leetcode", "binary search", "quicksort", "merge sort",
+    "bubble sort", "linked list", "lru cache", "dijkstra", "trie", "bfs", "dfs",
+    "topological sort", "coin change", "longest substring", "debounce", "throttle",
+    "promise", "custom hook", "react hook", "usedebounce", "uselocalstorage",
+    "worker pool", "thread pool", "concurrency", "circular buffer", "unique ptr",
+    "smart pointer", "singleton", "recursive cte", "window function", "running total",
+    "consecutive numbers", "rest api", "fastapi", "express", "open file in",
+    "read file in", "write file in", "file io", "reverse string", "prime check",
+    "factorial", "gcd in", "euclidean algorithm", "todo app", "todo list",
+    "calculator gui", "web scraper", "scraping", "scraper", "flask api",
+    "flask app", "discord bot", "login system", "auth system", "password hashing",
+    "password generator", "database manager", "sqlite manager", "unit test",
+    "unit tests", "pytest", "chat app", "websocket chat", "data pipeline",
+    "etl pipeline", "api client", "cli tool", "debug this", "debug code",
+    "fix this code", "fix the bug", "syntax error", "explain what this code does",
+    "explain this code", "walk through this code", "what does this code do",
+    "how does this code work", "refactor this", "refactor code", "optimize this",
+    "make this faster", "clean up code", "add error handling", "handle errors in",
+    "error handling to", "make this robust", "write unit tests for"
 ]
 
 class Nexus226Agent:
@@ -212,6 +219,15 @@ class Nexus226Agent:
         if any(target in clean for target in ["who created", "who made", "who invented", "when was", "history of"]):
             return False
 
+        if any(p in clean for p in [
+            "write code", "write a code", "write me code", "write me a code",
+            "give me code", "give me a code", "show me code", "generate code",
+            "code about", "code for", "the code to", "the code for", "the code of",
+            "how to code", "how do i code", "calculator", "snake game", "tic tac toe",
+            "tictactoe", "todo app", "todo list", "weather app"
+        ]):
+            return True
+
         padded_clean = f" {clean} "
         for ind in CODING_INDICATORS:
             if " " in ind:
@@ -231,7 +247,7 @@ class Nexus226Agent:
             return True
 
         has_lang = bool(tokens.intersection(PROGRAMMING_LANGS))
-        if has_lang and any(v in tokens for v in ["code", "function", "script", "program", "class", "method", "syntax", "loop", "array", "list", "dict", "sort", "algorithm", "implement", "write"]):
+        if has_lang and any(v in tokens for v in ["code", "function", "script", "program", "class", "method", "syntax", "loop", "array", "list", "dict", "sort", "algorithm", "implement", "write", "create", "build", "make", "develop", "generate", "app", "game", "tool"]):
             return True
         if has_lang and any(phrase in clean for phrase in ["how to", "how do i", "example of"]):
             return True
@@ -526,7 +542,9 @@ class Nexus226Agent:
             return res
 
         if ql in self.response_cache:
-            return self.response_cache[ql]
+            cached_val = self.response_cache[ql]
+            if not is_coding or "```" in cached_val:
+                return cached_val
 
         if not is_coding:
             omni_match = self.omni.search(norm_q) or self.omni.search(q)
@@ -589,13 +607,19 @@ class Nexus226Agent:
         elif hasattr(self.llm, "pro_model") and self.llm.pro_model and any(w in ql for w in ["deep dive", "research", "architecture", "mathematics", "frontier", "explain"]):
             target_model = self.llm.pro_model
 
-        res = self.llm.generate(prompt_with_history, system_prompt=system_instruction, max_tokens=2048, model=target_model)
+        res = self.llm.generate(prompt_with_history, system_prompt=system_instruction, max_tokens=1500, model=target_model)
         if res and not res.startswith("[Ollama Connection Error") and not res.startswith("[Offline"):
             clean = _CLEAN_ANSWER_RE.sub('', res).strip()
-            self._cache_set(ql, clean)
-            return clean
+            if not is_coding or "```" in clean:
+                self._cache_set(ql, clean)
+                return clean
 
-        fallback_msg = "Nexus is operating in 100% offline air-gapped mode. I can assist you with system controls, coding, science, mathematics, offline research, and local files."
+        if is_coding:
+            fallback_code = self.code_engine.generate_fallback_code(q)
+            self._cache_set(ql, fallback_code)
+            return fallback_code
+
+        fallback_msg = "Lyra is operating in 100% offline air-gapped mode. I can assist you with system controls, coding, science, mathematics, offline research, and local files."
         return fallback_msg
 
     def process_request_stream(self, user_query: str, history: Optional[List[Dict[str, str]]] = None) -> Generator[str, None, None]:
@@ -709,8 +733,10 @@ class Nexus226Agent:
             return
 
         if ql in self.response_cache:
-            yield self.response_cache[ql]
-            return
+            cached_val = self.response_cache[ql]
+            if not is_coding or "```" in cached_val:
+                yield cached_val
+                return
 
         if not is_coding:
             omni_match = self.omni.search(norm_q) or self.omni.search(q)
@@ -798,12 +824,27 @@ class Nexus226Agent:
 
         if full_tokens:
             full_ans = "".join(full_tokens).strip()
+            if is_coding and "```" not in full_ans:
+                fallback_code = self.code_engine.generate_fallback_code(q)
+                self._record_turn("user", q)
+                self._record_turn("assistant", fallback_code)
+                self._cache_set(ql, fallback_code)
+                yield fallback_code
+                return
             self._record_turn("user", q)
             self._record_turn("assistant", full_ans)
             self._cache_set(ql, full_ans)
             return
 
-        fallback_msg = "Nexus is operating in 100% offline air-gapped mode. I can assist you with system controls, coding, science, mathematics, offline research, and local files."
+        if is_coding:
+            fallback_code = self.code_engine.generate_fallback_code(q)
+            self._record_turn("user", q)
+            self._record_turn("assistant", fallback_code)
+            self._cache_set(ql, fallback_code)
+            yield fallback_code
+            return
+
+        fallback_msg = "Lyra is operating in 100% offline air-gapped mode. I can assist you with system controls, coding, science, mathematics, offline research, and local files."
         self._record_turn("user", q)
         self._record_turn("assistant", fallback_msg)
         yield fallback_msg

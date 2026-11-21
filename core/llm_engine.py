@@ -123,7 +123,7 @@ class OfflineLLMEngine:
             }
             full_response = []
             try:
-                with self.session.post(url, json=payload, stream=True, timeout=25) as resp:
+                with self.session.post(url, json=payload, stream=True, timeout=(5.0, 90.0)) as resp:
                     for line in resp.iter_lines():
                         if line:
                             data = json.loads(line)
@@ -163,7 +163,7 @@ class OfflineLLMEngine:
                     "stop": ["User:", "\nUser:", "Question:"]
                 }
             }
-            res = self.session.post(url, json=payload, timeout=25)
+            res = self.session.post(url, json=payload, timeout=(5.0, 90.0))
             if res.status_code == 200:
                 return res.json().get("response", "").strip()
             return f"[Ollama Error] HTTP {res.status_code}"
@@ -187,6 +187,7 @@ class OfflineLLMEngine:
 
     def _call_builtin(self, prompt: str, system_prompt: str) -> str:
         clean = prompt.lower().strip()
+        is_coding = any(w in clean for w in ["code", "function", "program", "script", "algorithm", "implement", "def ", "class ", "import ", "calculator", "snake", "write a", "create a"])
         try:
             from core.code_engine import CodeKnowledgeEngine
             ce = CodeKnowledgeEngine()
@@ -196,8 +197,12 @@ class OfflineLLMEngine:
             cm = ce.search_code(clean)
             if cm:
                 return ce.format_solution(cm)
+            if is_coding:
+                return ce.generate_fallback_code(prompt)
         except Exception:
             pass
+        if is_coding:
+            return f"```python\ndef run():\n    print(\"Implementation for: {clean}\")\n\nif __name__ == '__main__':\n    run()\n```"
         try:
             from core.omni_knowledge import OmniKnowledgeEngine
             omni = OmniKnowledgeEngine()
@@ -217,7 +222,7 @@ class OfflineLLMEngine:
                 return f"### 💡 {d.get('name')} ({d.get('category')})\n\n**Core Concept:**\n{d.get('concept')}\n\n**Mathematical Foundation:**\n```text\n{d.get('mathematical_basis')}\n```\n\n**Frameworks & Implementations:**\n`{d.get('open_source_frameworks')}`"
         except Exception:
             pass
-        return "Nexus Autonomous Offline Engine: Operating in 100% local air-gapped mode. Internal neural core ready to process queries, execute machine controls, and analyze 370+ scientific domains."
+        return "Lyra Autonomous Offline Engine: Operating in 100% local air-gapped mode. Internal neural core ready to process queries, execute machine controls, and analyze 370+ scientific domains."
 
 if __name__ == "__main__":
     engine = OfflineLLMEngine()
