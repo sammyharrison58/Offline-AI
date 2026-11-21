@@ -17,18 +17,34 @@ class OfflineLLMEngine:
         self.session.mount("http://", adapter)
         self.cache: Dict[str, str] = {}
         self.active_backend = "ollama"
+        self.available_models: List[str] = []
+        self.coder_model: Optional[str] = None
+        self.pro_model: Optional[str] = None
+        self.general_model: Optional[str] = None
         self.warmup_thread = threading.Thread(target=self._init_and_warmup, daemon=True)
         self.warmup_thread.start()
 
     def _init_and_warmup(self):
         try:
-            r = self.session.get(f"{self.ollama_url}/api/tags", timeout=0.8)
+            r = self.session.get(f"{self.ollama_url}/api/tags", timeout=1.0)
             if r.status_code == 200:
                 self.active_backend = "ollama"
                 models = [m.get("name") for m in r.json().get("models", [])]
+                self.available_models = models
                 if models:
-                    if any("grok" in m.lower() for m in models):
-                        self.ollama_model = next((m for m in models if "grok" in m.lower()))
+                    for m in models:
+                        ml = m.lower()
+                        if "coder" in ml and not self.coder_model:
+                            self.coder_model = m
+                        elif ("pro" in ml or "3b" in ml) and not self.pro_model:
+                            self.pro_model = m
+                        elif "grok" in ml and not self.general_model:
+                            self.general_model = m
+
+                    if self.general_model:
+                        self.ollama_model = self.general_model
+                    elif self.pro_model:
+                        self.ollama_model = self.pro_model
                     elif any("llama3.2:1b" in m.lower() for m in models):
                         self.ollama_model = next((m for m in models if "llama3.2:1b" in m.lower()))
                     elif any("1b" in m.lower() for m in models):
@@ -58,15 +74,16 @@ class OfflineLLMEngine:
             pass
         self.active_backend = "builtin_synthesizer"
 
-    def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 512, temperature: float = 0.5) -> str:
-        cache_key = f"{prompt.strip()}|{system_prompt.strip()}|{max_tokens}"
+    def generate(self, prompt: str, system_prompt: str = "", max_tokens: int = 512, temperature: float = 0.5, model: Optional[str] = None) -> str:
+        chosen_model = model or self.ollama_model
+        cache_key = f"{chosen_model}|{prompt.strip()}|{system_prompt.strip()}|{max_tokens}"
         if cache_key in self.cache:
             return self.cache[cache_key]
 
         backend = self.active_backend
         res = None
         if backend == "ollama":
-            res = self._call_ollama(prompt, system_prompt, max_tokens, temperature)
+            res = self._call_ollama(prompt, system_prompt, max_tokens, temperature, model=chosen_model)
         elif backend == "local_server":
             res = self._call_local_server(prompt, system_prompt, max_tokens, temperature)
 
@@ -77,8 +94,9 @@ class OfflineLLMEngine:
             self.cache[cache_key] = res
         return res
 
-    def generate_stream(self, prompt: str, system_prompt: str = "", max_tokens: int = 512, temperature: float = 0.5) -> Generator[str, None, None]:
-        cache_key = f"{prompt.strip()}|{system_prompt.strip()}|{max_tokens}"
+    def generate_stream(self, prompt: str, system_prompt: str = "", max_tokens: int = 512, temperature: float = 0.5, model: Optional[str] = None) -> Generator[str, None, None]:
+        chosen_model = model or self.ollama_model
+        cache_key = f"{chosen_model}|{prompt.strip()}|{system_prompt.strip()}|{max_tokens}"
         if cache_key in self.cache:
             yield self.cache[cache_key]
             return
@@ -87,7 +105,7 @@ class OfflineLLMEngine:
             url = f"{self.ollama_url}/api/generate"
             threads = max(1, min(8, os.cpu_count() or 4))
             payload = {
-                "model": self.ollama_model,
+                "model": chosen_model,
                 "prompt": prompt,
                 "system": system_prompt or "You are Nexus, an elite autonomous AI companion and polyglot software engineer. Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
                 "stream": True,
@@ -121,14 +139,15 @@ class OfflineLLMEngine:
                 builtin_fallback = self._call_builtin(prompt, system_prompt)
                 yield builtin_fallback
         else:
-            yield self.generate(prompt, system_prompt, max_tokens, temperature)
+            yield self.generate(prompt, system_prompt, max_tokens, temperature, model=chosen_model)
 
-    def _call_ollama(self, prompt: str, system_prompt: str, max_tokens: int, temperature: float) -> str:
+    def _call_ollama(self, prompt: str, system_prompt: str, max_tokens: int, temperature: float, model: Optional[str] = None) -> str:
         try:
+            chosen_model = model or self.ollama_model
             url = f"{self.ollama_url}/api/generate"
             threads = max(1, min(8, os.cpu_count() or 4))
             payload = {
-                "model": self.ollama_model,
+                "model": chosen_model,
                 "prompt": prompt,
                 "system": system_prompt or "You are Nexus, an elite autonomous AI companion and polyglot software engineer. Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
                 "stream": False,

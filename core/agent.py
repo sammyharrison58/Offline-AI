@@ -583,7 +583,13 @@ class Nexus226Agent:
                 prev_turns.append(f"User: {q}")
                 prompt_with_history = "\n".join(prev_turns)
 
-        res = self.llm.generate(prompt_with_history, system_prompt=system_instruction, max_tokens=2048)
+        target_model = None
+        if is_coding and hasattr(self.llm, "coder_model") and self.llm.coder_model:
+            target_model = self.llm.coder_model
+        elif hasattr(self.llm, "pro_model") and self.llm.pro_model and any(w in ql for w in ["deep dive", "research", "architecture", "mathematics", "frontier", "explain"]):
+            target_model = self.llm.pro_model
+
+        res = self.llm.generate(prompt_with_history, system_prompt=system_instruction, max_tokens=2048, model=target_model)
         if res and not res.startswith("[Ollama Connection Error") and not res.startswith("[Offline"):
             clean = _CLEAN_ANSWER_RE.sub('', res).strip()
             self._cache_set(ql, clean)
@@ -767,7 +773,13 @@ class Nexus226Agent:
         prefix_buffer = []
         prefix_cleared = False
         full_tokens = []
-        for chunk in self.llm.generate_stream(prompt_with_history, system_prompt=system_instruction, max_tokens=2048):
+        target_model = None
+        if is_coding and hasattr(self.llm, "coder_model") and self.llm.coder_model:
+            target_model = self.llm.coder_model
+        elif hasattr(self.llm, "pro_model") and self.llm.pro_model and any(w in ql for w in ["deep dive", "research", "architecture", "mathematics", "frontier", "explain"]):
+            target_model = self.llm.pro_model
+
+        for chunk in self.llm.generate_stream(prompt_with_history, system_prompt=system_instruction, max_tokens=2048, model=target_model):
             full_tokens.append(chunk)
             if not prefix_cleared:
                 prefix_buffer.append(chunk)
