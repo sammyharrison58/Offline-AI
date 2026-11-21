@@ -2847,10 +2847,20 @@ class CodeKnowledgeEngine:
                         kw_match = True
             if kw_match:
                 if target_lang:
-                    if target_lang in recipe.get("languages", []):
-                        matched_indices[idx] += 30
+                    recipe_langs = set(l.lower() for l in recipe.get("languages", []))
+                    valid_targets = {target_lang}
+                    if target_lang in ("cpp", "c++"):
+                        valid_targets.update(["cpp", "c++"])
+                    elif target_lang in ("js", "javascript"):
+                        valid_targets.update(["js", "javascript"])
+                    elif target_lang in ("ts", "typescript"):
+                        valid_targets.update(["ts", "typescript"])
+                    elif target_lang in ("py", "python"):
+                        valid_targets.update(["py", "python"])
+                    if valid_targets.intersection(recipe_langs):
+                        matched_indices[idx] += 35
                     else:
-                        matched_indices[idx] -= 25
+                        matched_indices[idx] -= 60
 
         if matched_indices:
             best_idx = max(matched_indices.keys(), key=lambda i: matched_indices[i])
@@ -3182,6 +3192,435 @@ int main() {{
 }}
 ```"""
                 }
+
+        if "binary search" in clean and not any(t in clean for t in ["tree", "bst"]):
+            if target_lang in ["cpp", "c"]:
+                return {
+                    "id": "dyn_cpp_binary_search",
+                    "languages": [target_lang],
+                    "title": f"Binary Search in {target_lang.upper()} (O(log n))",
+                    "description": "Searches for target in a sorted vector returning index or -1.",
+                    "code": f"""```{target_lang}
+#include <iostream>
+#include <vector>
+
+int binary_search(const std::vector<int>& arr, int target) {{
+    int left = 0;
+    int right = static_cast<int>(arr.size()) - 1;
+    while (left <= right) {{
+        int mid = left + (right - left) / 2;
+        if (arr[mid] == target) return mid;
+        if (arr[mid] < target) left = mid + 1;
+        else right = mid - 1;
+    }}
+    return -1;
+}}
+
+int main() {{
+    std::vector<int> nums = {{1, 3, 5, 7, 9, 11, 13, 15}};
+    int target = 7;
+    int idx = binary_search(nums, target);
+    std::cout << "Target " << target << " found at index: " << idx << std::endl;
+    return 0;
+}}
+```"""
+                }
+            elif target_lang == "rust":
+                return {
+                    "id": "dyn_rust_binary_search",
+                    "languages": ["rust"],
+                    "title": "Binary Search in Rust (O(log n))",
+                    "description": "Iterative binary search over a sorted slice.",
+                    "code": """```rust
+fn binary_search(arr: &[i32], target: i32) -> Option<usize> {
+    let mut left = 0;
+    let mut right = arr.len();
+    while left < right {
+        let mid = left + (right - left) / 2;
+        if arr[mid] == target {
+            return Some(mid);
+        } else if arr[mid] < target {
+            left = mid + 1;
+        } else {
+            right = mid;
+        }
+    }
+    None
+}
+
+fn main() {
+    let nums = [2, 4, 6, 8, 10, 12, 14, 16];
+    match binary_search(&nums, 10) {
+        Some(idx) => println!("Found at index {}", idx),
+        None => println!("Target not found"),
+    }
+}
+```"""
+                }
+            elif target_lang in ["javascript", "typescript"]:
+                return {
+                    "id": "dyn_js_binary_search",
+                    "languages": [target_lang],
+                    "title": "Binary Search in JavaScript (O(log n))",
+                    "description": "Finds target in a sorted array in logarithmic time.",
+                    "code": """```javascript
+function binarySearch(arr, target) {
+  let left = 0;
+  let right = arr.length - 1;
+  while (left <= right) {
+    const mid = Math.floor(left + (right - left) / 2);
+    if (arr[mid] === target) return mid;
+    if (arr[mid] < target) left = mid + 1;
+    else right = mid - 1;
+  }
+  return -1;
+}
+
+const nums = [1, 2, 4, 8, 16, 32, 64];
+console.log("Index of 16:", binarySearch(nums, 16));
+console.log("Index of 10:", binarySearch(nums, 10));
+```"""
+                }
+            elif target_lang == "golang":
+                return {
+                    "id": "dyn_go_binary_search",
+                    "languages": ["golang"],
+                    "title": "Binary Search in Go (O(log n))",
+                    "description": "Standard binary search on integer slice.",
+                    "code": """```go
+package main
+
+import "fmt"
+
+func binarySearch(arr []int, target int) int {
+    left, right := 0, len(arr)-1
+    for left <= right {
+        mid := left + (right-left)/2
+        if arr[mid] == target {
+            return mid
+        }
+        if arr[mid] < target {
+            left = mid + 1
+        } else {
+            right = mid - 1
+        }
+    }
+    return -1
+}
+
+func main() {
+    nums := []int{2, 3, 5, 7, 11, 13, 17, 19}
+    fmt.Println("Index of 11:", binarySearch(nums, 11))
+}
+```"""
+                }
+
+        if "quicksort" in clean or "quick sort" in clean:
+            if target_lang in ["cpp", "c"]:
+                return {
+                    "id": "dyn_cpp_quicksort",
+                    "languages": [target_lang],
+                    "title": f"Quicksort in {target_lang.upper()} (In-Place Lomuto Partition)",
+                    "description": "Sorts vector using divide-and-conquer quicksort in average O(n log n) time.",
+                    "code": f"""```{target_lang}
+#include <iostream>
+#include <vector>
+#include <utility>
+
+int partition(std::vector<int>& arr, int low, int high) {{
+    int pivot = arr[high];
+    int i = low - 1;
+    for (int j = low; j < high; ++j) {{
+        if (arr[j] <= pivot) {{
+            ++i;
+            std::swap(arr[i], arr[j]);
+        }}
+    }}
+    std::swap(arr[i + 1], arr[high]);
+    return i + 1;
+}}
+
+void quicksort(std::vector<int>& arr, int low, int high) {{
+    if (low < high) {{
+        int pi = partition(arr, low, high);
+        quicksort(arr, low, pi - 1);
+        quicksort(arr, pi + 1, high);
+    }}
+}}
+
+int main() {{
+    std::vector<int> data = {{10, 80, 30, 90, 40, 50, 70}};
+    quicksort(data, 0, data.size() - 1);
+    for (int x : data) std::cout << x << " ";
+    std::cout << std::endl;
+    return 0;
+}}
+```"""
+                }
+            elif target_lang in ["javascript", "typescript"]:
+                return {
+                    "id": "dyn_js_quicksort",
+                    "languages": [target_lang],
+                    "title": "Quicksort in JavaScript (Average O(n log n))",
+                    "description": "In-place quicksort algorithm with partitioning.",
+                    "code": """```javascript
+function quicksort(arr, low = 0, high = arr.length - 1) {
+  if (low < high) {
+    const pivotIndex = partition(arr, low, high);
+    quicksort(arr, low, pivotIndex - 1);
+    quicksort(arr, pivotIndex + 1, high);
+  }
+  return arr;
+}
+
+function partition(arr, low, high) {
+  const pivot = arr[high];
+  let i = low - 1;
+  for (let j = low; j < high; j++) {
+    if (arr[j] <= pivot) {
+      i++;
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+  [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+  return i + 1;
+}
+
+const numbers = [38, 27, 43, 3, 9, 82, 10];
+console.log("Sorted:", quicksort(numbers));
+```"""
+                }
+
+        if any(w in clean for w in ["anagram", "valid anagram", "is anagram"]):
+            return {
+                "id": "dyn_anagram",
+                "languages": ["python", "javascript"],
+                "title": "Valid Anagram Verification (O(n) Time, O(1) Space)",
+                "description": "Determines whether two strings are anagrams using frequency counter array.",
+                "code": """```python
+from collections import Counter
+
+def is_anagram(s: str, t: str) -> bool:
+    if len(s) != len(t):
+        return False
+    return Counter(s.lower()) == Counter(t.lower())
+
+def is_anagram_optimized(s: str, t: str) -> bool:
+    if len(s) != len(t):
+        return False
+    counts = [0] * 26
+    for c1, c2 in zip(s.lower(), t.lower()):
+        if 'a' <= c1 <= 'z': counts[ord(c1) - ord('a')] += 1
+        if 'a' <= c2 <= 'z': counts[ord(c2) - ord('a')] -= 1
+    return all(x == 0 for x in counts)
+
+print("anagram vs nagaram:", is_anagram("anagram", "nagaram"))
+print("rat vs car:", is_anagram("rat", "car"))
+```"""
+            }
+
+        if any(w in clean for w in ["palindrome", "is palindrome", "valid palindrome"]):
+            return {
+                "id": "dyn_palindrome",
+                "languages": ["python"],
+                "title": "Valid Palindrome Verification (Two-Pointer O(n) Time, O(1) Space)",
+                "description": "Validates palindrome considering only alphanumeric characters and ignoring cases.",
+                "code": """```python
+def is_palindrome(s: str) -> bool:
+    left, right = 0, len(s) - 1
+    while left < right:
+        while left < right and not s[left].isalnum():
+            left += 1
+        while left < right and not s[right].isalnum():
+            right -= 1
+        if s[left].lower() != s[right].lower():
+            return False
+        left += 1
+        right -= 1
+    return True
+
+print(is_palindrome("A man, a plan, a canal: Panama"))
+print(is_palindrome("race a car"))
+```"""
+            }
+
+        if any(w in clean for w in ["kadane", "maximum subarray", "max subarray"]):
+            return {
+                "id": "dyn_kadane",
+                "languages": ["python"],
+                "title": "Maximum Subarray Sum (Kadane's Algorithm O(n) Time, O(1) Space)",
+                "description": "Finds the contiguous subarray with the largest sum in linear time.",
+                "code": """```python
+def max_sub_array(nums: list) -> int:
+    if not nums:
+        return 0
+    max_so_far = nums[0]
+    current_max = nums[0]
+    for x in nums[1:]:
+        current_max = max(x, current_max + x)
+        max_so_far = max(max_so_far, current_max)
+    return max_so_far
+
+numbers = [-2, 1, -3, 4, -1, 2, 1, -5, 4]
+print("Max Subarray Sum:", max_sub_array(numbers))
+```"""
+            }
+
+        if any(w in clean for w in ["invert binary tree", "invert tree", "flip binary tree"]):
+            return {
+                "id": "dyn_invert_tree",
+                "languages": ["python"],
+                "title": "Invert / Flip Binary Tree (Recursive O(n) Time)",
+                "description": "Inverts a binary tree by swapping left and right child pointers at every node.",
+                "code": """```python
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def invert_tree(root: TreeNode) -> TreeNode:
+    if not root:
+        return None
+    root.left, root.right = invert_tree(root.right), invert_tree(root.left)
+    return root
+
+def print_bfs(root: TreeNode):
+    if not root: return []
+    from collections import deque
+    queue = deque([root])
+    vals = []
+    while queue:
+        node = queue.popleft()
+        if node:
+            vals.append(node.val)
+            queue.append(node.left)
+            queue.append(node.right)
+    return vals
+
+tree = TreeNode(4, TreeNode(2, TreeNode(1), TreeNode(3)), TreeNode(7, TreeNode(6), TreeNode(9)))
+print("Original BFS:", print_bfs(tree))
+inverted = invert_tree(tree)
+print("Inverted BFS:", print_bfs(inverted))
+```"""
+            }
+
+        if any(w in clean for w in ["queue using stacks", "queue using two stacks", "implement queue"]):
+            return {
+                "id": "dyn_queue_stacks",
+                "languages": ["python"],
+                "title": "Implement Queue using Two Stacks (Amortized O(1) Operations)",
+                "description": "FIFO queue using two LIFO stacks with amortized constant time push, pop, and peek.",
+                "code": """```python
+class MyQueue:
+    def __init__(self):
+        self.in_stack = []
+        self.out_stack = []
+
+    def push(self, x: int) -> None:
+        self.in_stack.append(x)
+
+    def _shift(self) -> None:
+        if not self.out_stack:
+            while self.in_stack:
+                self.out_stack.append(self.in_stack.pop())
+
+    def pop(self) -> int:
+        self._shift()
+        if not self.out_stack:
+            raise IndexError("Queue is empty")
+        return self.out_stack.pop()
+
+    def peek(self) -> int:
+        self._shift()
+        if not self.out_stack:
+            raise IndexError("Queue is empty")
+        return self.out_stack[-1]
+
+    def empty(self) -> bool:
+        return not self.in_stack and not self.out_stack
+
+q = MyQueue()
+q.push(1)
+q.push(2)
+q.push(3)
+print("Peek:", q.peek())
+print("Pop:", q.pop())
+print("Pop:", q.pop())
+print("Empty:", q.empty())
+```"""
+            }
+
+        if any(w in clean for w in ["context manager", "custom context manager", "contextlib"]):
+            return {
+                "id": "dyn_context_manager",
+                "languages": ["python"],
+                "title": "Context Manager Patterns (Class-Based & @contextmanager)",
+                "description": "Demonstrates resource management with safe acquire/release guarantees.",
+                "code": """```python
+import time
+from contextlib import contextmanager
+
+class TimerContext:
+    def __enter__(self):
+        self.start = time.perf_counter()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.elapsed = (time.perf_counter() - self.start) * 1000
+        print(f"Elapsed: {self.elapsed:.2f}ms")
+        return False
+
+@contextmanager
+def temporary_file_lock(lock_name: str):
+    print(f"Acquiring lock: {lock_name}")
+    try:
+        yield lock_name
+    finally:
+        print(f"Released lock: {lock_name}")
+
+with TimerContext():
+    total = sum(i ** 2 for i in range(100000))
+
+with temporary_file_lock("resource.lock") as lock:
+    print(f"Safely executing critical section inside {lock}")
+```"""
+            }
+
+        if any(w in clean for w in ["dockerfile", "docker container"]):
+            return {
+                "id": "dyn_dockerfile",
+                "languages": ["dockerfile", "bash"],
+                "title": "Multi-Stage Production Dockerfile (Python / Node / Go)",
+                "description": "Secure multi-stage build producing minimal, non-root, production container image.",
+                "code": """```dockerfile
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 \\
+    PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev \\
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+FROM python:3.11-slim AS final
+
+WORKDIR /app
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+COPY --from=builder /root/.local /home/appuser/.local
+COPY --chown=appuser:appuser . .
+
+ENV PATH=/home/appuser/.local/bin:$PATH
+USER appuser
+
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+```"""
+            }
 
         return None
 

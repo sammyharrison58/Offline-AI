@@ -105,7 +105,7 @@ class OfflineLLMEngine:
             }
             full_response = []
             try:
-                with self.session.post(url, json=payload, stream=True, timeout=120) as resp:
+                with self.session.post(url, json=payload, stream=True, timeout=8) as resp:
                     for line in resp.iter_lines():
                         if line:
                             data = json.loads(line)
@@ -144,7 +144,7 @@ class OfflineLLMEngine:
                     "stop": ["User:", "\nUser:", "Question:"]
                 }
             }
-            res = self.session.post(url, json=payload, timeout=120)
+            res = self.session.post(url, json=payload, timeout=8)
             if res.status_code == 200:
                 return res.json().get("response", "").strip()
             return f"[Ollama Error] HTTP {res.status_code}"
@@ -159,7 +159,7 @@ class OfflineLLMEngine:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
             payload = {"messages": messages, "max_tokens": max_tokens, "temperature": temperature}
-            res = self.session.post(url, json=payload, timeout=120)
+            res = self.session.post(url, json=payload, timeout=8)
             if res.status_code == 200:
                 return res.json()["choices"][0]["message"]["content"].strip()
             return f"[Local Offline Server Error] HTTP {res.status_code}"
