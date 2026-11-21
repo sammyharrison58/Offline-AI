@@ -428,6 +428,9 @@ function initSpeechRecognition() {{
     rec.interimResults = true;
     rec.lang = 'en-US';
 
+    let silenceTimer = null;
+    let pendingTranscript = '';
+
     rec.onstart = function() {{
         if (!isAiSpeaking && isCallActive) {{
             setStatus('CONNECTED • LISTENING TO YOU...', 'listening', '#10b981');
@@ -444,13 +447,25 @@ function initSpeechRecognition() {{
                 interim += event.results[i][0].transcript;
             }}
         }}
-        const display = final || interim;
-        if (display) {{
+        const currentText = (final || interim).trim();
+        if (currentText) {{
+            pendingTranscript = currentText;
             const userEl = document.getElementById('userSubtitle');
-            if (userEl) userEl.innerText = 'You: ' + display;
+            if (userEl) userEl.innerText = 'You: ' + currentText;
         }}
+        if (silenceTimer) clearTimeout(silenceTimer);
         if (final && final.trim()) {{
+            pendingTranscript = '';
             queryAgent(final.trim());
+        }} else if (pendingTranscript) {{
+            silenceTimer = setTimeout(function() {{
+                if (pendingTranscript && !isAiSpeaking && isCallActive) {{
+                    const toSend = pendingTranscript;
+                    pendingTranscript = '';
+                    stopListening();
+                    queryAgent(toSend);
+                }}
+            }}, 850);
         }}
     }};
 
@@ -461,8 +476,15 @@ function initSpeechRecognition() {{
     }};
 
     rec.onend = function() {{
+        if (silenceTimer) clearTimeout(silenceTimer);
+        if (pendingTranscript && !isAiSpeaking && isCallActive) {{
+            const toSend = pendingTranscript;
+            pendingTranscript = '';
+            queryAgent(toSend);
+            return;
+        }}
         if (isCallActive && !isAiSpeaking && !isMicMuted) {{
-            setTimeout(startListening, 150);
+            setTimeout(startListening, 120);
         }}
     }};
     return rec;

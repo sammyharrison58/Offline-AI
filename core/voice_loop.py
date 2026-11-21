@@ -130,8 +130,9 @@ class ConversationalCallLoop:
             try:
                 with self.mic as source:
                     self.recognizer.adjust_for_ambient_noise(source, duration=0.2)
-                    self.recognizer.pause_threshold = 0.8
-                    self.recognizer.non_speaking_duration = 0.5
+                    self.recognizer.pause_threshold = 0.7
+                    self.recognizer.non_speaking_duration = 0.4
+                    self.recognizer.dynamic_energy_threshold = True
                     while self.is_active:
                         user_input = self._listen_or_prompt(source=source)
                         if not user_input or not self.is_active:
