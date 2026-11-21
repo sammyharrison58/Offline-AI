@@ -284,7 +284,10 @@ class Nexus226Agent:
             return "You're welcome! Ready for your next query."
 
         if ql in ["help", "what can you do", "commands", "menu"]:
-            return "Capabilities: 100% offline neural AI assistant, full OS machine control (open/close apps, volume, mute, lock, network, WoL), 370+ scientific & coding dossiers, local python sandbox, crypto wallet, and MongoDB sync."
+            return "Capabilities: 100% offline neural AI assistant, full OS machine control (open/close apps, volume, mute, lock, network, WoL), 370+ scientific & coding dossiers, polyglot vibe coding partner, local python sandbox, crypto wallet, and MongoDB sync."
+
+        if any(w in ql or w in norm_ql for w in ["can you write code", "can you code", "can i vibe code", "can you vibe code", "what languages do you support", "can you program"]):
+            return "Yes, I am a fully equipped polyglot software engineering agent and interactive vibe coding partner. I support full-stack application development, algorithms, refactoring, debugging, error handling, and test suites across Python, C++, Rust, Go, JavaScript, TypeScript, Java, and SQL - 100% offline."
 
         is_coding = self._is_coding_request(q, ql) or self._is_coding_request(norm_q, norm_ql)
 
@@ -588,7 +591,11 @@ class Nexus226Agent:
             return
 
         if ql in ["help", "what can you do", "commands", "menu"]:
-            yield "Capabilities: 100% offline neural AI assistant, full OS machine control (open/close apps, volume, mute, lock, network, WoL), 370+ scientific & coding dossiers, local python sandbox, crypto wallet, and MongoDB sync."
+            yield "Capabilities: 100% offline neural AI assistant, full OS machine control (open/close apps, volume, mute, lock, network, WoL), 370+ scientific & coding dossiers, polyglot vibe coding partner, local python sandbox, crypto wallet, and MongoDB sync."
+            return
+
+        if any(w in ql or w in norm_ql for w in ["can you write code", "can you code", "can i vibe code", "can you vibe code", "what languages do you support", "can you program"]):
+            yield "Yes, I am a fully equipped polyglot software engineering agent and interactive vibe coding partner. I support full-stack application development, algorithms, refactoring, debugging, error handling, and test suites across Python, C++, Rust, Go, JavaScript, TypeScript, Java, and SQL - 100% offline."
             return
 
         math_res = self._solve_math(q) or self._solve_math(norm_q)

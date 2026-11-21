@@ -47,10 +47,14 @@ class AIKnowledgeEngine:
             try:
                 import pickle
                 with open(cache_bin, 'rb') as f:
-                    self.domains, self.inverted_index, self.doc_freq, self.categories = pickle.load(f)
-                self.name_exact_map = {doc.get("name", "").strip().lower(): doc for doc in self.domains}
-                num_docs = len(self.domains)
-                self.idf = {t: math.log((num_docs + 1) / (df + 1)) + 1.0 for t, df in self.doc_freq.items()}
+                    data = pickle.load(f)
+                if len(data) == 6:
+                    self.domains, self.inverted_index, self.doc_freq, self.categories, self.name_exact_map, self.idf = data
+                else:
+                    self.domains, self.inverted_index, self.doc_freq, self.categories = data
+                    self.name_exact_map = {doc.get("name", "").strip().lower(): doc for doc in self.domains}
+                    num_docs = len(self.domains)
+                    self.idf = {t: math.log((num_docs + 1) / (df + 1)) + 1.0 for t, df in self.doc_freq.items()}
                 AIKnowledgeEngine._shared_domains = self.domains
                 AIKnowledgeEngine._shared_inverted_index = self.inverted_index
                 AIKnowledgeEngine._shared_doc_freq = self.doc_freq
@@ -70,7 +74,7 @@ class AIKnowledgeEngine:
         try:
             import pickle
             with open(cache_bin, 'wb') as f:
-                pickle.dump((self.domains, self.inverted_index, self.doc_freq, self.categories), f, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump((self.domains, self.inverted_index, self.doc_freq, self.categories, self.name_exact_map, self.idf), f, protocol=pickle.HIGHEST_PROTOCOL)
         except Exception:
             pass
 
