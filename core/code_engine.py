@@ -2826,10 +2826,18 @@ class CodeKnowledgeEngine:
                 break
 
         matched_indices: Dict[int, int] = {}
+        padded_clean = f" {clean} "
+        token_set = set(tokens)
         for idx, recipe in enumerate(self.recipes):
             kw_match = False
             for kw in recipe.get("keywords", []):
-                if kw in clean:
+                kw_lower = kw.lower()
+                is_word_match = False
+                if " " in kw_lower:
+                    is_word_match = f" {kw_lower} " in padded_clean
+                else:
+                    is_word_match = kw_lower in token_set
+                if is_word_match:
                     matched_indices[idx] = matched_indices.get(idx, 0) + 25 + len(kw)
                     kw_match = True
                 else:

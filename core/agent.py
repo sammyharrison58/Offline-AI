@@ -196,8 +196,14 @@ class Nexus226Agent:
         if any(target in clean for target in ["who created", "who made", "who invented", "when was", "history of"]):
             return False
 
-        if any(w in clean for w in CODING_INDICATORS):
-            return True
+        padded_clean = f" {clean} "
+        for ind in CODING_INDICATORS:
+            if " " in ind:
+                if f" {ind} " in padded_clean:
+                    return True
+            else:
+                if ind in tokens:
+                    return True
 
         if any(w in clean for w in ["def ", "class ", "import ", "return ", "console.log", "=>", "lambda ", "try:", "except:", "print(", "for i in ", "while ", "dict[", "list[", "->", "open("]):
             return True

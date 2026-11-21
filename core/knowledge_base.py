@@ -14,6 +14,8 @@ class AIKnowledgeEngine:
     _shared_inverted_index = None
     _shared_doc_freq = None
     _shared_categories = None
+    _shared_name_exact_map = None
+    _shared_idf = None
     _shared_mtime = None
 
     def __init__(self, json_path: str = KNOWLEDGE_FILE):
@@ -23,6 +25,8 @@ class AIKnowledgeEngine:
         self.doc_freq: Dict[str, int] = {}
         self.categories: Dict[str, List[Dict[str, Any]]] = {}
         self.query_cache: Dict[str, List[Dict[str, Any]]] = {}
+        self.name_exact_map: Dict[str, Dict[str, Any]] = {}
+        self.idf: Dict[str, float] = {}
         self.load()
 
     def load(self):
@@ -34,6 +38,8 @@ class AIKnowledgeEngine:
             self.inverted_index = AIKnowledgeEngine._shared_inverted_index
             self.doc_freq = AIKnowledgeEngine._shared_doc_freq
             self.categories = AIKnowledgeEngine._shared_categories
+            self.name_exact_map = AIKnowledgeEngine._shared_name_exact_map or {}
+            self.idf = AIKnowledgeEngine._shared_idf or {}
             return
 
         cache_bin = self.json_path + ".bin"
@@ -42,10 +48,15 @@ class AIKnowledgeEngine:
                 import pickle
                 with open(cache_bin, 'rb') as f:
                     self.domains, self.inverted_index, self.doc_freq, self.categories = pickle.load(f)
+                self.name_exact_map = {doc.get("name", "").strip().lower(): doc for doc in self.domains}
+                num_docs = len(self.domains)
+                self.idf = {t: math.log((num_docs + 1) / (df + 1)) + 1.0 for t, df in self.doc_freq.items()}
                 AIKnowledgeEngine._shared_domains = self.domains
                 AIKnowledgeEngine._shared_inverted_index = self.inverted_index
                 AIKnowledgeEngine._shared_doc_freq = self.doc_freq
                 AIKnowledgeEngine._shared_categories = self.categories
+                AIKnowledgeEngine._shared_name_exact_map = self.name_exact_map
+                AIKnowledgeEngine._shared_idf = self.idf
                 AIKnowledgeEngine._shared_mtime = mtime
                 return
             except Exception:
@@ -67,6 +78,8 @@ class AIKnowledgeEngine:
         AIKnowledgeEngine._shared_inverted_index = self.inverted_index
         AIKnowledgeEngine._shared_doc_freq = self.doc_freq
         AIKnowledgeEngine._shared_categories = self.categories
+        AIKnowledgeEngine._shared_name_exact_map = self.name_exact_map
+        AIKnowledgeEngine._shared_idf = self.idf
         AIKnowledgeEngine._shared_mtime = mtime
 
     def _stem(self, t: str) -> str:
@@ -137,6 +150,10 @@ class AIKnowledgeEngine:
                     self.inverted_index[t] = []
                 self.inverted_index[t].append((idx, w))
 
+        self.name_exact_map = {doc.get("name", "").strip().lower(): doc for doc in self.domains}
+        num_docs = len(self.domains)
+        self.idf = {t: math.log((num_docs + 1) / (df + 1)) + 1.0 for t, df in self.doc_freq.items()}
+
     def query(self, query_text: str, top_k: int = 3) -> List[Dict[str, Any]]:
         clean_q = query_text.strip().lower()
         if not clean_q:
@@ -144,6 +161,11 @@ class AIKnowledgeEngine:
 
         if clean_q in self.query_cache:
             return self.query_cache[clean_q][:top_k]
+
+        if clean_q in self.name_exact_map:
+            res = [self.name_exact_map[clean_q]]
+            self.query_cache[clean_q] = res
+            return res
 
         tokens = self._tokenize(clean_q)
         if not tokens:
@@ -153,12 +175,10 @@ class AIKnowledgeEngine:
         active_tokens = substantive_tokens if substantive_tokens else tokens
 
         scores: Dict[int, float] = {}
-        num_docs = len(self.domains)
 
         for t in active_tokens:
             if t in self.inverted_index:
-                df = self.doc_freq.get(t, 1)
-                idf = math.log((num_docs + 1) / (df + 1)) + 1.0
+                idf = self.idf.get(t, 1.0)
                 for doc_idx, weight in self.inverted_index[t]:
                     scores[doc_idx] = scores.get(doc_idx, 0.0) + (weight * idf)
 
