@@ -89,14 +89,14 @@ class OfflineLLMEngine:
             payload = {
                 "model": self.ollama_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Nexus, an advanced autonomous offline AI assistant. Answer clearly, accurately, and thoroughly. Provide complete code and explanations when requested. Never repeat the prompt.",
+                "system": system_prompt or "You are Nexus, an elite autonomous AI companion and polyglot software engineer. Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
                 "stream": True,
                 "keep_alive": -1,
                 "options": {
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
                     "num_thread": threads,
-                    "num_ctx": 1024,
+                    "num_ctx": 2048,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,
@@ -105,7 +105,7 @@ class OfflineLLMEngine:
             }
             full_response = []
             try:
-                with self.session.post(url, json=payload, stream=True, timeout=8) as resp:
+                with self.session.post(url, json=payload, stream=True, timeout=25) as resp:
                     for line in resp.iter_lines():
                         if line:
                             data = json.loads(line)
@@ -130,21 +130,21 @@ class OfflineLLMEngine:
             payload = {
                 "model": self.ollama_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Nexus, an advanced autonomous offline AI assistant. Answer clearly, accurately, and thoroughly. Provide complete code and explanations when requested. Never repeat the prompt.",
+                "system": system_prompt or "You are Nexus, an elite autonomous AI companion and polyglot software engineer. Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
                 "stream": False,
                 "keep_alive": -1,
                 "options": {
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
                     "num_thread": threads,
-                    "num_ctx": 1024,
+                    "num_ctx": 2048,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,
                     "stop": ["User:", "\nUser:", "Question:"]
                 }
             }
-            res = self.session.post(url, json=payload, timeout=8)
+            res = self.session.post(url, json=payload, timeout=25)
             if res.status_code == 200:
                 return res.json().get("response", "").strip()
             return f"[Ollama Error] HTTP {res.status_code}"

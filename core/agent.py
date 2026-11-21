@@ -13,6 +13,7 @@ if root_dir not in sys.path:
 from core.knowledge_base import AIKnowledgeEngine
 from core.omni_knowledge import OmniKnowledgeEngine
 from core.code_engine import CodeKnowledgeEngine
+from core.human_engine import HumanPersonaEngine
 
 _CLEAN_RE = re.compile(r'[^a-z0-9\s]')
 _MATH_PREFIX_RE = re.compile(r'^(what is|calculate|evaluate|solve|compute)\s+')
@@ -99,6 +100,8 @@ class Nexus226Agent:
         self.knowledge = AIKnowledgeEngine()
         self.omni = OmniKnowledgeEngine()
         self.code_engine = CodeKnowledgeEngine()
+        self.human_engine = HumanPersonaEngine()
+        self.session_history: List[Dict[str, str]] = []
         self._sys_controller = None
         self._blockchain = None
         self._llm = None
@@ -106,6 +109,19 @@ class Nexus226Agent:
         self._mongo = None
         self.cache_path = os.path.join(root_dir, "data", "response_cache.json")
         self.response_cache: Dict[str, str] = self._load_cache()
+
+    def _record_turn(self, role: str, content: str):
+        if not content:
+            return
+        self.session_history.append({"role": role, "content": content})
+        if len(self.session_history) > 20:
+            self.session_history = self.session_history[-20:]
+
+    def clear_history(self):
+        self.session_history.clear()
+
+    def get_history(self) -> List[Dict[str, str]]:
+        return list(self.session_history)
 
     @property
     def sys_controller(self):
@@ -256,6 +272,13 @@ class Nexus226Agent:
         return None
 
     def process_request(self, user_query: str, history: Optional[List[Dict[str, str]]] = None) -> str:
+        res = self._process_request_impl(user_query, history)
+        if res:
+            self._record_turn("user", user_query.strip())
+            self._record_turn("assistant", res)
+        return res
+
+    def _process_request_impl(self, user_query: str, history: Optional[List[Dict[str, str]]] = None) -> str:
         q = user_query.strip()
         ql = q.lower()
 
@@ -271,17 +294,23 @@ class Nexus226Agent:
             self._cache_set(ql, ans)
             return ans
 
+        active_history = history if history is not None else self.session_history
+
+        human_res = self.human_engine.handle_conversational_query(q, history=active_history) or self.human_engine.handle_conversational_query(norm_q, history=active_history)
+        if human_res:
+            return human_res
+
         if self._is_greeting(ql) or self._is_greeting(norm_ql):
-            return "Greetings! Nexus-Jarvis online and listening. Ready for your command."
+            return "Hey! Nexus here, running fully offline and ready to collaborate. What are we building or exploring today?"
 
         if any(target in ql or target in norm_ql for target in ["who are you", "what are you", "what is your name", "who made you", "who created you", "who built you", "tell me about yourself"]):
-            return "I am Nexus-Jarvis, your 100% offline autonomous AI assistant and polyglot software engineering agent equipped with 370+ scientific paradigms, local neural language models, OS machine controls, and offline code generation."
+            return self.human_engine.identity_explanation
 
         if any(ql.startswith(w) or norm_ql.startswith(w) for w in ["how are you", "are you ready", "are you online", "status", "are you working"]):
-            return "All local systems operational, hot in memory, and running completely offline. Ready for commands, coding, or complex inquiries."
+            return "Doing great! All local neural engines, compilers, and knowledge graphs are loaded and responsive. What's on your mind?"
 
         if ql in ["thank you", "thanks", "thanks grok", "thanks jarvis", "appreciate it"]:
-            return "You're welcome! Ready for your next query."
+            return "You're very welcome! Always here whenever you need code, an architecture review, or a deep dive."
 
         if ql in ["help", "what can you do", "commands", "menu"]:
             return "Capabilities: 100% offline neural AI assistant, full OS machine control (open/close apps, volume, mute, lock, network, WoL), 370+ scientific & coding dossiers, polyglot vibe coding partner, local python sandbox, crypto wallet, and MongoDB sync."
@@ -529,23 +558,23 @@ class Nexus226Agent:
 
         if is_coding:
             system_instruction = (
-                "You are an expert polyglot software engineer and algorithms specialist. "
-                "Write clean, optimal, production-grade code in the requested programming language. "
-                "Provide the complete, self-contained implementation with usage examples and time/space complexity analysis. "
-                "Do not include conversational filler."
+                "You are an expert polyglot software engineer and principal systems architect. "
+                "Write clean, elegant, production-grade code in the requested programming language. "
+                "Explain the architecture, design choices, edge cases, and time/space complexity with clarity and precision."
             )
         else:
             system_instruction = (
-                "You are Nexus, an advanced autonomous offline AI assistant. "
-                "You possess deep scientific, engineering, coding, and general knowledge. "
-                "Answer the question directly, accurately, and thoroughly with clear explanations and complete working code when requested. "
-                "Never repeat the question, avoid meta-introductions, and speak with confidence and clarity."
+                "You are Nexus, an elite autonomous AI companion and scientific polymath. "
+                "Communicate with the warmth, intellectual depth, sharp wit, and clarity of a world-class human collaborator. "
+                "Explain concepts using first-principles reasoning and intuitive mental models. "
+                "Never use robotic corporate filler or disclaimers. Answer directly, thoroughly, and engagingly."
             )
 
         prompt_with_history = q
-        if history:
+        hist_to_use = history if history is not None else self.session_history
+        if hist_to_use:
             prev_turns = []
-            for msg in history[-6:]:
+            for msg in hist_to_use[-6:]:
                 role = "User" if msg.get("role") == "user" else "Assistant"
                 content = msg.get("content", "").strip()
                 if content and content != q:
@@ -574,28 +603,55 @@ class Nexus226Agent:
         norm_q = self._normalize_query(q)
         norm_ql = norm_q.lower()
 
+        active_history = history if history is not None else self.session_history
+
+        human_res = self.human_engine.handle_conversational_query(q, history=active_history) or self.human_engine.handle_conversational_query(norm_q, history=active_history)
+        if human_res:
+            self._record_turn("user", q)
+            self._record_turn("assistant", human_res)
+            yield human_res
+            return
+
         if self._is_greeting(ql) or self._is_greeting(norm_ql):
-            yield "Greetings! Nexus-Jarvis online and listening. Ready for your command."
+            ans = "Hey! Nexus here, running fully offline and ready to collaborate. What are we building or exploring today?"
+            self._record_turn("user", q)
+            self._record_turn("assistant", ans)
+            yield ans
             return
 
         if any(target in ql or target in norm_ql for target in ["who are you", "what are you", "what is your name", "who made you", "who created you", "who built you", "tell me about yourself"]):
-            yield "I am Nexus-Jarvis, your 100% offline autonomous AI assistant and polyglot software engineering agent equipped with 370+ scientific paradigms, local neural language models, OS machine controls, and offline code generation."
+            ans = self.human_engine.identity_explanation
+            self._record_turn("user", q)
+            self._record_turn("assistant", ans)
+            yield ans
             return
 
         if any(ql.startswith(w) or norm_ql.startswith(w) for w in ["how are you", "are you ready", "are you online", "status", "are you working"]):
-            yield "All local systems operational, hot in memory, and running completely offline. Ready for commands, coding, or complex inquiries."
+            ans = "Doing great! All local neural engines, compilers, and knowledge graphs are loaded and responsive. What's on your mind?"
+            self._record_turn("user", q)
+            self._record_turn("assistant", ans)
+            yield ans
             return
 
         if ql in ["thank you", "thanks", "thanks grok", "thanks jarvis", "appreciate it"]:
-            yield "You're welcome! Ready for your next query."
+            ans = "You're very welcome! Always here whenever you need code, an architecture review, or a deep dive."
+            self._record_turn("user", q)
+            self._record_turn("assistant", ans)
+            yield ans
             return
 
         if ql in ["help", "what can you do", "commands", "menu"]:
-            yield "Capabilities: 100% offline neural AI assistant, full OS machine control (open/close apps, volume, mute, lock, network, WoL), 370+ scientific & coding dossiers, polyglot vibe coding partner, local python sandbox, crypto wallet, and MongoDB sync."
+            ans = "Capabilities: 100% offline neural AI assistant, full OS machine control (open/close apps, volume, mute, lock, network, WoL), 370+ scientific & coding dossiers, polyglot vibe coding partner, local python sandbox, crypto wallet, and MongoDB sync."
+            self._record_turn("user", q)
+            self._record_turn("assistant", ans)
+            yield ans
             return
 
         if any(w in ql or w in norm_ql for w in ["can you write code", "can you code", "can i vibe code", "can you vibe code", "what languages do you support", "can you program"]):
-            yield "Yes, I am a fully equipped polyglot software engineering agent and interactive vibe coding partner. I support full-stack application development, algorithms, refactoring, debugging, error handling, and test suites across Python, C++, Rust, Go, JavaScript, TypeScript, Java, and SQL - 100% offline."
+            ans = "Yes, I am a fully equipped polyglot software engineering agent and interactive vibe coding partner. I support full-stack application development, algorithms, refactoring, debugging, error handling, and test suites across Python, C++, Rust, Go, JavaScript, TypeScript, Java, and SQL - 100% offline."
+            self._record_turn("user", q)
+            self._record_turn("assistant", ans)
+            yield ans
             return
 
         math_res = self._solve_math(q) or self._solve_math(norm_q)
@@ -683,23 +739,23 @@ class Nexus226Agent:
 
         if is_coding:
             system_instruction = (
-                "You are an expert polyglot software engineer and algorithms specialist. "
-                "Write clean, optimal, production-grade code in the requested programming language. "
-                "Provide the complete, self-contained implementation with usage examples and time/space complexity analysis. "
-                "Do not include conversational filler."
+                "You are an expert polyglot software engineer and principal systems architect. "
+                "Write clean, elegant, production-grade code in the requested programming language. "
+                "Explain the architecture, design choices, edge cases, and time/space complexity with clarity and precision."
             )
         else:
             system_instruction = (
-                "You are Nexus, an advanced autonomous offline AI assistant. "
-                "You possess deep scientific, engineering, coding, and general knowledge. "
-                "Answer the question directly, accurately, and thoroughly with clear explanations and complete working code when requested. "
-                "Never repeat the question, avoid meta-introductions, and speak with confidence and clarity."
+                "You are Nexus, an elite autonomous AI companion and scientific polymath. "
+                "Communicate with the warmth, intellectual depth, sharp wit, and clarity of a world-class human collaborator. "
+                "Explain concepts using first-principles reasoning and intuitive mental models. "
+                "Never use robotic corporate filler or disclaimers. Answer directly, thoroughly, and engagingly."
             )
 
         prompt_with_history = q
-        if history:
+        hist_to_use = history if history is not None else self.session_history
+        if hist_to_use:
             prev_turns = []
-            for msg in history[-6:]:
+            for msg in hist_to_use[-6:]:
                 role = "User" if msg.get("role") == "user" else "Assistant"
                 content = msg.get("content", "").strip()
                 if content and content != q:
@@ -729,8 +785,13 @@ class Nexus226Agent:
             yield _CLEAN_ANSWER_RE.sub('', "".join(prefix_buffer))
 
         if full_tokens:
-            self._cache_set(ql, "".join(full_tokens).strip())
+            full_ans = "".join(full_tokens).strip()
+            self._record_turn("user", q)
+            self._record_turn("assistant", full_ans)
+            self._cache_set(ql, full_ans)
             return
 
         fallback_msg = "Nexus is operating in 100% offline air-gapped mode. I can assist you with system controls, coding, science, mathematics, offline research, and local files."
+        self._record_turn("user", q)
+        self._record_turn("assistant", fallback_msg)
         yield fallback_msg
