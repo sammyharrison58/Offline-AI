@@ -28,7 +28,7 @@ _AMT_RE = re.compile(r'(\d+(?:\.\d+)?)')
 _ADDR_RE = re.compile(r'(0x[a-fA-F0-9]{40})')
 _CLEAN_ANSWER_RE = re.compile(r'^(Direct Answer:|Answer:|Grok:|Response:|Question:|Detailed Explanation:)\s*', re.IGNORECASE)
 
-GREETING_EXACT = frozenset({"hello", "hi", "hey", "howdy", "greetings", "yo", "jarvis", "nexus"})
+GREETING_EXACT = frozenset({"hello", "hi", "hey", "howdy", "greetings", "yo", "jarvis", "nexus", "lyra"})
 GREETING_STARTS = frozenset({"hello", "hi", "hey", "greetings", "yo"})
 GREETING_PHRASES = ("good morning", "good afternoon", "good evening", "wake up")
 
@@ -301,15 +301,15 @@ class Nexus226Agent:
             return human_res
 
         if self._is_greeting(ql) or self._is_greeting(norm_ql):
-            return "Hey! Nexus here, running fully offline and ready to collaborate. What are we building or exploring today?"
+            return "Hey! Lyra here, running fully offline and ready to collaborate. What are we building or exploring today?"
 
-        if any(target in ql or target in norm_ql for target in ["who are you", "what are you", "what is your name", "who made you", "who created you", "who built you", "tell me about yourself"]):
+        if any(target in ql or target in norm_ql for target in ["who are you", "what are you", "what is your name", "who made you", "who created you", "who built you", "tell me about yourself", "who is lyra"]):
             return self.human_engine.identity_explanation
 
         if any(ql.startswith(w) or norm_ql.startswith(w) for w in ["how are you", "are you ready", "are you online", "status", "are you working"]):
             return "Doing great! All local neural engines, compilers, and knowledge graphs are loaded and responsive. What's on your mind?"
 
-        if ql in ["thank you", "thanks", "thanks grok", "thanks jarvis", "appreciate it"]:
+        if ql in ["thank you", "thanks", "thanks lyra", "thanks grok", "thanks jarvis", "appreciate it"]:
             return "You're very welcome! Always here whenever you need code, an architecture review, or a deep dive."
 
         if ql in ["help", "what can you do", "commands", "menu"]:
@@ -564,7 +564,7 @@ class Nexus226Agent:
             )
         else:
             system_instruction = (
-                "You are Nexus, an elite autonomous AI companion and scientific polymath. "
+                "You are Lyra, an elite autonomous AI companion, voice assistant, and scientific polymath. "
                 "Communicate with the warmth, intellectual depth, sharp wit, and clarity of a world-class human collaborator. "
                 "Explain concepts using first-principles reasoning and intuitive mental models. "
                 "Never use robotic corporate filler or disclaimers. Answer directly, thoroughly, and engagingly."
@@ -619,13 +619,13 @@ class Nexus226Agent:
             return
 
         if self._is_greeting(ql) or self._is_greeting(norm_ql):
-            ans = "Hey! Nexus here, running fully offline and ready to collaborate. What are we building or exploring today?"
+            ans = "Hey! Lyra here, running fully offline and ready to collaborate. What are we building or exploring today?"
             self._record_turn("user", q)
             self._record_turn("assistant", ans)
             yield ans
             return
 
-        if any(target in ql or target in norm_ql for target in ["who are you", "what are you", "what is your name", "who made you", "who created you", "who built you", "tell me about yourself"]):
+        if any(target in ql or target in norm_ql for target in ["who are you", "what are you", "what is your name", "who made you", "who created you", "who built you", "tell me about yourself", "who is lyra"]):
             ans = self.human_engine.identity_explanation
             self._record_turn("user", q)
             self._record_turn("assistant", ans)
@@ -639,7 +639,7 @@ class Nexus226Agent:
             yield ans
             return
 
-        if ql in ["thank you", "thanks", "thanks grok", "thanks jarvis", "appreciate it"]:
+        if ql in ["thank you", "thanks", "thanks lyra", "thanks grok", "thanks jarvis", "appreciate it"]:
             ans = "You're very welcome! Always here whenever you need code, an architecture review, or a deep dive."
             self._record_turn("user", q)
             self._record_turn("assistant", ans)
@@ -751,7 +751,7 @@ class Nexus226Agent:
             )
         else:
             system_instruction = (
-                "You are Nexus, an elite autonomous AI companion and scientific polymath. "
+                "You are Lyra, an elite autonomous AI companion, voice assistant, and scientific polymath. "
                 "Communicate with the warmth, intellectual depth, sharp wit, and clarity of a world-class human collaborator. "
                 "Explain concepts using first-principles reasoning and intuitive mental models. "
                 "Never use robotic corporate filler or disclaimers. Answer directly, thoroughly, and engagingly."

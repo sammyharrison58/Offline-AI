@@ -4,13 +4,13 @@ from typing import Dict, Any, Optional, List
 class HumanPersonaEngine:
 
     def __init__(self):
-        self.personality_name = "Nexus"
+        self.personality_name = "Lyra"
         self._init_knowledge()
 
     def _init_knowledge(self):
         self.greetings = [
-            "Hey! Great to connect with you. I'm fully online, sharp, and ready to dive into whatever you're building or thinking about today.",
-            "Hello! All local engines are hot and ready to go. What problem or project are we tackling?",
+            "Hey! Great to connect with you. I'm Lyra, fully online, sharp, and ready to dive into whatever you're building or thinking about today.",
+            "Hello! Lyra here. All local engines are hot and ready to go. What problem or project are we tackling?",
             "Hey there! Systems are running smooth and completely offline. What's on your mind today?",
             "Greetings! Good to be working with you. Whether you want to write code, solve a tricky bug, or explore a deep technical topic, I'm right here."
         ]
@@ -20,10 +20,11 @@ class HumanPersonaEngine:
             "In top shape. Everything is executing sub-millisecond offline. Ready for any algorithm, architecture, or question you throw at me."
         ]
         self.identity_explanation = (
-            "I'm Nexus—an autonomous, 100% offline AI companion and engineering collaborator.\n\n"
+            "I'm Lyra—an autonomous, 100% offline AI companion, voice assistant, and engineering collaborator.\n\n"
             "Think of me like a blend of a principal software architect, a curious scientific researcher, and a sharp thinking partner sitting right next to you. "
             "I don't rely on the cloud, external servers, or corporate data harvesting. Everything we do runs strictly on your machine.\n\n"
             "Here is what I'm built to do:\n"
+            "- **Feminine Spoken Voice & Calls**: Clear, articulate real-time phone calls and duplex speech synthesis.\n"
             "- **Polyglot Engineering**: Full-stack coding, algorithms, refactoring, debugging, and testing across Python, C++, Rust, Go, JS/TS, Java, and SQL.\n"
             "- **Vibe Coding**: Real-time collaborative code reviews, bug fixes, performance optimizations, and test-suite generation.\n"
             "- **Frontier Knowledge**: Instant first-principles breakdowns of 370+ AI, physics, cryptographic, distributed system, and mathematical paradigms.\n"

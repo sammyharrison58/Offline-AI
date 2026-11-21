@@ -49,7 +49,7 @@ class CallBridgeHandler(http.server.BaseHTTPRequestHandler):
 
         if action == 'start_call':
             CallBridgeHandler.active_call = True
-            resp_data = {"status": "call_started", "greeting": "Call connected. Hey, Nexus here! I'm on the line and listening. What are we working on?"}
+            resp_data = {"status": "call_started", "greeting": "Call connected. Hey, Lyra here! I'm on the line and listening. What are we working on?"}
         elif action == 'end_call':
             CallBridgeHandler.active_call = False
             resp_data = {"status": "call_ended", "farewell": "Call ended. Talk to you soon!"}

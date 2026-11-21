@@ -16,7 +16,7 @@ from core.call_server import CallBridgeServer
 from core.phone_hud import get_phone_call_component
 
 st.set_page_config(
-    page_title="Nexus-Grok AI | Jarvis Edition",
+    page_title="Lyra AI | Holographic Neural Cockpit",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="auto"
@@ -245,11 +245,11 @@ if "phone_call_open" not in st.session_state:
 
 if "greeted" not in st.session_state:
     st.session_state.greeted = True
-    voice.speak("Greetings Father Looks.Jarvis Ready for work.", block=False)
+    voice.speak("Hello! Lyra is online and ready.", block=False)
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Nexus-Jarvis online. Holographic neural core engaged. Speak or type your command into the bar below."}
+        {"role": "assistant", "content": "Lyra online. Neural core and voice channels active. Ready for your command."}
     ]
 
 bridge_history = CallBridgeServer.get_history()
@@ -260,7 +260,7 @@ if bridge_history:
     CallBridgeServer.clear_history()
 
 with st.sidebar:
-    st.markdown('<div class="main-title" style="font-size:1.35rem;">⚡ JARVIS DOCK</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title" style="font-size:1.35rem;">⚡ LYRA DOCK</div>', unsafe_allow_html=True)
     st.markdown('<div style="font-size:10px; color:#38bdf8; font-weight:700; margin-bottom:10px;">[ PERSISTENT HUD CONTROLS ]</div>', unsafe_allow_html=True)
 
     if st.session_state.ai_open:
@@ -311,13 +311,13 @@ with st.sidebar:
 
 col_hdr, col_pwr = st.columns([3, 1])
 with col_hdr:
-    st.markdown('<div class="main-title">⚡ NEXUS-JARVIS AI COCKPIT</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">⚡ LYRA AI COCKPIT</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-title">325+ Scientific & AI Paradigms | Holographic HUD Core | Direct Voice Duplex | OS Machine Control</div>', unsafe_allow_html=True)
     st.markdown('<div style="font-size:10px; color:#38bdf8; letter-spacing:2px; font-weight:700; margin-top:-6px; margin-bottom:8px;">[ SYSTEM: MK-IV ] // [ QUANTUM FLUX: OPTIMAL ] // [ SEC-GRID: ZERO-TRUST ]</div>', unsafe_allow_html=True)
 
 with col_pwr:
     if st.session_state.ai_open:
-        st.markdown('<div class="status-badge-on">● JARVIS CORE ACTIVE</div>', unsafe_allow_html=True)
+        st.markdown('<div class="status-badge-on">● LYRA CORE ACTIVE</div>', unsafe_allow_html=True)
         if st.button("🔴 CLOSE AI", use_container_width=True):
             st.session_state.ai_open = False
             voice.speak("AI power closed. Entering standby.", block=False)
@@ -477,7 +477,7 @@ with call_box:
             st.markdown("""
             <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; border-radius: 8px; padding: 8px 14px; margin-top: 4px;">
                 <span style="color: #10b981; font-weight: 700; font-size: 13px;">📞 FULL PHONE CALL CONSOLE ACTIVE:</span>
-                <span style="color: #cbd5e1; font-size: 12px; margin-left: 6px;">Speak naturally into your mic. Jarvis transcribes, answers aloud, and keeps listening hands-free until you hang up.</span>
+                <span style="color: #cbd5e1; font-size: 12px; margin-left: 6px;">Speak naturally into your mic. Lyra transcribes, answers aloud, and keeps listening hands-free until you hang up.</span>
             </div>
             """, unsafe_allow_html=True)
         with c_act2:

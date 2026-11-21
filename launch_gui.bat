@@ -1,5 +1,5 @@
 @echo off
-title Nexus-Jarvis Autonomous Offline AI Cockpit
+title Lyra Autonomous Offline AI Cockpit
 cd /d "%~dp0"
 netstat -ano | findstr :8501 | findstr LISTENING >nul
 if %ERRORLEVEL% EQU 0 (

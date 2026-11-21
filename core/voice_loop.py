@@ -131,7 +131,7 @@ class ConversationalCallLoop:
     def start_call(self, on_turn: Optional[Callable[[str, str], None]] = None):
         self._init_mic()
         self.is_active = True
-        greeting = "Call connected. Hey, Nexus here! I'm on the line and listening. What are we working on?"
+        greeting = "Call connected. Hey, Lyra here! I'm on the line and listening. What are we working on?"
         print(f'\nAI: {greeting}\n')
         self.voice.speak(greeting, block=True)
         if self.recognizer and self.mic:
@@ -147,7 +147,7 @@ class ConversationalCallLoop:
                             continue
 
                         clean_input = user_input.strip().lower()
-                        if any(w in clean_input for w in ['hang up', 'end call', 'close call', 'disconnect', 'goodbye', 'bye jarvis', 'bye', 'terminate call']):
+                        if any(w in clean_input for w in ['hang up', 'end call', 'close call', 'disconnect', 'goodbye', 'bye lyra', 'bye jarvis', 'bye', 'terminate call']):
                             farewell = 'Call ended. Talk to you soon!'
                             print(f'\nAI: {farewell}\n')
                             self.voice.speak(farewell, block=True)
@@ -180,7 +180,7 @@ class ConversationalCallLoop:
                 continue
 
             clean_input = user_input.strip().lower()
-            if any(w in clean_input for w in ['hang up', 'end call', 'close call', 'disconnect', 'goodbye', 'bye jarvis', 'bye', 'terminate call']):
+            if any(w in clean_input for w in ['hang up', 'end call', 'close call', 'disconnect', 'goodbye', 'bye lyra', 'bye jarvis', 'bye', 'terminate call']):
                 farewell = 'Call ended. Talk to you soon!'
                 print(f'\nAI: {farewell}\n')
                 self.voice.speak(farewell, block=True)

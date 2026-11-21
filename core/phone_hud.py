@@ -237,7 +237,7 @@ body {{
     <div class="call-header">
         <div class="call-title">
             <div class="pulse-dot" id="pulseDot"></div>
-            <span>LIVE PHONE CALL DISCUSSION</span>
+            <span>LYRA • REAL-TIME VOICE CALL</span>
         </div>
         <div class="call-timer" id="callTimer">00:00</div>
     </div>
@@ -256,7 +256,7 @@ body {{
                 <div class="bar active"></div>
             </div>
             <div class="subtitle-line subtitle-user" id="userSubtitle">You: (Speak into your mic...)</div>
-            <div class="subtitle-line subtitle-ai" id="aiSubtitle">Jarvis: Line open. Ask any question.</div>
+            <div class="subtitle-line subtitle-ai" id="aiSubtitle">Lyra: Line open. Ask any question.</div>
         </div>
     </div>
     <div class="call-footer">
@@ -419,7 +419,7 @@ function speakResponse(text) {{
 function queryAgent(userInput) {{
     if (!userInput || !userInput.trim()) return;
     const clean = userInput.trim().toLowerCase();
-    if (clean.includes('hang up') || clean.includes('end call') || clean.includes('disconnect') || clean.includes('bye jarvis') || clean.includes('goodbye')) {{
+    if (clean.includes('hang up') || clean.includes('end call') || clean.includes('disconnect') || clean.includes('bye lyra') || clean.includes('bye jarvis') || clean.includes('goodbye')) {{
         endCall();
         return;
     }}
@@ -434,13 +434,13 @@ function queryAgent(userInput) {{
         const aiText = data.response || 'Understood.';
         const spokenText = data.spoken || aiText;
         const aiEl = document.getElementById('aiSubtitle');
-        if (aiEl) aiEl.innerText = 'Nexus: ' + aiText;
+        if (aiEl) aiEl.innerText = 'Lyra: ' + aiText;
         speakResponse(spokenText);
     }})
     .catch(err => {{
-        const errMsg = 'Error connecting to Nexus bridge: ' + err.message;
+        const errMsg = 'Error connecting to Lyra bridge: ' + err.message;
         const aiEl = document.getElementById('aiSubtitle');
-        if (aiEl) aiEl.innerText = 'Jarvis: ' + errMsg;
+        if (aiEl) aiEl.innerText = 'Lyra: ' + errMsg;
         speakResponse('Network error on local bridge.');
     }});
 }}
@@ -570,13 +570,13 @@ function initCallComponent() {{
     }})
     .then(r => r.json())
     .then(data => {{
-        const greeting = data.greeting || "Call connected. Hey, Nexus here! I'm on the line and listening. What are we working on?";
+        const greeting = data.greeting || "Call connected. Hey, Lyra here! I'm on the line and listening. What are we working on?";
         const aiEl = document.getElementById('aiSubtitle');
-        if (aiEl) aiEl.innerText = 'Nexus: ' + greeting;
+        if (aiEl) aiEl.innerText = 'Lyra: ' + greeting;
         speakResponse(greeting);
     }})
     .catch(() => {{
-        speakResponse("Call connected. Hey, Nexus here! I'm on the line and listening. What are we working on?");
+        speakResponse("Call connected. Hey, Lyra here! I'm on the line and listening. What are we working on?");
     }});
 
     const btnEnd = document.getElementById('btnEnd');

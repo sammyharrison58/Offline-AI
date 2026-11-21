@@ -1,5 +1,5 @@
 @echo off
-title Nexus-Jarvis AI Starter
+title Lyra AI Starter
 cd /d "%~dp0"
 netstat -ano | findstr :8501 | findstr LISTENING >nul
 if %ERRORLEVEL% EQU 0 (
@@ -8,7 +8,7 @@ if %ERRORLEVEL% EQU 0 (
     exit /b 0
 )
 echo ========================================================
-echo   Starting Nexus-Jarvis AI Cockpit
+echo   Starting Lyra AI Cockpit
 echo ========================================================
 echo.
 echo Launching Cockpit on http://localhost:8501 ...
