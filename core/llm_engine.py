@@ -171,6 +171,9 @@ class OfflineLLMEngine:
         try:
             from core.code_engine import CodeKnowledgeEngine
             ce = CodeKnowledgeEngine()
+            vr = ce.process_vibe_request(clean)
+            if vr:
+                return vr
             cm = ce.search_code(clean)
             if cm:
                 return ce.format_solution(cm)

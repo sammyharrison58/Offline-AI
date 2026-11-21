@@ -81,7 +81,16 @@ CODING_INDICATORS = [
     "thread pool", "concurrency", "circular buffer", "unique ptr", "smart pointer",
     "singleton", "recursive cte", "window function", "running total", "consecutive numbers",
     "rest api", "fastapi", "express", "open file in", "read file in", "write file in",
-    "file io", "reverse string", "prime check", "factorial", "gcd in", "euclidean algorithm"
+    "file io", "reverse string", "prime check", "factorial", "gcd in", "euclidean algorithm",
+    "todo app", "todo list", "calculator gui", "web scraper", "scraping", "scraper",
+    "flask api", "flask app", "discord bot", "login system", "auth system", "password hashing",
+    "password generator", "database manager", "sqlite manager", "unit test", "unit tests",
+    "pytest", "chat app", "websocket chat", "data pipeline", "etl pipeline", "api client",
+    "cli tool", "debug this", "debug code", "fix this code", "fix the bug", "syntax error",
+    "explain what this code does", "explain this code", "walk through this code",
+    "what does this code do", "how does this code work", "refactor this", "refactor code",
+    "optimize this", "make this faster", "clean up code", "add error handling",
+    "handle errors in", "error handling to", "make this robust", "write unit tests for"
 ]
 
 class Nexus226Agent:
@@ -190,6 +199,15 @@ class Nexus226Agent:
         if any(w in clean for w in CODING_INDICATORS):
             return True
 
+        if any(w in clean for w in ["def ", "class ", "import ", "return ", "console.log", "=>", "lambda ", "try:", "except:", "print(", "for i in ", "while ", "dict[", "list[", "->", "open("]):
+            return True
+
+        if any(clean.startswith(p) for p in ["debug", "refactor", "optimize", "explain code", "walk through code", "add error handling", "write unit test", "unit test"]):
+            return True
+
+        if any(p in clean for p in ["explain what this code does", "what does this code do", "explain this code", "debug this", "fix this code", "refactor this", "make this faster", "add error handling to", "error handling to", "unit tests for", "write tests for"]):
+            return True
+
         has_lang = bool(tokens.intersection(PROGRAMMING_LANGS))
         if has_lang and any(v in tokens for v in ["code", "function", "script", "program", "class", "method", "syntax", "loop", "array", "list", "dict", "sort", "algorithm", "implement", "write"]):
             return True
@@ -198,6 +216,10 @@ class Nexus226Agent:
 
         code_match = self.code_engine.search_code(q)
         if code_match:
+            return True
+
+        vibe_match = self.code_engine.process_vibe_request(q)
+        if vibe_match:
             return True
 
         return False
@@ -233,9 +255,6 @@ class Nexus226Agent:
 
         if not ql:
             return "Listening. Say or type a command."
-
-        if ql in self.response_cache:
-            return self.response_cache[ql]
 
         norm_q = self._normalize_query(q)
         norm_ql = norm_q.lower()
@@ -457,11 +476,19 @@ class Nexus226Agent:
                 pair = q[8:].split(" and ", 1)
                 return self.knowledge.compare_paradigms(pair[0].strip(), pair[1].strip())
 
+        vibe_res = self.code_engine.process_vibe_request(q) or self.code_engine.process_vibe_request(norm_q)
+        if vibe_res:
+            self._cache_set(ql, vibe_res)
+            return vibe_res
+
         code_match = self.code_engine.search_code(norm_q) or self.code_engine.search_code(q)
         if code_match:
             res = self.code_engine.format_solution(code_match)
             self._cache_set(ql, res)
             return res
+
+        if ql in self.response_cache:
+            return self.response_cache[ql]
 
         if not is_coding:
             omni_match = self.omni.search(norm_q) or self.omni.search(q)
@@ -518,7 +545,7 @@ class Nexus226Agent:
                 prev_turns.append(f"User: {q}")
                 prompt_with_history = "\n".join(prev_turns)
 
-        res = self.llm.generate(prompt_with_history, system_prompt=system_instruction, max_tokens=512)
+        res = self.llm.generate(prompt_with_history, system_prompt=system_instruction, max_tokens=2048)
         if res and not res.startswith("[Ollama Connection Error") and not res.startswith("[Offline"):
             clean = _CLEAN_ANSWER_RE.sub('', res).strip()
             self._cache_set(ql, clean)
@@ -565,10 +592,6 @@ class Nexus226Agent:
             yield ans
             return
 
-        if ql in self.response_cache:
-            yield self.response_cache[ql]
-            return
-
         is_coding = self._is_coding_request(q, ql) or self._is_coding_request(norm_q, norm_ql)
 
         if not is_coding:
@@ -597,11 +620,21 @@ class Nexus226Agent:
                 yield self.process_request(user_query, history)
                 return
 
+        vibe_res = self.code_engine.process_vibe_request(q) or self.code_engine.process_vibe_request(norm_q)
+        if vibe_res:
+            self._cache_set(ql, vibe_res)
+            yield vibe_res
+            return
+
         code_match = self.code_engine.search_code(norm_q) or self.code_engine.search_code(q)
         if code_match:
             res = self.code_engine.format_solution(code_match)
             self._cache_set(ql, res)
             yield res
+            return
+
+        if ql in self.response_cache:
+            yield self.response_cache[ql]
             return
 
         if not is_coding:
@@ -665,7 +698,7 @@ class Nexus226Agent:
         prefix_buffer = []
         prefix_cleared = False
         full_tokens = []
-        for chunk in self.llm.generate_stream(prompt_with_history, system_prompt=system_instruction, max_tokens=512):
+        for chunk in self.llm.generate_stream(prompt_with_history, system_prompt=system_instruction, max_tokens=2048):
             full_tokens.append(chunk)
             if not prefix_cleared:
                 prefix_buffer.append(chunk)
