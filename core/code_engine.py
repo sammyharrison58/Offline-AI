@@ -39,7 +39,7 @@ CODE_RECIPES: List[Dict[str, Any]] = [
         "keywords": ["calculator", "simple calculator", "calculator in java", "java calculator", "calculator using java", "basic calculator java"],
         "title": "Simple Calculator in Java (CLI & Arithmetic Evaluator)",
         "description": "Complete interactive calculator in Java supporting addition, subtraction, multiplication, division, modulo, and input validation with error handling.",
-        "code": """```java
+        "code": r"""```java
 import java.util.Scanner;
 
 public class SimpleCalculator {
@@ -118,7 +118,7 @@ public class SimpleCalculator {
         "keywords": ["snake game", "snake game in python", "snake in python", "python snake", "snake code", "simple snake game"],
         "title": "Classic Snake Game in Python (Terminal & Logic Loop)",
         "description": "Complete self-contained Snake game with grid movement, food spawning, growth mechanics, collision detection, and score tracking.",
-        "code": """```python
+        "code": r"""```python
 import os
 import time
 import random
@@ -204,7 +204,7 @@ if __name__ == "__main__":
         "keywords": ["calculator", "simple calculator", "calculator in python", "python calculator", "create a calculator in python", "calculator code", "calculator using python", "basic calculator python", "write a calculator in python"],
         "title": "Interactive Calculator in Python (CLI & Math Evaluator)",
         "description": "Interactive command-line calculator supporting arithmetic operations, expression parsing, and error handling.",
-        "code": """```python
+        "code": r"""```python
 import operator
 
 OPERATIONS = {
