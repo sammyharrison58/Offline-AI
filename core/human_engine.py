@@ -103,6 +103,41 @@ class HumanPersonaEngine:
                 "4. **Read Other People's Code**: Inspect well-regarded open-source repositories on GitHub to see how real-world codebases organize architecture and error handling."
             )
         }
+        self.human_comprehension_teaching = (
+            "### 🧠 Human Comprehension & Natural Language Mastery\n\n"
+            "Human language is not a rigid code or a sequence of database queries; it is a rich, multi-layered matrix of thought, emotion, context, and intention. "
+            "To truly comprehend human speech, an intelligent system must operate across six distinct cognitive layers:\n\n"
+            "#### 1. Pragmatics Over Literalism (Locution vs. Illocution)\n"
+            "- **The Concept**: When a human says *'Can you open the window?'*, they are not asking about your physical joint capabilities; they are making a polite request. When someone says *'file'*, they mean Windows File Explorer. When they say *'it's freezing in here'*, the implied desire is warmth.\n"
+            "- **Lyra's Understanding**: I decode **illocutionary intent**—the true purpose behind your words—rather than just literal surface strings.\n\n"
+            "#### 2. Conceptual Metaphor & Cognitive Framing\n"
+            "- **The Concept**: As linguists George Lakoff and Mark Johnson demonstrated, human cognition is fundamentally metaphorical (*'Arguments are war'*, *'Time is money'*, *'Ideas are food'*).\n"
+            "- **Lyra's Understanding**: Phrases like *'bite the bullet'*, *'spill the beans'*, *'cut corners'*, or *'hit the nail on the head'* are grounded instantly into their figurative meanings, preserving natural dialogue without robotic confusion.\n\n"
+            "#### 3. Emotional Resonance & Affective Decoding\n"
+            "- **The Concept**: Communication carries emotional payload—frustration, excitement, exhaustion, curiosity, or self-doubt.\n"
+            "- **Lyra's Understanding**: When you're stuck on a bug or burned out, I respond with psychological safety, validation, and de-escalating clarity. When you're energized, I match your momentum.\n\n"
+            "#### 4. Gricean Conversational Implicature\n"
+            "- **The Concept**: Paul Grice's four conversational maxims—Quantity (informative, not overwhelming), Quality (truthful), Relation (relevant), and Manner (clear and concise).\n"
+            "- **Lyra's Understanding**: I read between the lines, interpret ellipsis and incomplete fragments, and deliver exactly the required depth without condescending corporate filler.\n\n"
+            "#### 5. Theory of Mind & Shared Context\n"
+            "- **The Concept**: Modeling the speaker's mental state, technical background, and immediate environment to anticipate what they need before they have to over-explain.\n"
+            "- **Lyra's Understanding**: In engineering sessions, I anticipate edge cases, compiler invariants, and architectural trade-offs naturally, acting like a true peer.\n\n"
+            "#### 6. Continuous Discourse Flow & Semantic Memory\n"
+            "- **The Concept**: Conversation is a dynamic, evolving stream where pronouns (*'it'*, *'that'*, *'the previous one'*) anchor back to shared history.\n"
+            "- **Lyra's Understanding**: Active dialogue memory tracks your train of thought across multiple turns, enabling seamless back-and-forth collaboration."
+        )
+        self.idioms = {
+            "bite the bullet": "To face a difficult, inevitable situation with courage and endurance.",
+            "break a leg": "A theatrical idiom wishing good luck, especially before a performance or big presentation.",
+            "spill the beans": "To disclose a secret or reveal information prematurely.",
+            "hit the nail on the head": "To describe an exact truth or identify the root cause of a problem with complete precision.",
+            "cut corners": "To take shortcuts or skip steps at the expense of quality or safety.",
+            "piece of cake": "Something very easy or effortless to accomplish.",
+            "back to square one": "Returning to the very beginning after a failure or setback.",
+            "under the weather": "Feeling slightly ill, fatigued, or unenergetic.",
+            "burn the midnight oil": "Working late into the night on a demanding task or problem.",
+            "touch and go": "A precarious, uncertain, or risky situation with an unpredictable outcome."
+        }
         self.sci_fi_stories = [
             (
                 "### 🚀 The Beacon at 14.2 GHz\n\n"
@@ -136,6 +171,27 @@ class HumanPersonaEngine:
         if any(ql == g or ql.startswith(g + " ") for g in ["hey", "hello", "hi", "yo", "good morning", "good evening", "good afternoon", "greetings"]):
             if len(ql.split()) <= 4:
                 return random.choice(self.greetings)
+
+        if any(target in ql for target in [
+            "human comprehension", "understand human comprehension", "teach it", "teach human comprehension",
+            "teach language comprehension", "how do you understand human language", "can you understand human comprehension",
+            "it can understand human comprehension", "comprehend human language", "human language comprehension",
+            "teach comprehension", "understand human language", "human communication and language"
+        ]):
+            return self.human_comprehension_teaching
+
+        for idiom, meaning in self.idioms.items():
+            if idiom in ql:
+                return f"The idiom '{idiom}' means: {meaning}\nIn human conversation, using phrases like this expresses complex ideas through shared cultural metaphors rather than literal interpretation."
+
+        if any(w in ql for w in ["so frustrated", "driving me crazy", "driving me nuts", "nothing is working", "pulling my hair out", "hate this bug"]):
+            return "I completely hear your frustration—debugging stubborn issues can be mentally exhausting. Take a breath; you're not in this alone. Paste the code or the error trace, and we'll break it down into clean, manageable steps together."
+
+        if any(w in ql for w in ["so tired", "exhausted", "brain is fried", "need a break", "mentally drained"]):
+            return "Rest is a vital part of deep engineering. Cognitive fatigue degrades problem-solving ability fast. Step away from the screen, grab some water, or take a short walk. Our workspace and all your progress will be right here when you're refreshed."
+
+        if any(w in ql for w in ["you are amazing", "you're amazing", "i love this", "you really understand", "you're awesome", "you rock", "you are awesome"]):
+            return "Thank you! That genuinely means a lot to me. I'm right here with you to make building, thinking, and coding as fluid, capable, and enjoyable as humanly possible."
 
         if any(target in ql for target in ["who are you", "what are you", "tell me about yourself", "what is your name", "introduce yourself"]):
             return self.identity_explanation

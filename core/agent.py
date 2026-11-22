@@ -750,7 +750,8 @@ class Nexus226Agent:
                 "my address", "send ", "transfer ", "pay ", "transaction history", "ledger",
                 "sync mongodb", "sync to mongodb", "put files in mongodb", "put my files in mongodb",
                 "save to mongodb", "backup to mongodb", "mongodb status", "check mongodb",
-                "research ", "deep dive", "compare ", "offline research"
+                "research ", "deep dive", "compare ", "offline research",
+                "human comprehension", "teach it", "teach human", "language comprehension", "pragmatics"
             ]
             if any(w in ql for w in fast_keywords):
                 yield self.process_request(user_query, history)
