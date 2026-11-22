@@ -1,5 +1,5 @@
 @echo off
-title Nexus-226 MongoDB Sync Engine
+title Lyra MongoDB Sync Engine
 cd /d "%~dp0"
 echo ========================================================
 echo   Syncing Project Files and Knowledge Base to MongoDB
@@ -9,4 +9,3 @@ echo.
 echo.
 echo Sync completed.
 pause
-

@@ -89,7 +89,7 @@ class BlockchainManager:
                     balance += float(tx.get('amount', 0.0))
                 if tx.get('from', '').lower() == target_addr.lower():
                     balance -= float(tx.get('amount', 0.0)) + float(tx.get('fee', 0.0))
-        return {'address': target_addr, 'balance': round(balance, 4), 'symbol': 'AETH (Nexus Autonomous Token)'}
+        return {'address': target_addr, 'balance': round(balance, 4), 'symbol': 'AETH (Lyra Autonomous Token)'}
 
     def create_and_sign_transaction(self, to_address: str, amount: float, memo: str='', fee: float=0.001) -> Dict[str, Any]:
         if not self.active_wallet:

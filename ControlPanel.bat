@@ -1,7 +1,7 @@
 @echo off
-title Nexus-226 Master Control Panel
+title Lyra AI Master Control Panel
 cd /d "%~dp0"
-echo [Nexus-226] Launching Master Control Panel...
+echo [Lyra] Launching Master Control Panel...
 python control_panel.py
 if %ERRORLEVEL% NEQ 0 (
     echo.

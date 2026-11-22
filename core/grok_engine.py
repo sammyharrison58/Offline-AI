@@ -46,7 +46,7 @@ class GrokEngine:
         return {
             "online": False,
             "results": [
-                f"Nexus is operating in 100% offline air-gapped mode. External web requests are disabled to preserve complete local autonomy and privacy. Querying local neural models for '{query}'."
+                f"Lyra is operating in 100% offline air-gapped mode. External web requests are disabled to preserve complete local autonomy and privacy. Querying local neural models for '{query}'."
             ]
         }
 
@@ -57,7 +57,7 @@ class GrokEngine:
 
         draw.rectangle([15, 15, width - 15, height - 15], outline=(0, 240, 255), width=2)
         draw.rectangle([18, 18, width - 18, height - 18], outline=(99, 102, 241), width=1)
-        draw.text((35, 30), "⚡ NEXUS-GROK AUTONOMOUS VISUAL ENGINE", fill=(0, 240, 255))
+        draw.text((35, 30), "⚡ LYRA AUTONOMOUS VISUAL ENGINE", fill=(0, 240, 255))
         draw.text((35, 55), f"Subject: {prompt[:65]}", fill=(203, 213, 225))
 
         for row in range(5):

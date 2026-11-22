@@ -21,7 +21,10 @@ def train_neural_models():
     modelfiles = [
         ("grok-offline:1b", "Modelfile.grok"),
         ("nexus-coder:1b", "Modelfile.coder"),
-        ("nexus-pro:3b", "Modelfile.pro")
+        ("nexus-pro:3b", "Modelfile.pro"),
+        ("lyra:1b", "Modelfile.grok"),
+        ("lyra-coder:1b", "Modelfile.coder"),
+        ("lyra-pro:3b", "Modelfile.pro")
     ]
     for model_name, mf_path in modelfiles:
         full_path = os.path.join(root_dir, mf_path)

@@ -10,20 +10,20 @@ from core.voice_loop import ConversationalCallLoop
 
 def run_text_loop(agent: Nexus226Agent):
     print('\n' + '=' * 65)
-    print(' [NEXUS-226] AUTONOMOUS OFFLINE AI (TEXT TERMINAL)')
+    print(' [LYRA] AUTONOMOUS OFFLINE AI (TEXT TERMINAL)')
     print(' 226 AI Paradigms | Machine Control | Blockchain Transactions')
     print(" Type 'exit' or 'quit' to terminate session.")
     print('=' * 65 + '\n')
     while True:
         try:
-            query = input('\n[Nexus-226 User] >> ')
+            query = input('\n[User] >> ')
             if not query.strip():
                 continue
             if query.strip().lower() in ['exit', 'quit', 'shutdown']:
-                print('Terminating Nexus-226 session.')
+                print('Terminating Lyra session.')
                 break
             response = agent.process_request(query)
-            print(f'\n[Nexus-226 AI]:\n{response}')
+            print(f'\n[Lyra AI]:\n{response}')
         except (KeyboardInterrupt, EOFError):
             print('\nSession interrupted. Exiting.')
             break
@@ -38,12 +38,12 @@ def run_voice_loop(agent: Nexus226Agent):
     call.start_call()
 
 def run_gui():
-    print('[Nexus-226] Launching Streamlit Web Cockpit...')
+    print('[Lyra] Launching Streamlit Web Cockpit...')
     script_path = os.path.join(root_dir, 'web_ui.py')
     subprocess.run([sys.executable, '-m', 'streamlit', 'run', script_path])
 
 def main():
-    parser = argparse.ArgumentParser(description='Nexus-226: Autonomous Offline AI Agent')
+    parser = argparse.ArgumentParser(description='Lyra: Autonomous Offline AI Agent')
     parser.add_argument('--mode', choices=['voice', 'text', 'gui'], default='voice', help='Operating mode: voice (Always-On Call), text (CLI), or gui (Streamlit Cockpit)')
     parser.add_argument('query', nargs='*', help='Optional single-shot query/command to run immediately')
     args = parser.parse_args()

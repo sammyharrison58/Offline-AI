@@ -67,7 +67,7 @@ def run_tests():
     print('[OK] Cryptographic signing and block mining verified.')
     print_banner('8. TESTING OFFLINE CONVERSATIONAL VOICE OUTPUT')
     voice = OfflineVoiceEngine(voice_speed=1)
-    spoken_text = 'All Nexus 226 subsystems verified successfully. Operating system automation, blockchain ledger, and AI knowledge engines are online.'
+    spoken_text = 'All Lyra subsystems verified successfully. Operating system automation, blockchain ledger, and AI knowledge engines are online.'
     print(f"Speaking aloud through Windows audio stack: '{spoken_text}'")
     voice.speak(spoken_text, block=True)
     print('[OK] SAPI5 speech synthesis complete.')

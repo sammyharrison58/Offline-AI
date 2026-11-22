@@ -2,7 +2,7 @@ import os
 import json
 import threading
 import requests
-from typing import Dict, Any, Optional, Generator
+from typing import Dict, Any, Optional, Generator, List
 
 class OfflineLLMEngine:
 
@@ -38,10 +38,12 @@ class OfflineLLMEngine:
                             self.coder_model = m
                         elif ("pro" in ml or "3b" in ml) and not self.pro_model:
                             self.pro_model = m
-                        elif "grok" in ml and not self.general_model:
+                        elif ("lyra" in ml or "grok" in ml) and not self.general_model:
                             self.general_model = m
 
-                    if self.general_model:
+                    if any("lyra:1b" in m.lower() for m in models):
+                        self.ollama_model = next((m for m in models if "lyra:1b" in m.lower()))
+                    elif self.general_model:
                         self.ollama_model = self.general_model
                     elif self.pro_model:
                         self.ollama_model = self.pro_model
@@ -107,7 +109,7 @@ class OfflineLLMEngine:
             payload = {
                 "model": chosen_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Nexus, an elite autonomous AI companion and polyglot software engineer. Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
+                "system": system_prompt or "You are Lyra, an elite autonomous AI companion and polyglot software engineer. Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
                 "stream": True,
                 "keep_alive": -1,
                 "options": {
@@ -149,7 +151,7 @@ class OfflineLLMEngine:
             payload = {
                 "model": chosen_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Nexus, an elite autonomous AI companion and polyglot software engineer. Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
+                "system": system_prompt or "You are Lyra, an elite autonomous AI companion and polyglot software engineer. Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
                 "stream": False,
                 "keep_alive": -1,
                 "options": {

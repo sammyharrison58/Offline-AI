@@ -185,7 +185,7 @@ class Nexus226Agent:
             pass
 
     def _cache_set(self, key: str, value: str):
-        if not value or value.startswith("Nexus is operating in 100% offline air-gapped mode") or value.startswith("[Ollama") or value.startswith("[Offline"):
+        if not value or value.startswith("Lyra is operating in 100% offline air-gapped mode") or value.startswith("Nexus is operating in 100% offline air-gapped mode") or value.startswith("[Ollama") or value.startswith("[Offline"):
             return
         self.response_cache[key] = value
         threading.Thread(target=self._save_cache, daemon=True).start()
@@ -398,7 +398,7 @@ class Nexus226Agent:
                     if prefix in ql:
                         search_query = ql.split(prefix, 1)[1].strip()
                         break
-                return f"Nexus is operating in 100% offline air-gapped mode. External web requests are disabled to preserve total privacy. Querying local offline neural models for '{search_query}'."
+                return f"Lyra is operating in 100% offline air-gapped mode. External web requests are disabled to preserve total privacy. Querying local offline neural models for '{search_query}'."
 
             if any(w in ql for w in ["wake on lan", "wol", "open computer", "open the computer", "wake computer", "power on"]):
                 mac_match = _MAC_RE.search(q)

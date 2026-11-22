@@ -8,11 +8,11 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 root_dir = os.path.dirname(os.path.abspath(__file__))
 
-class NexusControlPanelApp:
+class LyraControlPanelApp:
 
     def __init__(self, root):
         self.root = root
-        self.root.title('⚡ Nexus-226: Master Controller')
+        self.root.title('⚡ Lyra AI: Master Controller')
         self.root.geometry('680x580')
         self.root.resizable(False, False)
         self.root.configure(bg='#0F172A')
@@ -24,9 +24,9 @@ class NexusControlPanelApp:
     def _build_ui(self):
         header = tk.Frame(self.root, bg='#1E293B', padx=20, pady=15)
         header.pack(fill='x')
-        lbl_title = tk.Label(header, text='⚡ NEXUS-226 AUTONOMOUS AI', font=('Segoe UI', 16, 'bold'), fg='#818CF8', bg='#1E293B')
+        lbl_title = tk.Label(header, text='⚡ LYRA AUTONOMOUS AI', font=('Segoe UI', 16, 'bold'), fg='#818CF8', bg='#1E293B')
         lbl_title.pack(anchor='w')
-        lbl_sub = tk.Label(header, text='Offline 226 AI Engine | Machine Power & OS Control | Blockchain Ledger', font=('Segoe UI', 9), fg='#94A3B8', bg='#1E293B')
+        lbl_sub = tk.Label(header, text='Offline AI Engine | Machine Power & OS Control | Blockchain Ledger', font=('Segoe UI', 9), fg='#94A3B8', bg='#1E293B')
         lbl_sub.pack(anchor='w')
         status_card = tk.Frame(self.root, bg='#1E293B', padx=20, pady=12)
         status_card.pack(fill='x', padx=20, pady=12)
@@ -52,7 +52,7 @@ class NexusControlPanelApp:
         lbl_console.pack(anchor='w', padx=20, pady=(8, 2))
         self.log_area = scrolledtext.ScrolledText(self.root, height=12, font=('Consolas', 9), bg='#020617', fg='#38BDF8', insertbackground='#38BDF8', relief='flat', padx=10, pady=10)
         self.log_area.pack(fill='both', expand=True, padx=20, pady=(0, 15))
-        self.log_message('Nexus-226 Master Control Panel initialized.')
+        self.log_message('Lyra Master Control Panel initialized.')
 
     def log_message(self, msg: str):
         ts = time.strftime('%H:%M:%S')
@@ -75,7 +75,7 @@ class NexusControlPanelApp:
             self.log_message('System is already running on port 8501.')
             self.open_browser()
             return
-        self.log_message('Initiating Nexus-226 Streamlit engine...')
+        self.log_message('Initiating Lyra Streamlit engine...')
         self.lbl_status.config(text='● STARTING...', fg='#FBBF24')
         self.root.update()
 
@@ -86,12 +86,12 @@ class NexusControlPanelApp:
             time.sleep(2)
             self.is_running = True
             self.lbl_status.config(text='● ONLINE / RUNNING (Port 8501)', fg='#10B981')
-            self.log_message('Nexus-226 Online: Web Cockpit accessible at http://localhost:8501')
+            self.log_message('Lyra Online: Web Cockpit accessible at http://localhost:8501')
             webbrowser.open('http://localhost:8501')
         threading.Thread(target=_runner, daemon=True).start()
 
     def stop_system(self):
-        self.log_message('Stopping Nexus-226 processes...')
+        self.log_message('Stopping Lyra processes...')
         self.lbl_status.config(text='● STOPPING...', fg='#FBBF24')
         self.root.update()
         kill_cmd = 'powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 8501 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"'
@@ -105,7 +105,7 @@ class NexusControlPanelApp:
         time.sleep(1)
         self.is_running = False
         self.lbl_status.config(text='● OFFLINE / STOPPED', fg='#F43F5E')
-        self.log_message('Nexus-226 stopped. Bye Father Looks.')
+        self.log_message('Lyra stopped. Standby.')
 
     def open_browser(self):
         if not self.is_running:
@@ -125,7 +125,7 @@ class NexusControlPanelApp:
 
 def main():
     root = tk.Tk()
-    app = NexusControlPanelApp(root)
+    app = LyraControlPanelApp(root)
     root.mainloop()
 if __name__ == '__main__':
     main()

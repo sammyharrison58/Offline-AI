@@ -24,7 +24,9 @@ st.set_page_config(
 
 @st.cache_data
 def get_cached_bg():
-    p = os.path.join(root_dir, "assets", "jarvis_hud_bg.png")
+    p = os.path.join(root_dir, "assets", "lyra_hud_bg.png")
+    if not os.path.exists(p):
+        p = os.path.join(root_dir, "assets", "jarvis_hud_bg.png")
     if os.path.exists(p):
         with open(p, "rb") as f:
             return base64.b64encode(f.read()).decode()
@@ -335,11 +337,11 @@ if not st.session_state.ai_open:
     st.warning("⚡ The AI is currently CLOSED. Click the green '🟢 OPEN AI' button above to activate voice, reasoning, and machine control.")
     st.stop()
 
-jarvis_sphere_html = """
+lyra_sphere_html = """
 <style>
 body { margin:0; background:transparent; display:flex; justify-content:center; align-items:center; overflow:hidden; font-family:'Segoe UI',sans-serif; }
-.jarvis-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:230px; }
-.jarvis-core { position:relative; width:144px; height:144px; display:flex; align-items:center; justify-content:center; }
+.lyra-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:230px; }
+.lyra-core { position:relative; width:144px; height:144px; display:flex; align-items:center; justify-content:center; }
 .ring { position:absolute; border-radius:50%; box-sizing:border-box; }
 .outer-ring { width:142px; height:142px; border:1px dashed rgba(0,240,255,0.45); animation:rotCW 18s linear infinite; }
 .tracker-ring { width:126px; height:126px; border:2px solid transparent; border-top:2px solid #00f0ff; border-bottom:2px solid #00f0ff; filter:drop-shadow(0 0 8px #00f0ff); animation:rotCCW 9s linear infinite; }
@@ -375,8 +377,8 @@ body { margin:0; background:transparent; display:flex; justify-content:center; a
 .hud-tag { font-size:11px; font-weight:800; letter-spacing:3px; color:#00f0ff; text-shadow:0 0 10px rgba(0,240,255,0.85); }
 .hud-sub { font-size:9px; font-weight:600; letter-spacing:1.5px; color:#60a5fa; opacity:0.85; margin-top:2px; }
 </style>
-<div class='jarvis-wrap'>
-<div class='jarvis-core'>
+<div class='lyra-wrap'>
+<div class='lyra-core'>
 <div class='ring outer-ring'></div>
 <div class='ring tracker-ring'></div>
 <div class='ring middle-ring'></div>
@@ -391,12 +393,12 @@ body { margin:0; background:transparent; display:flex; justify-content:center; a
 <div class='bar b11'></div><div class='bar b12'></div><div class='bar b13'></div><div class='bar b14'></div><div class='bar b15'></div>
 </div>
 <div class='hud-text'>
-<div class='hud-tag'>J.A.R.V.I.S. QUANTUM SPHERE ACTIVE</div>
+<div class='hud-tag'>LYRA QUANTUM NEURAL SPHERE ACTIVE</div>
 <div class='hud-sub'>370+ SCIENTIFIC & AI PARADIGMS ● AUDIO FREQUENCY EQUALIZER ONLINE</div>
 </div>
 </div>
 """
-components.html(jarvis_sphere_html, height=235)
+components.html(lyra_sphere_html, height=235)
 
 telemetry = agent.sys_controller.get_telemetry()
 cpu_val = f"{telemetry['cpu_usage_percent']}%"
