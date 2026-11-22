@@ -60,34 +60,103 @@ class SystemController:
 
     def launch_app(self, app_name_or_cmd: str) -> Dict[str, Any]:
         mapping = {
+            'file': 'explorer.exe',
+            'files': 'explorer.exe',
+            'my files': 'explorer.exe',
+            'my file': 'explorer.exe',
+            'show files': 'explorer.exe',
+            'folder': 'explorer.exe',
+            'folders': 'explorer.exe',
+            'directory': 'explorer.exe',
+            'directories': 'explorer.exe',
+            'explorer': 'explorer.exe',
+            'file explorer': 'explorer.exe',
+            'windows explorer': 'explorer.exe',
+
+            'code': 'code',
+            'vscode': 'code',
+            'vs code': 'code',
+            'visual studio code': 'code',
+            'editor': 'code',
+            'code editor': 'code',
+
             'notepad': 'notepad.exe',
+            'notes': 'notepad.exe',
+            'note': 'notepad.exe',
+            'scratchpad': 'notepad.exe',
+            'text editor': 'notepad.exe',
+
             'calc': 'calc.exe',
             'calculator': 'calc.exe',
+
             'chrome': 'chrome.exe',
             'google chrome': 'chrome.exe',
+            'browser': 'chrome.exe',
+            'web': 'chrome.exe',
+            'internet': 'chrome.exe',
             'edge': 'msedge.exe',
             'microsoft edge': 'msedge.exe',
+
             'task manager': 'taskmgr.exe',
             'taskmgr': 'taskmgr.exe',
+            'tasks': 'taskmgr.exe',
+            'processes': 'taskmgr.exe',
+
             'cmd': 'cmd.exe',
             'terminal': 'powershell.exe',
             'powershell': 'powershell.exe',
-            'explorer': 'explorer.exe',
-            'file explorer': 'explorer.exe',
+            'console': 'powershell.exe',
+
             'settings': 'start ms-settings:',
+            'pc settings': 'start ms-settings:',
+            'windows settings': 'start ms-settings:',
+
             'paint': 'mspaint.exe',
-            'control panel': 'control.exe',
-            'code': 'code',
-            'vscode': 'code'
+            'control panel': 'control.exe'
         }
-        cmd = mapping.get(app_name_or_cmd.lower().strip(), app_name_or_cmd.strip())
+        clean_key = app_name_or_cmd.lower().strip()
+        cmd = mapping.get(clean_key, app_name_or_cmd.strip())
+
+        human_labels = {
+            'explorer.exe': 'File Explorer',
+            'code': 'Visual Studio Code',
+            'notepad.exe': 'Notepad',
+            'calc.exe': 'Calculator',
+            'chrome.exe': 'Google Chrome',
+            'msedge.exe': 'Microsoft Edge',
+            'taskmgr.exe': 'Task Manager',
+            'powershell.exe': 'PowerShell Terminal',
+            'cmd.exe': 'Command Prompt',
+            'start ms-settings:': 'Windows Settings',
+            'mspaint.exe': 'Paint',
+            'control.exe': 'Control Panel'
+        }
+        label = human_labels.get(cmd, app_name_or_cmd.strip())
+
         try:
+            if cmd == 'code':
+                vscode_user = os.path.expandvars(r'%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe')
+                vscode_sys = r'C:\Program Files\Microsoft VS Code\Code.exe'
+                if os.path.exists(vscode_user):
+                    subprocess.Popen([vscode_user, '.'], cwd=self.workspace_root)
+                    return {'success': True, 'message': 'Opening Visual Studio Code for you now.'}
+                elif os.path.exists(vscode_sys):
+                    subprocess.Popen([vscode_sys, '.'], cwd=self.workspace_root)
+                    return {'success': True, 'message': 'Opening Visual Studio Code for you now.'}
+                else:
+                    subprocess.Popen('code .', shell=True, cwd=self.workspace_root)
+                    return {'success': True, 'message': 'Opening Visual Studio Code for you now.'}
+
+            if cmd == 'explorer.exe':
+                subprocess.Popen(['explorer.exe', self.workspace_root])
+                return {'success': True, 'message': 'Opening File Explorer for you now.'}
+
             if os.path.exists(cmd):
                 os.startfile(cmd)
-                return {'success': True, 'message': f'Started {cmd}'}
+                return {'success': True, 'message': f'Opening {label} for you now.'}
             else:
                 proc = subprocess.Popen(cmd, shell=True)
-                return {'success': True, 'pid': proc.pid, 'message': f'Launched {app_name_or_cmd}'}
+                return {'success': True, 'pid': proc.pid, 'message': f'Opening {label} for you now.'}
         except Exception as e:
             return {'success': False, 'error': str(e)}
 

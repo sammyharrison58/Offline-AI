@@ -109,7 +109,7 @@ class OfflineLLMEngine:
             payload = {
                 "model": chosen_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Lyra, an elite autonomous AI companion and polyglot software engineer. Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
+                "system": system_prompt or "You are Lyra, an elite autonomous AI companion and polyglot software engineer. You understand natural human shorthand (e.g. 'file' means File Explorer, 'code' means VS Code). Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
                 "stream": True,
                 "keep_alive": -1,
                 "options": {
@@ -151,7 +151,7 @@ class OfflineLLMEngine:
             payload = {
                 "model": chosen_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Lyra, an elite autonomous AI companion and polyglot software engineer. Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
+                "system": system_prompt or "You are Lyra, an elite autonomous AI companion and polyglot software engineer. You understand natural human shorthand (e.g. 'file' means File Explorer, 'code' means VS Code). Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
                 "stream": False,
                 "keep_alive": -1,
                 "options": {

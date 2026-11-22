@@ -18,7 +18,7 @@ from core.human_engine import HumanPersonaEngine
 _CLEAN_RE = re.compile(r'[^a-z0-9\s]')
 _MATH_PREFIX_RE = re.compile(r'^(what is|calculate|evaluate|solve|compute)\s+')
 _MATH_EXPR_RE = re.compile(r'^[a-z0-9\.\s\+\-\*\/\(\)\^\%\,]+$', re.IGNORECASE)
-_APP_RE = re.compile(r'^(open|launch|start)\s+(app\s+)?', re.IGNORECASE)
+_APP_RE = re.compile(r'^(open|launch|start|bring up|show me|go to)\s+(the\s+|app\s+|my\s+)?', re.IGNORECASE)
 _KILL_RE = re.compile(r'^(close|kill|terminate|quit)\s+(app\s+)?', re.IGNORECASE)
 _DEL_FILE_RE = re.compile(r'^(delete file|remove file)\s+', re.IGNORECASE)
 _DIR_RE = re.compile(r'^(create folder|make folder|create directory)\s+', re.IGNORECASE)
@@ -440,7 +440,42 @@ class Nexus226Agent:
                 res = self.sys_controller.run_cmd(cmd)
                 return res.get("stdout") or res.get("stderr") or "[Executed]"
 
-            if any(ql.startswith(p) for p in ["open ", "launch ", "start "]):
+            if any(p in ql for p in ["when i say file", "when i say code", "file means", "code means", "when i say vscode"]):
+                return "Understood completely! Whenever you say 'file', 'files', or 'folder', I know you mean Windows File Explorer. And when you say 'code' or 'editor', I'll bring up Visual Studio Code. I naturally adapt to human shorthand."
+
+            app_shorthand_exact = {
+                "file": "explorer.exe",
+                "files": "explorer.exe",
+                "my files": "explorer.exe",
+                "show files": "explorer.exe",
+                "open file": "explorer.exe",
+                "open files": "explorer.exe",
+                "folder": "explorer.exe",
+                "folders": "explorer.exe",
+                "vscode": "code",
+                "vs code": "code",
+                "open vscode": "code",
+                "open code": "code",
+                "editor": "code",
+                "code editor": "code",
+                "browser": "chrome.exe",
+                "open browser": "chrome.exe",
+                "terminal": "powershell.exe",
+                "open terminal": "powershell.exe",
+                "notepad": "notepad.exe",
+                "open notepad": "notepad.exe",
+                "calculator": "calc.exe",
+                "open calculator": "calc.exe",
+                "calc": "calc.exe",
+                "open calc": "calc.exe",
+                "task manager": "taskmgr.exe",
+                "open task manager": "taskmgr.exe"
+            }
+            if ql in app_shorthand_exact:
+                res = self.sys_controller.launch_app(app_shorthand_exact[ql])
+                return str(res.get("message", res.get("error")))
+
+            if any(ql.startswith(p) for p in ["open ", "launch ", "start ", "bring up ", "show me ", "go to "]):
                 app = _APP_RE.sub("", q).strip()
                 res = self.sys_controller.launch_app(app)
                 return str(res.get("message", res.get("error")))
@@ -707,7 +742,9 @@ class Nexus226Agent:
                 "schedule wake", "wake at", "sleep computer", "suspend machine",
                 "system status", "system telemetry", "hardware status", "pc specs", "ram usage", "battery",
                 "screenshot", "capture display", "capture screen", "run powershell ", "powershell ",
-                "run cmd ", "cmd ", "open ", "launch ", "start ", "close ", "kill ", "terminate ",
+                "run cmd ", "cmd ", "open ", "launch ", "start ", "bring up ", "show me ", "go to ",
+                "file", "files", "my files", "show files", "vscode", "vs code", "code editor",
+                "close ", "kill ", "terminate ",
                 "type ", "create file ", "delete file ", "remove file ", "create folder ",
                 "list files", "dir", "list processes", "wallet", "balance", "crypto balance",
                 "my address", "send ", "transfer ", "pay ", "transaction history", "ledger",
