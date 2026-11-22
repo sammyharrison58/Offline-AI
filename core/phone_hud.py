@@ -362,32 +362,70 @@ function cleanForSpeech(raw) {{
     return t;
 }}
 
-function getFeminineVoice() {{
+let activeFeminineVoice = null;
+
+function updateFeminineVoice() {{
     if (!window.speechSynthesis) return null;
     const voices = window.speechSynthesis.getVoices();
     if (!voices || voices.length === 0) return null;
-    let v = voices.find(function(v) {{
-        const name = (v.name || '').toLowerCase();
-        return (
-            name.includes('zira') ||
-            name.includes('jenny') ||
-            name.includes('aria') ||
-            name.includes('samantha') ||
-            name.includes('victoria') ||
-            name.includes('karen') ||
-            name.includes('female')
-        );
-    }});
-    if (!v) {{
-        v = voices.find(function(v) {{
-            return (v.lang || '').startsWith('en') && (v.name || '').toLowerCase().includes('female');
-        }});
+
+    const femaleKeywords = ['zira', 'jenny', 'aria', 'samantha', 'victoria', 'karen', 'hazel', 'susan', 'catherine', 'eva', 'female'];
+    const maleKeywords = ['david', 'mark', 'george', 'richard', 'male', 'guy', 'james', 'john', 'ravi', 'sean'];
+
+    let chosen = null;
+    for (let i = 0; i < voices.length; i++) {{
+        const name = (voices[i].name || '').toLowerCase();
+        const isMale = maleKeywords.some(function(m) {{ return name.includes(m); }});
+        if (!isMale && femaleKeywords.some(function(f) {{ return name.includes(f); }})) {{
+            chosen = voices[i];
+            break;
+        }}
     }}
-    return v || voices[0];
+    if (!chosen) {{
+        for (let i = 0; i < voices.length; i++) {{
+            const name = (voices[i].name || '').toLowerCase();
+            const lang = (voices[i].lang || '').toLowerCase();
+            const isMale = maleKeywords.some(function(m) {{ return name.includes(m); }});
+            if (!isMale && (lang.startsWith('en') || voices[i].default)) {{
+                chosen = voices[i];
+                break;
+            }}
+        }}
+    }}
+    if (!chosen) {{
+        for (let i = 0; i < voices.length; i++) {{
+            const name = (voices[i].name || '').toLowerCase();
+            if (!maleKeywords.some(function(m) {{ return name.includes(m); }})) {{
+                chosen = voices[i];
+                break;
+            }}
+        }}
+    }}
+    activeFeminineVoice = chosen;
+    return chosen;
 }}
 
-function speakResponse(text) {{
+if (window.speechSynthesis) {{
+    updateFeminineVoice();
+    window.speechSynthesis.onvoiceschanged = updateFeminineVoice;
+}}
+
+function getFeminineVoice() {{
+    return updateFeminineVoice() || activeFeminineVoice;
+}}
+
+function speakResponse(text, retryCount) {{
     if (!window.speechSynthesis) return;
+    if (typeof retryCount === 'undefined') retryCount = 0;
+
+    const voices = window.speechSynthesis.getVoices();
+    if ((!voices || voices.length === 0) && retryCount < 10) {{
+        setTimeout(function() {{
+            speakResponse(text, retryCount + 1);
+        }}, 150);
+        return;
+    }}
+
     window.speechSynthesis.cancel();
     isAiSpeaking = true;
     setStatus('LYRA IS SPEAKING...', 'speaking', '#06b6d4');
@@ -398,7 +436,7 @@ function speakResponse(text) {{
         u.voice = fVoice;
     }}
     u.rate = 1.0;
-    u.pitch = 1.15;
+    u.pitch = 1.25;
     u.onend = function() {{
         isAiSpeaking = false;
         if (isCallActive) {{
@@ -574,10 +612,14 @@ function initCallComponent() {{
         const greeting = data.greeting || "Call connected. Hey, Lyra here! I'm on the line and listening. What are we working on?";
         const aiEl = document.getElementById('aiSubtitle');
         if (aiEl) aiEl.innerText = 'Lyra: ' + greeting;
-        speakResponse(greeting);
+        setTimeout(function() {{
+            speakResponse(greeting);
+        }}, 250);
     }})
     .catch(() => {{
-        speakResponse("Call connected. Hey, Lyra here! I'm on the line and listening. What are we working on?");
+        setTimeout(function() {{
+            speakResponse("Call connected. Hey, Lyra here! I'm on the line and listening. What are we working on?");
+        }}, 250);
     }});
 
     const btnEnd = document.getElementById('btnEnd');

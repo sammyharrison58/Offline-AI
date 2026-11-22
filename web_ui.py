@@ -578,7 +578,7 @@ if user_input:
             if "generated_graphic.png" in response and os.path.exists("generated_graphic.png"):
                 st.image("generated_graphic.png", caption="Rendered Graphic", use_column_width=True)
             if "```" in response:
-                voice.speak("Code generated and ready on your screen, Sir.", block=False)
+                voice.speak("Code generated and ready on your screen.", block=False)
             else:
                 voice.speak(response[:300], block=False)
     st.session_state.messages.append({"role": "assistant", "content": response})

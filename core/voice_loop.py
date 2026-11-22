@@ -139,12 +139,22 @@ class OfflineVoiceEngine:
                     v = win32com.client.Dispatch('SAPI.SpVoice')
                     self.sapi_voice = v
                     if self.feminine:
+                        zira_vc = None
                         for i in range(v.GetVoices().Count):
                             vc = v.GetVoices().Item(i)
                             desc = vc.GetDescription().lower()
-                            if any(k in desc for k in ['zira', 'female', 'eva', 'jenny', 'aria', 'hazel', 'susan', 'catherine']):
-                                v.Voice = vc
+                            if 'zira' in desc or any(k in desc for k in ['female', 'eva', 'jenny', 'aria', 'hazel', 'susan', 'catherine']):
+                                zira_vc = vc
                                 break
+                        if zira_vc:
+                            v.Voice = zira_vc
+                        else:
+                            for i in range(v.GetVoices().Count):
+                                vc = v.GetVoices().Item(i)
+                                desc = vc.GetDescription().lower()
+                                if 'david' not in desc and 'mark' not in desc and 'male' not in desc:
+                                    v.Voice = vc
+                                    break
                     v.Rate = self.voice_speed
                     v.Speak(clean_text, 0)
                 except Exception as e:
