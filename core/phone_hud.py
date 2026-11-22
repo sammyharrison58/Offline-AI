@@ -390,7 +390,7 @@ function speakResponse(text) {{
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     isAiSpeaking = true;
-    setStatus('NEXUS IS SPEAKING...', 'speaking', '#06b6d4');
+    setStatus('LYRA IS SPEAKING...', 'speaking', '#06b6d4');
     const spoken = cleanForSpeech(text);
     const u = new SpeechSynthesisUtterance(spoken || text);
     const fVoice = getFeminineVoice();
@@ -452,8 +452,9 @@ function initSpeechRecognition() {{
         return null;
     }}
     const rec = new SpeechRec();
-    rec.continuous = false;
+    rec.continuous = true;
     rec.interimResults = true;
+    rec.maxAlternatives = 3;
     rec.lang = 'en-US';
 
     let silenceTimer = null;

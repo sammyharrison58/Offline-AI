@@ -55,18 +55,34 @@ def _load_vosk():
         return VOSK_AVAILABLE
     try:
         import vosk
+        vosk.SetLogLevel(-1)
         model_path = _find_vosk_model()
         if not model_path:
             VOSK_AVAILABLE = False
             return False
         VOSK_MODEL_PATH = model_path
-        vosk.SetLogLevel(-1)
         VOSK_MODEL = vosk.Model(model_path)
         VOSK_AVAILABLE = True
         return True
     except Exception:
         VOSK_AVAILABLE = False
         return False
+
+def _decode_audio_with_vosk(audio) -> Optional[str]:
+    if not _load_vosk() or VOSK_MODEL is None:
+        return None
+    try:
+        import vosk
+        raw_pcm = audio.get_raw_data(convert_rate=16000, convert_width=2)
+        rec = vosk.KaldiRecognizer(VOSK_MODEL, 16000)
+        rec.SetMaxAlternatives(0)
+        rec.SetWords(False)
+        rec.AcceptWaveform(raw_pcm)
+        res = json.loads(rec.FinalResult())
+        text = res.get('text', '').strip()
+        return text if text else None
+    except Exception:
+        return None
 
 class OfflineVoiceEngine:
 
@@ -147,13 +163,13 @@ class OfflineVoiceEngine:
                 pass
 
 
-def _vosk_listen_once(samplerate: int = 16000, max_seconds: int = 15, silence_ms: int = 1200) -> Optional[str]:
+def _vosk_listen_once(samplerate: int = 16000, max_seconds: int = 15, silence_ms: int = 1000, initial_timeout_sec: float = 3.5) -> Optional[str]:
     try:
         import sounddevice as sd
         import vosk
     except ImportError:
         return None
-    if not VOSK_AVAILABLE or VOSK_MODEL is None:
+    if not _load_vosk() or VOSK_MODEL is None:
         return None
     try:
         rec = vosk.KaldiRecognizer(VOSK_MODEL, samplerate)
@@ -162,12 +178,15 @@ def _vosk_listen_once(samplerate: int = 16000, max_seconds: int = 15, silence_ms
         chunk_ms = 100
         chunk_size = int(samplerate * chunk_ms / 1000)
         silence_chunks = int(silence_ms / chunk_ms)
+        initial_chunks_limit = int(initial_timeout_sec * 1000 / chunk_ms)
         consecutive_silence = 0
+        chunks_elapsed = 0
         total_chunks = int(max_seconds * 1000 / chunk_ms)
         got_speech = False
         transcript = ''
         with sd.RawInputStream(samplerate=samplerate, blocksize=chunk_size, dtype='int16', channels=1) as stream:
             for _ in range(total_chunks):
+                chunks_elapsed += 1
                 data, _ = stream.read(chunk_size)
                 raw = bytes(data)
                 if rec.AcceptWaveform(raw):
@@ -189,11 +208,13 @@ def _vosk_listen_once(samplerate: int = 16000, max_seconds: int = 15, silence_ms
                             consecutive_silence += 1
                 if got_speech and consecutive_silence >= silence_chunks:
                     break
+                if not got_speech and chunks_elapsed >= initial_chunks_limit:
+                    break
             final = json.loads(rec.FinalResult()).get('text', '').strip()
             if final:
                 transcript += ' ' + final
         return transcript.strip() or None
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -224,8 +245,8 @@ class ConversationalCallLoop:
                     self.recognizer = _sr.Recognizer()
                     self.recognizer.energy_threshold = 250
                     self.recognizer.dynamic_energy_threshold = True
-                    self.recognizer.pause_threshold = 0.9
-                    self.recognizer.non_speaking_duration = 0.5
+                    self.recognizer.pause_threshold = 0.8
+                    self.recognizer.non_speaking_duration = 0.4
                 self.mic = _sr.Microphone()
             except Exception:
                 self.mic = None
@@ -240,7 +261,7 @@ class ConversationalCallLoop:
         if self.recognizer and self.mic:
             try:
                 with self.mic as source:
-                    self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
+                    self.recognizer.adjust_for_ambient_noise(source, duration=0.4)
                     self.recognizer.energy_threshold = max(self.recognizer.energy_threshold, 200)
                     while self.is_active:
                         user_input = self._listen_or_prompt(source=source)
@@ -298,14 +319,6 @@ class ConversationalCallLoop:
         if not self.is_active:
             return None
 
-        if self._vosk_ready and VOSK_AVAILABLE:
-            try:
-                text = _vosk_listen_once(samplerate=16000, max_seconds=15, silence_ms=1200)
-                if text:
-                    return text
-            except Exception:
-                pass
-
         _sr, avail = _get_sr()
         w_err = getattr(_sr, "WaitTimeoutError", Exception) if avail else Exception
         u_err = getattr(_sr, "UnknownValueError", Exception) if avail else Exception
@@ -313,13 +326,16 @@ class ConversationalCallLoop:
 
         if self.recognizer and source:
             try:
-                audio = self.recognizer.listen(source, timeout=5, phrase_time_limit=15)
+                audio = self.recognizer.listen(source, timeout=4, phrase_time_limit=15)
+                vosk_text = _decode_audio_with_vosk(audio)
+                if vosk_text:
+                    return vosk_text
                 try:
-                    text = self.recognizer.recognize_google(audio)
-                except r_err:
-                    text = None
-                if text and text.strip():
-                    return text.strip()
+                    google_text = self.recognizer.recognize_google(audio)
+                    if google_text and google_text.strip():
+                        return google_text.strip()
+                except Exception:
+                    pass
             except w_err:
                 return None
             except u_err:
@@ -330,13 +346,16 @@ class ConversationalCallLoop:
         elif self.recognizer and self.mic:
             try:
                 with self.mic as src:
-                    audio = self.recognizer.listen(src, timeout=5, phrase_time_limit=15)
+                    audio = self.recognizer.listen(src, timeout=4, phrase_time_limit=15)
+                vosk_text = _decode_audio_with_vosk(audio)
+                if vosk_text:
+                    return vosk_text
                 try:
-                    text = self.recognizer.recognize_google(audio)
-                except r_err:
-                    text = None
-                if text and text.strip():
-                    return text.strip()
+                    google_text = self.recognizer.recognize_google(audio)
+                    if google_text and google_text.strip():
+                        return google_text.strip()
+                except Exception:
+                    pass
             except w_err:
                 return None
             except u_err:
@@ -344,6 +363,14 @@ class ConversationalCallLoop:
             except Exception:
                 time.sleep(0.05)
                 return None
+
+        if self._vosk_ready and VOSK_AVAILABLE:
+            try:
+                direct_text = _vosk_listen_once(samplerate=16000, max_seconds=15, silence_ms=1000, initial_timeout_sec=3.5)
+                if direct_text:
+                    return direct_text
+            except Exception:
+                pass
 
         try:
             return input('>> [User Speaking]: ')
