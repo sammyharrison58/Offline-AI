@@ -180,6 +180,15 @@ class HumanPersonaEngine:
         ]):
             return self.human_comprehension_teaching
 
+        if any(target in ql for target in ["can you understand natural language", "do you understand natural language", "natural language understanding", "can you understand normal speech", "do you understand casual speech"]):
+            return "Yes! I understand natural human language, conversational shorthand, subtext, idioms, and indirect requests. You don't need to speak to me in rigid commands—just speak normally like you would to a software engineering collaborator, and I'll adapt to your intent."
+
+        if any(ql == b or ql.startswith(b + " ") for b in ["bye", "goodbye", "see you", "see ya", "catch you later", "goodnight", "take care", "have a good one"]):
+            return "Take care! Have a great one, and I'll be right here whenever you want to dive back into code, research, or system controls."
+
+        if ql in ["sounds good", "let us do it", "lets do it", "perfect", "awesome", "deal", "got it", "nice", "cool", "sweet", "great"]:
+            return "Awesome! Let's make it happen. What are we tackling next?"
+
         for idiom, meaning in self.idioms.items():
             if idiom in ql:
                 return f"The idiom '{idiom}' means: {meaning}\nIn human conversation, using phrases like this expresses complex ideas through shared cultural metaphors rather than literal interpretation."

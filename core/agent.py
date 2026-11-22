@@ -18,8 +18,8 @@ from core.human_engine import HumanPersonaEngine
 _CLEAN_RE = re.compile(r'[^a-z0-9\s]')
 _MATH_PREFIX_RE = re.compile(r'^(what is|calculate|evaluate|solve|compute)\s+')
 _MATH_EXPR_RE = re.compile(r'^[a-z0-9\.\s\+\-\*\/\(\)\^\%\,]+$', re.IGNORECASE)
-_APP_RE = re.compile(r'^(open|launch|start|bring up|show me|go to)\s+(the\s+|app\s+|my\s+)?', re.IGNORECASE)
-_KILL_RE = re.compile(r'^(close|kill|terminate|quit)\s+(app\s+)?', re.IGNORECASE)
+_APP_RE = re.compile(r'^(can you\s+|could you\s+|please\s+|would you\s+|i want you to\s+|help me\s+)?(open|launch|start|bring up|pull up|pop open|fire up|show me|go to)\s+(the\s+|app\s+|my\s+)?', re.IGNORECASE)
+_KILL_RE = re.compile(r'^(can you\s+|could you\s+|please\s+|would you\s+)?(close|kill|terminate|quit|shut down|stop)\s+(the\s+|app\s+|my\s+)?', re.IGNORECASE)
 _DEL_FILE_RE = re.compile(r'^(delete file|remove file)\s+', re.IGNORECASE)
 _DIR_RE = re.compile(r'^(create folder|make folder|create directory)\s+', re.IGNORECASE)
 _MAC_RE = re.compile(r'([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})')
@@ -301,6 +301,16 @@ class Nexus226Agent:
         if not ql:
             return "Listening. Say or type a command."
 
+        cmd_text = ql
+        for prefix in [
+            "can you please ", "could you please ", "would you please ",
+            "can you ", "could you ", "please ", "would you ", "will you ",
+            "i want you to ", "help me ", "let us ", "lets ", "just "
+        ]:
+            if cmd_text.startswith(prefix):
+                cmd_text = cmd_text[len(prefix):].strip()
+                break
+
         norm_q = self._normalize_query(q)
         norm_ql = norm_q.lower()
 
@@ -312,7 +322,18 @@ class Nexus226Agent:
 
         active_history = history if history is not None else self.session_history
 
-        human_res = self.human_engine.handle_conversational_query(q, history=active_history) or self.human_engine.handle_conversational_query(norm_q, history=active_history)
+        if active_history and len(active_history) >= 2:
+            last_agent_msg = active_history[-1].get("content", "").lower() if active_history[-1].get("role") == "assistant" else ""
+            if "hardware:" in last_agent_msg or "cpu" in last_agent_msg or "ram" in last_agent_msg or "battery" in last_agent_msg:
+                if cmd_text in ["what about cpu", "what about the cpu", "how about cpu", "how about the cpu", "and the cpu", "cpu"]:
+                    return f"CPU: {self.sys_controller.get_telemetry()['cpu_usage_percent']}% usage."
+                if cmd_text in ["what about battery", "what about the battery", "how about battery", "how about the battery", "and the battery", "battery"]:
+                    return f"Battery: {self.sys_controller.get_telemetry()['battery']['percent']}% capacity."
+                if cmd_text in ["what about ram", "what about the ram", "how about ram", "how about the ram", "and the ram", "ram", "what about memory", "memory"]:
+                    t = self.sys_controller.get_telemetry()
+                    return f"RAM: {t['ram_available_gb']}GB free of {t['ram_total_gb']}GB ({t['ram_used_percent']}% used)."
+
+        human_res = self.human_engine.handle_conversational_query(q, history=active_history) or self.human_engine.handle_conversational_query(norm_q, history=active_history) or self.human_engine.handle_conversational_query(cmd_text, history=active_history)
         if human_res:
             return human_res
 
@@ -337,27 +358,27 @@ class Nexus226Agent:
         is_coding = self._is_coding_request(q, ql) or self._is_coding_request(norm_q, norm_ql)
 
         if not is_coding:
-            if any(w in ql for w in ["mute", "silence audio", "unmute"]):
+            if any(w in cmd_text or w in ql for w in ["mute", "silence audio", "unmute", "shut up", "turn off sound", "silence sound", "kill the sound"]):
                 res = self.sys_controller.toggle_mute()
                 return res.get("message", "Mute toggled.")
 
-            if any(w in ql for w in ["volume up", "increase volume", "louder", "turn up sound"]):
+            if any(w in cmd_text or w in ql for w in ["volume up", "increase volume", "louder", "turn up sound", "turn up the volume", "crank up the volume", "make it louder"]):
                 res = self.sys_controller.volume_up(steps=5)
                 return res.get("message", "Volume increased.")
 
-            if any(w in ql for w in ["volume down", "decrease volume", "lower volume", "quieter", "turn down sound"]):
+            if any(w in cmd_text or w in ql for w in ["volume down", "decrease volume", "lower volume", "quieter", "turn down sound", "turn down the volume", "turn down the noise", "lower the sound", "make it quieter"]):
                 res = self.sys_controller.volume_down(steps=5)
                 return res.get("message", "Volume decreased.")
 
-            if any(w in ql for w in ["lock computer", "lock pc", "lock screen", "lock workstation"]):
+            if any(w in cmd_text or w in ql for w in ["lock computer", "lock pc", "lock screen", "lock workstation"]):
                 res = self.sys_controller.lock_workstation()
                 return res.get("message", "Workstation locked.")
 
-            if any(w in ql for w in ["minimize windows", "minimize all", "show desktop"]):
+            if any(w in cmd_text or w in ql for w in ["minimize windows", "minimize all", "show desktop", "show my desktop", "hide all windows"]):
                 res = self.sys_controller.minimize_all_windows()
                 return res.get("message", "Showing desktop.")
 
-            if any(w in ql for w in ["empty recycle bin", "clean recycle bin", "clear recycle bin"]):
+            if any(w in cmd_text or w in ql for w in ["empty recycle bin", "clean recycle bin", "clear recycle bin"]):
                 res = self.sys_controller.empty_recycle_bin()
                 return res.get("message", "Recycle bin emptied.")
 
@@ -419,28 +440,40 @@ class Nexus226Agent:
             if "sleep computer" in ql or "suspend machine" in ql:
                 return "Entering low-power sleep mode."
 
-            if "opentelemetry" not in ql and (any(w in ql for w in ["system status", "hardware status", "pc specs", "ram usage", "battery", "hardware telemetry"]) or "telemetry" in ql.split()):
+            telemetry_triggers = [
+                "system status", "hardware status", "pc specs", "ram usage", "battery",
+                "hardware telemetry", "how much ram", "how much memory", "cpu usage",
+                "how much juice", "battery level", "battery percentage", "is my battery",
+                "system load", "check memory", "check hardware", "is my pc lagging",
+                "computer specs", "machine specs", "system specs"
+            ]
+            if "opentelemetry" not in ql and (any(w in cmd_text or w in ql for w in telemetry_triggers) or "telemetry" in ql.split()):
                 t = self.sys_controller.get_telemetry()
                 return f"Hardware: CPU {t['cpu_usage_percent']}% | RAM {t['ram_available_gb']}GB free of {t['ram_total_gb']}GB ({t['ram_used_percent']}% used) | Battery {t['battery']['percent']}%"
 
-            if "screenshot" in ql or "capture display" in ql or "capture screen" in ql:
+            screenshot_triggers = [
+                "screenshot", "capture display", "capture screen", "screen capture",
+                "snap the screen", "snap screen", "grab my screen", "grab the screen",
+                "take a picture of my screen", "take a pic of my screen", "pic of my screen"
+            ]
+            if any(w in cmd_text or w in ql for w in screenshot_triggers):
                 path = "screenshot.png"
                 res = self.sys_controller.capture_screenshot(path)
                 if res.get("success"):
                     return f"Screenshot captured: {res['path']}"
                 return f"Screenshot error: {res.get('error')}"
 
-            if ql.startswith("run powershell ") or ql.startswith("powershell "):
+            if ql.startswith("run powershell ") or ql.startswith("powershell ") or cmd_text.startswith("run powershell ") or cmd_text.startswith("powershell "):
                 cmd = q.split("powershell", 1)[1].strip()
                 res = self.sys_controller.run_powershell(cmd)
                 return res.get("stdout") or res.get("stderr") or "[Executed]"
 
-            if ql.startswith("run cmd ") or ql.startswith("cmd "):
+            if ql.startswith("run cmd ") or ql.startswith("cmd ") or cmd_text.startswith("run cmd ") or cmd_text.startswith("cmd "):
                 cmd = q.split("cmd", 1)[1].strip()
                 res = self.sys_controller.run_cmd(cmd)
                 return res.get("stdout") or res.get("stderr") or "[Executed]"
 
-            if any(p in ql for p in ["when i say file", "when i say code", "file means", "code means", "when i say vscode"]):
+            if any(p in ql or p in cmd_text for p in ["when i say file", "when i say code", "file means", "code means", "when i say vscode"]):
                 return "Understood completely! Whenever you say 'file', 'files', or 'folder', I know you mean Windows File Explorer. And when you say 'code' or 'editor', I'll bring up Visual Studio Code. I naturally adapt to human shorthand."
 
             app_shorthand_exact = {
@@ -452,16 +485,27 @@ class Nexus226Agent:
                 "open files": "explorer.exe",
                 "folder": "explorer.exe",
                 "folders": "explorer.exe",
+                "pull up files": "explorer.exe",
+                "pull up my files": "explorer.exe",
+                "pull up file": "explorer.exe",
                 "vscode": "code",
                 "vs code": "code",
                 "open vscode": "code",
                 "open code": "code",
+                "pull up vscode": "code",
+                "pull up code": "code",
+                "pop open vscode": "code",
+                "fire up vscode": "code",
+                "fire up code": "code",
                 "editor": "code",
                 "code editor": "code",
                 "browser": "chrome.exe",
                 "open browser": "chrome.exe",
+                "pop open browser": "chrome.exe",
+                "pop open chrome": "chrome.exe",
                 "terminal": "powershell.exe",
                 "open terminal": "powershell.exe",
+                "fire up terminal": "powershell.exe",
                 "notepad": "notepad.exe",
                 "open notepad": "notepad.exe",
                 "calculator": "calc.exe",
@@ -471,17 +515,20 @@ class Nexus226Agent:
                 "task manager": "taskmgr.exe",
                 "open task manager": "taskmgr.exe"
             }
-            if ql in app_shorthand_exact:
-                res = self.sys_controller.launch_app(app_shorthand_exact[ql])
+            if ql in app_shorthand_exact or cmd_text in app_shorthand_exact:
+                target_key = ql if ql in app_shorthand_exact else cmd_text
+                res = self.sys_controller.launch_app(app_shorthand_exact[target_key])
                 return str(res.get("message", res.get("error")))
 
-            if any(ql.startswith(p) for p in ["open ", "launch ", "start ", "bring up ", "show me ", "go to "]):
-                app = _APP_RE.sub("", q).strip()
+            if any(cmd_text.startswith(p) or ql.startswith(p) for p in ["open ", "launch ", "start ", "bring up ", "pull up ", "pop open ", "fire up ", "show me ", "go to "]):
+                raw_target = cmd_text if any(cmd_text.startswith(p) for p in ["open ", "launch ", "start ", "bring up ", "pull up ", "pop open ", "fire up ", "show me ", "go to "]) else ql
+                app = _APP_RE.sub("", raw_target).strip()
                 res = self.sys_controller.launch_app(app)
                 return str(res.get("message", res.get("error")))
 
-            if any(ql.startswith(p) for p in ["close ", "kill ", "terminate ", "quit "]):
-                target = _KILL_RE.sub("", q).strip()
+            if any(cmd_text.startswith(p) or ql.startswith(p) for p in ["close ", "kill ", "terminate ", "quit ", "shut down ", "stop "]):
+                raw_target = cmd_text if any(cmd_text.startswith(p) for p in ["close ", "kill ", "terminate ", "quit ", "shut down ", "stop "]) else ql
+                target = _KILL_RE.sub("", raw_target).strip()
                 res = self.sys_controller.terminate_by_name(target)
                 return str(res.get("message", res.get("error")))
 
@@ -668,9 +715,19 @@ class Nexus226Agent:
         norm_q = self._normalize_query(q)
         norm_ql = norm_q.lower()
 
+        cmd_text = ql
+        for prefix in [
+            "can you please ", "could you please ", "would you please ",
+            "can you ", "could you ", "please ", "would you ", "will you ",
+            "i want you to ", "help me ", "let us ", "lets ", "just "
+        ]:
+            if cmd_text.startswith(prefix):
+                cmd_text = cmd_text[len(prefix):].strip()
+                break
+
         active_history = history if history is not None else self.session_history
 
-        human_res = self.human_engine.handle_conversational_query(q, history=active_history) or self.human_engine.handle_conversational_query(norm_q, history=active_history)
+        human_res = self.human_engine.handle_conversational_query(q, history=active_history) or self.human_engine.handle_conversational_query(norm_q, history=active_history) or self.human_engine.handle_conversational_query(cmd_text, history=active_history)
         if human_res:
             self._record_turn("user", q)
             self._record_turn("assistant", human_res)
@@ -751,9 +808,12 @@ class Nexus226Agent:
                 "sync mongodb", "sync to mongodb", "put files in mongodb", "put my files in mongodb",
                 "save to mongodb", "backup to mongodb", "mongodb status", "check mongodb",
                 "research ", "deep dive", "compare ", "offline research",
-                "human comprehension", "teach it", "teach human", "language comprehension", "pragmatics"
+                "human comprehension", "teach it", "teach human", "language comprehension", "pragmatics",
+                "pull up", "pop open", "fire up", "how much juice", "battery level", "how much ram",
+                "how much memory", "cpu usage", "snap screen", "snap the screen", "grab my screen",
+                "pic of my screen", "what about", "how about"
             ]
-            if any(w in ql for w in fast_keywords):
+            if any(w in ql or w in cmd_text for w in fast_keywords):
                 yield self.process_request(user_query, history)
                 return
 

@@ -151,6 +151,35 @@ class SystemController:
                 subprocess.Popen(['explorer.exe', self.workspace_root])
                 return {'success': True, 'message': 'Opening File Explorer for you now.'}
 
+            if cmd == 'chrome.exe':
+                chrome_paths = [
+                    r'C:\Program Files\Google\Chrome\Application\chrome.exe',
+                    r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
+                    os.path.expandvars(r'%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe')
+                ]
+                for cp in chrome_paths:
+                    if os.path.exists(cp):
+                        subprocess.Popen([cp])
+                        return {'success': True, 'message': 'Opening Google Chrome for you now.'}
+                subprocess.Popen('start msedge', shell=True)
+                return {'success': True, 'message': 'Opening web browser for you now.'}
+
+            if cmd == 'powershell.exe':
+                subprocess.Popen('start powershell', shell=True)
+                return {'success': True, 'message': 'Opening PowerShell Terminal for you now.'}
+
+            if cmd == 'cmd.exe':
+                subprocess.Popen('start cmd', shell=True)
+                return {'success': True, 'message': 'Opening Command Prompt for you now.'}
+
+            if cmd == 'notepad.exe':
+                subprocess.Popen('notepad.exe', shell=True)
+                return {'success': True, 'message': 'Opening Notepad for you now.'}
+
+            if cmd == 'calc.exe':
+                subprocess.Popen('calc.exe', shell=True)
+                return {'success': True, 'message': 'Opening Calculator for you now.'}
+
             if os.path.exists(cmd):
                 os.startfile(cmd)
                 return {'success': True, 'message': f'Opening {label} for you now.'}
