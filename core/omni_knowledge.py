@@ -632,6 +632,7 @@ OMNI_TOPICS = [
         "significance": "Safeguards digital identities, financial transactions, critical national infrastructure, healthcare data, and proprietary intellectual property against global cyber warfare and data breaches.",
         "applications": "HTTPS web encryption, banking payment gateways, enterprise identity providers (Okta, Keycloak), end-to-end encrypted messaging (Signal Protocol), and secure enclave computing."
     },
+    
     {
         "name": "Linux Operating System Internals, POSIX Systems Programming & Shell Scripting",
         "keywords": ["what is linux shell", "linux internals", "posix systems programming", "bash scripting mechanics", "linux process fork exec", "unix pipes and signals", "shell scripting", "who created linux", "linus torvalds linux"],
