@@ -24,6 +24,13 @@ st.set_page_config(
 
 @st.cache_data
 def get_cached_bg():
+    b64_p = os.path.join(root_dir, "assets", "lyra_hud_bg.b64")
+    if os.path.exists(b64_p):
+        try:
+            with open(b64_p, "r", encoding="utf-8") as f:
+                return f.read().strip()
+        except Exception:
+            pass
     p = os.path.join(root_dir, "assets", "lyra_hud_bg.png")
     if not os.path.exists(p):
         p = os.path.join(root_dir, "assets", "jarvis_hud_bg.png")

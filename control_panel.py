@@ -60,13 +60,15 @@ class LyraControlPanelApp:
         self.log_area.see('end')
 
     def _check_initial_status(self):
-        cmd = 'powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 8501 -ErrorAction SilentlyContinue"'
-        res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        if 'Listen' in res.stdout or 'Established' in res.stdout:
+        import socket
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.2)
+                s.connect(('127.0.0.1', 8501))
             self.is_running = True
             self.lbl_status.config(text='● ONLINE / RUNNING (Port 8501)', fg='#10B981')
             self.log_message('Detected existing server running on port 8501.')
-        else:
+        except Exception:
             self.is_running = False
             self.lbl_status.config(text='● OFFLINE / STOPPED', fg='#F43F5E')
 
@@ -80,10 +82,28 @@ class LyraControlPanelApp:
         self.root.update()
 
         def _runner():
+            import socket
             script_path = os.path.join(root_dir, 'web_ui.py')
-            cmd = [sys.executable, '-m', 'streamlit', 'run', script_path, '--server.port', '8501', '--server.headless', 'true']
+            cmd = [
+                sys.executable, '-m', 'streamlit', 'run', script_path,
+                '--server.port', '8501',
+                '--server.address', '127.0.0.1',
+                '--server.headless', 'false',
+                '--browser.serverAddress', 'localhost',
+                '--browser.gatherUsageStats', 'false',
+                '--server.fileWatcherType', 'none',
+                '--server.runOnSave', 'false',
+                '--client.toolbarMode', 'minimal'
+            ]
             self.server_process = subprocess.Popen(cmd, cwd=root_dir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
-            time.sleep(2)
+            for _ in range(200):
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.settimeout(0.1)
+                        s.connect(('127.0.0.1', 8501))
+                    break
+                except Exception:
+                    time.sleep(0.04)
             self.is_running = True
             self.lbl_status.config(text='● ONLINE / RUNNING (Port 8501)', fg='#10B981')
             self.log_message('Lyra Online: Web Cockpit accessible at http://localhost:8501')
@@ -94,15 +114,23 @@ class LyraControlPanelApp:
         self.log_message('Stopping Lyra processes...')
         self.lbl_status.config(text='● STOPPING...', fg='#FBBF24')
         self.root.update()
-        kill_cmd = 'powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 8501 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"'
-        subprocess.run(kill_cmd, shell=True)
+        try:
+            import psutil
+            for conn in psutil.net_connections(kind='tcp'):
+                if conn.laddr.port == 8501 and conn.pid:
+                    try:
+                        psutil.Process(conn.pid).kill()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
         if self.server_process:
             try:
                 self.server_process.terminate()
             except Exception:
                 pass
             self.server_process = None
-        time.sleep(1)
+        time.sleep(0.5)
         self.is_running = False
         self.lbl_status.config(text='● OFFLINE / STOPPED', fg='#F43F5E')
         self.log_message('Lyra stopped. Standby.')
