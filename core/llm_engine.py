@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional, Generator, List
 
 class OfflineLLMEngine:
 
-    def __init__(self, backend: str = "ollama", ollama_url: str = "http://localhost:11434", ollama_model: str = "grok-offline:1b", local_server_url: str = "http://localhost:1234/v1", gguf_path: Optional[str] = None):
+    def __init__(self, backend: str = "ollama", ollama_url: str = "http://localhost:11434", ollama_model: str = "lyra:1b", local_server_url: str = "http://localhost:1234/v1", gguf_path: Optional[str] = None):
         self.backend = backend
         self.ollama_url = ollama_url
         self.ollama_model = ollama_model
@@ -62,7 +62,7 @@ class OfflineLLMEngine:
                         "keep_alive": -1,
                         "stream": False
                     },
-                    timeout=20
+                    timeout=120
                 )
                 return
         except Exception:
@@ -105,7 +105,8 @@ class OfflineLLMEngine:
 
         if self.active_backend == "ollama":
             url = f"{self.ollama_url}/api/generate"
-            threads = max(1, min(8, os.cpu_count() or 4))
+            threads = max(1, min(4, os.cpu_count() or 4))
+            dynamic_ctx = 1024 if (len(prompt.split()) * 2 + max_tokens) > 512 else 512
             payload = {
                 "model": chosen_model,
                 "prompt": prompt,
@@ -116,7 +117,7 @@ class OfflineLLMEngine:
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
                     "num_thread": threads,
-                    "num_ctx": 2048,
+                    "num_ctx": dynamic_ctx,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,
@@ -147,7 +148,8 @@ class OfflineLLMEngine:
         try:
             chosen_model = model or self.ollama_model
             url = f"{self.ollama_url}/api/generate"
-            threads = max(1, min(8, os.cpu_count() or 4))
+            threads = max(1, min(4, os.cpu_count() or 4))
+            dynamic_ctx = 1024 if (len(prompt.split()) * 2 + max_tokens) > 512 else 512
             payload = {
                 "model": chosen_model,
                 "prompt": prompt,
@@ -158,7 +160,7 @@ class OfflineLLMEngine:
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
                     "num_thread": threads,
-                    "num_ctx": 2048,
+                    "num_ctx": dynamic_ctx,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,

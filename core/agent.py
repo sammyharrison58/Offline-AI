@@ -686,10 +686,11 @@ class Nexus226Agent:
         target_model = None
         if is_coding and hasattr(self.llm, "coder_model") and self.llm.coder_model:
             target_model = self.llm.coder_model
-        elif hasattr(self.llm, "pro_model") and self.llm.pro_model and any(w in ql for w in ["deep dive", "research", "architecture", "mathematics", "frontier", "explain"]):
+        elif hasattr(self.llm, "pro_model") and self.llm.pro_model and any(w in ql for w in ["deep pro", "pro model", "use pro"]):
             target_model = self.llm.pro_model
 
-        res = self.llm.generate(prompt_with_history, system_prompt=system_instruction, max_tokens=1500, model=target_model)
+        token_limit = 512 if is_coding else 350
+        res = self.llm.generate(prompt_with_history, system_prompt=system_instruction, max_tokens=token_limit, model=target_model)
         if res and not res.startswith("[Ollama Connection Error") and not res.startswith("[Offline"):
             clean = _CLEAN_ANSWER_RE.sub('', res).strip()
             if not is_coding or "```" in clean:
@@ -900,15 +901,16 @@ class Nexus226Agent:
         target_model = None
         if is_coding and hasattr(self.llm, "coder_model") and self.llm.coder_model:
             target_model = self.llm.coder_model
-        elif hasattr(self.llm, "pro_model") and self.llm.pro_model and any(w in ql for w in ["deep dive", "research", "architecture", "mathematics", "frontier", "explain"]):
+        elif hasattr(self.llm, "pro_model") and self.llm.pro_model and any(w in ql for w in ["deep pro", "pro model", "use pro"]):
             target_model = self.llm.pro_model
 
-        for chunk in self.llm.generate_stream(prompt_with_history, system_prompt=system_instruction, max_tokens=2048, model=target_model):
+        token_limit = 512 if is_coding else 350
+        for chunk in self.llm.generate_stream(prompt_with_history, system_prompt=system_instruction, max_tokens=token_limit, model=target_model):
             full_tokens.append(chunk)
             if not prefix_cleared:
                 prefix_buffer.append(chunk)
                 buffered_text = "".join(prefix_buffer)
-                if len(buffered_text) >= 25 or ":" in buffered_text or "\n" in buffered_text:
+                if len(buffered_text) >= 10 or ":" in buffered_text or "\n" in buffered_text:
                     cleaned_start = _CLEAN_ANSWER_RE.sub('', buffered_text)
                     prefix_cleared = True
                     if cleaned_start:

@@ -18,6 +18,7 @@ echo   Starting Lyra AI Cockpit
 echo ========================================================
 echo.
 echo Launching Cockpit on http://localhost:8501 ...
+start /b "" "%~dp0.venv\Scripts\python.exe" -c "import requests; requests.post('http://localhost:11434/api/generate', json={'model':'lyra:1b','keep_alive':-1,'options':{'num_predict':1,'num_ctx':512}}, timeout=120)" >nul 2>&1
 start /b "" "%~dp0.venv\Scripts\python.exe" -c "import socket,time,webbrowser; s=socket.socket(); s.settimeout(0.1); exec('for _ in range(300):\n try:\n  s.connect((\x27127.0.0.1\x27, 8501))\n  s.close()\n  webbrowser.open(\x27http://localhost:8501\x27)\n  break\n except:\n  time.sleep(0.04)')"
 "%~dp0.venv\Scripts\python.exe" -m streamlit run "%~dp0web_ui.py" --server.port 8501 --server.address 127.0.0.1 --server.headless false --browser.serverAddress localhost --browser.gatherUsageStats false --server.fileWatcherType none --server.runOnSave false --client.toolbarMode minimal --client.showErrorDetails false --global.developmentMode false --server.enableCORS false --server.enableXsrfProtection false
 if %ERRORLEVEL% NEQ 0 (
