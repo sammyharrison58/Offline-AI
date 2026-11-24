@@ -419,7 +419,11 @@ body { margin:0; background:transparent; display:flex; justify-content:center; a
 """
 components.html(lyra_sphere_html, height=235)
 
-telemetry = agent.sys_controller.get_telemetry()
+@st.cache_data(ttl=2)
+def get_cached_telemetry():
+    return agent.sys_controller.get_telemetry()
+
+telemetry = get_cached_telemetry()
 cpu_val = f"{telemetry['cpu_usage_percent']}%"
 ram_val = f"{telemetry['ram_available_gb']} GB Free"
 battery_val = f"{telemetry['battery']['percent']}%" if telemetry['battery']['percent'] != 'N/A' else "AC Power"

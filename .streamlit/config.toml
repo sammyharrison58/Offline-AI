@@ -1,13 +1,18 @@
 [browser]
 gatherUsageStats = false
+serverAddress = "localhost"
 
 [server]
 fileWatcherType = "none"
 headless = true
 runOnSave = false
 port = 8501
+address = "127.0.0.1"
+enableCORS = false
+enableXsrfProtection = false
+fastReruns = true
 
 [client]
 toolbarMode = "minimal"
-showErrorDetails = "brief"
-
+showErrorDetails = "none"
+showSidebarNav = false
