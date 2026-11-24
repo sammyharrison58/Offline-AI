@@ -31,7 +31,27 @@ def run_nlu_suite():
         ("catch you later", lambda r: "Take care" in r),
         ("can you understand natural language", lambda r: "natural human language" in r),
         ("what does bite the bullet mean", lambda r: "courage" in r or "bullet" in r),
-        ("this bug is driving me crazy", lambda r: "frustration" in r or "debugging" in r)
+        ("this bug is driving me crazy", lambda r: "frustration" in r or "debugging" in r),
+        ("vsc", lambda r: "Visual Studio Code" in r),
+        ("fl", lambda r: "File Explorer" in r),
+        ("calc", lambda r: "calc.exe" in r or "Calculator" in r),
+        ("term", lambda r: "PowerShell Terminal" in r),
+        ("ss", lambda r: "Screenshot" in r),
+        ("v+", lambda r: "Volume increased" in r),
+        ("v-", lambda r: "Volume decreased" in r),
+        ("m", lambda r: "mute" in r.lower()),
+        ("specs", lambda r: "Hardware" in r or "CPU" in r),
+        ("ls", lambda r: "Files:" in r),
+        ("bal", lambda r: "Treasury" in r or "Balance" in r),
+        ("idk", lambda r: "No worries" in r or "here" in r),
+        ("wdym", lambda r: "adapt" in r.lower() or "clarify" in r.lower()),
+        ("brb", lambda r: "Take your time" in r or "right here" in r),
+        ("tysm", lambda r: "very welcome" in r.lower()),
+        ("eli5 black holes", lambda r: "ELI5" in r or "black hole" in r.lower()),
+        ("tldr quantum computing", lambda r: "TL;DR" in r or "quantum" in r.lower()),
+        ("algo for quicksort", lambda r: "quicksort" in r.lower() or "def " in r),
+        ("func to reverse string in py", lambda r: "def " in r or "reverse" in r.lower()),
+        ("can you understand short versions of things", lambda r: "Shorthand" in r or "Short Versions" in r)
     ]
 
     print("======================================================================")

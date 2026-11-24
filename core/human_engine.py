@@ -160,6 +160,38 @@ class HumanPersonaEngine:
                 "'Not alive,' Elena corrected, feeling a shiver down her spine as the interference patterns subtly shifted to mirror their breathing. 'It's observant. We thought we were measuring the universe. It turns out the universe was just waiting for a mirror.'"
             )
         ]
+        self.short_versions_teaching = (
+            "### ⚡ Shorthand & Short Versions Mastery\n\n"
+            "I fluidly understand and decode short versions of things, human conversational acronyms, developer shorthand, and ultra-short CLI commands:\n\n"
+            "#### 1. Quick Application & Tool Shorthand\n"
+            "- `'vsc'` / `'vs'` / `'code'` / `'editor'` -> Visual Studio Code\n"
+            "- `'fl'` / `'file'` / `'files'` / `'folder'` -> Windows File Explorer\n"
+            "- `'term'` / `'cmd'` / `'ps'` / `'cli'` / `'shell'` -> PowerShell Terminal\n"
+            "- `'calc'` -> Windows Calculator\n"
+            "- `'task'` / `'taskmgr'` -> Task Manager\n"
+            "- `'browser'` / `'chrome'` / `'web'` -> Google Chrome\n\n"
+            "#### 2. Ultra-Short Power Commands\n"
+            "- `'ss'` / `'snap'` -> Instant desktop screenshot\n"
+            "- `'v+'` / `'v-'` -> Volume up / Volume down\n"
+            "- `'m'` -> Toggle audio mute\n"
+            "- `'lock'` -> Lock Windows workstation\n"
+            "- `'min'` -> Minimize all windows / show desktop\n"
+            "- `'bin'` / `'trash'` -> Empty Windows recycle bin\n"
+            "- `'specs'` / `'hw'` -> Real-time CPU, RAM & battery telemetry\n"
+            "- `'ls'` / `'dir'` -> List workspace files\n"
+            "- `'top'` / `'procs'` -> List running system processes\n"
+            "- `'bal'` / `'wal'` -> Cryptographic treasury balance\n"
+            "- `'py <expr>'` -> Execute Python sandbox code\n\n"
+            "#### 3. Conversational Acronyms & Slang\n"
+            "- `'idk'` (I don't know), `'tbh'` (to be honest), `'wdym'` (what do you mean), `'wbu'` / `'hbu'` (what/how about you)\n"
+            "- `'btw'` (by the way), `'fyi'` (for your information), `'asap'` (as soon as possible), `'brb'` (be right back)\n"
+            "- `'tldr'` (executive summary), `'eli5'` (explain simply like I'm 5)\n"
+            "- `'np'` (no problem), `'yw'` (you're welcome), `'ty'` / `'thx'` / `'tysm'` (thank you so much), `'rn'` (right now)\n\n"
+            "#### 4. Developer & Technical Shorthand\n"
+            "- `'algo'` -> Algorithm, `'func'` / `'fn'` -> Function, `'dev'` -> Developer, `'repo'` -> Repository\n"
+            "- `'pr'` -> Pull Request, `'cfg'` / `'conf'` -> Configuration, `'db'` -> Database, `'err'` -> Error, `'perf'` -> Performance\n\n"
+            "You never have to type out verbose commands. Speak in casual shorthand, chat acronyms, or quick words—I adapt to your intent instantly."
+        )
 
     def handle_conversational_query(self, query: str, history: Optional[List[Dict[str, str]]] = None) -> Optional[str]:
         ql = query.lower().strip()
@@ -179,6 +211,28 @@ class HumanPersonaEngine:
             "teach comprehension", "understand human language", "human communication and language"
         ]):
             return self.human_comprehension_teaching
+
+        if any(target in ql for target in [
+            "short versions of things", "short versions", "understand short versions", "can you understand short versions",
+            "teach short versions", "understand abbreviations", "can you understand abbreviations", "conversational shorthand",
+            "understand shorthand", "can you understand shorthand", "short forms", "short words"
+        ]):
+            return self.short_versions_teaching
+
+        if ql in ["idk", "i don't know", "i dont know"]:
+            return "No worries at all! That's why I'm here. What are you thinking about, or what problem are you trying to crack? We can take it one small step at a time."
+
+        if ql in ["wdym", "wdym?", "what do you mean"]:
+            return "I mean that behind the surface, the system adapts to your intent directly. Tell me which part you'd like me to clarify!"
+
+        if ql in ["brb", "bbl"]:
+            return "Sounds good! Take your time—I'll be right here whenever you get back."
+
+        if ql in ["tysm", "ty", "thx"]:
+            return "You're very welcome! Always here whenever you need anything."
+
+        if ql in ["np", "yw"]:
+            return "Glad to collaborate with you! What are we tackling next?"
 
         if any(target in ql for target in ["can you understand natural language", "do you understand natural language", "natural language understanding", "can you understand normal speech", "do you understand casual speech"]):
             return "Yes! I understand natural human language, conversational shorthand, subtext, idioms, and indirect requests. You don't need to speak to me in rigid commands—just speak normally like you would to a software engineering collaborator, and I'll adapt to your intent."

@@ -42,16 +42,28 @@ def get_cached_bg():
 bg_b64 = get_cached_bg()
 
 bg_style = f"""
-    [data-testid="stAppViewContainer"], body {{
-        background-image: linear-gradient(rgba(3, 6, 16, 0.40), rgba(3, 6, 16, 0.65)), url("data:image/png;base64,{bg_b64}");
+    .stApp, [data-testid="stAppViewContainer"], body {{
+        background-image: linear-gradient(135deg, rgba(3, 7, 18, 0.42) 0%, rgba(6, 12, 28, 0.58) 100%), url("data:image/png;base64,{bg_b64}");
         background-size: cover;
-        background-position: center;
+        background-position: center center;
+        background-repeat: no-repeat;
         background-attachment: fixed;
         color: #F3F4F6;
         font-family: 'Segoe UI', system-ui, sans-serif;
     }}
+    [data-testid="stHeader"] {{
+        background: transparent !important;
+    }}
+    [data-testid="stSidebar"] {{
+        background: rgba(6, 11, 25, 0.82) !important;
+        backdrop-filter: blur(16px);
+        border-right: 1px solid rgba(0, 240, 255, 0.22) !important;
+    }}
+    [data-testid="stBottom"] {{
+        background: transparent !important;
+    }}
 """ if bg_b64 else """
-    [data-testid="stAppViewContainer"], body {
+    .stApp, [data-testid="stAppViewContainer"], body {
         background-color: #050814;
         color: #F3F4F6;
         font-family: 'Segoe UI', system-ui, sans-serif;

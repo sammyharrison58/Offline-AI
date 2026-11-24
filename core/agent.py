@@ -59,6 +59,98 @@ CONTRACTIONS = {
     "aren't": "are not"
 }
 
+HUMAN_SHORTHAND = {
+    "idk": "i do not know",
+    "tbh": "to be honest",
+    "imo": "in my opinion",
+    "imho": "in my humble opinion",
+    "btw": "by the way",
+    "fyi": "for your information",
+    "asap": "as soon as possible",
+    "wdym": "what do you mean",
+    "wbu": "what about you",
+    "hbu": "how about you",
+    "brb": "be right back",
+    "np": "no problem",
+    "yw": "you are welcome",
+    "tysm": "thank you so much",
+    "ty": "thank you",
+    "thx": "thanks",
+    "pls": "please",
+    "plz": "please",
+    "rn": "right now",
+    "atm": "at the moment",
+    "w/e": "whatever",
+    "w/o": "without",
+    "w/": "with",
+    "afaik": "as far as i know",
+    "tldr": "too long did not read summary",
+    "tl;dr": "too long did not read summary",
+    "eli5": "explain simply like i am five",
+    "gm": "good morning",
+    "gn": "good night",
+    "cya": "see you",
+    "ttyl": "talk to you later",
+    "sup": "what is up",
+    "wassup": "what is up",
+    "fav": "favorite",
+    "diff": "difference",
+    "info": "information",
+    "pic": "picture",
+    "pics": "pictures",
+    "vid": "video",
+    "vids": "videos",
+    "msg": "message",
+    "msgs": "messages",
+    "approx": "approximately",
+    "def": "definitely",
+    "prolly": "probably",
+    "algo": "algorithm",
+    "algos": "algorithms",
+    "func": "function",
+    "funcs": "functions",
+    "fn": "function",
+    "fns": "functions",
+    "dev": "developer",
+    "devs": "developers",
+    "repo": "repository",
+    "repos": "repositories",
+    "pr": "pull request",
+    "prs": "pull requests",
+    "cfg": "configuration",
+    "conf": "configuration",
+    "env": "environment",
+    "auth": "authentication",
+    "db": "database",
+    "dbs": "databases",
+    "doc": "documentation",
+    "docs": "documentation",
+    "lib": "library",
+    "libs": "libraries",
+    "pkg": "package",
+    "pkgs": "packages",
+    "dep": "dependency",
+    "deps": "dependencies",
+    "param": "parameter",
+    "params": "parameters",
+    "arg": "argument",
+    "args": "arguments",
+    "impl": "implementation",
+    "perf": "performance",
+    "opt": "optimize",
+    "dbg": "debug",
+    "err": "error",
+    "errs": "errors",
+    "req": "request",
+    "res": "response",
+    "hw": "hardware",
+    "sw": "software",
+    "specs": "specifications",
+    "sec": "security",
+    "vsc": "vscode",
+    "fl": "files"
+}
+
 PROGRAMMING_LANGS = frozenset([
     "python", "py", "javascript", "js", "typescript", "ts", "c++", "cpp",
     "c", "rust", "rs", "golang", "go", "sql", "bash", "shell", "sh",
@@ -98,7 +190,9 @@ CODING_INDICATORS = [
     "explain this code", "walk through this code", "what does this code do",
     "how does this code work", "refactor this", "refactor code", "optimize this",
     "make this faster", "clean up code", "add error handling", "handle errors in",
-    "error handling to", "make this robust", "write unit tests for"
+    "error handling to", "make this robust", "write unit tests for",
+    "algo for", "algo to", "algo of", "algo", "func to", "func for", "fn to", "fn for",
+    "impl of", "impl for", "write a func", "write func", "write fn", "dev a", "pr for"
 ]
 
 class Nexus226Agent:
@@ -195,7 +289,22 @@ class Nexus226Agent:
         for k, v in CONTRACTIONS.items():
             pattern = re.compile(re.escape(k), re.IGNORECASE)
             clean = pattern.sub(v, clean)
-        return clean
+        tokens = clean.split()
+        expanded_tokens = []
+        for t in tokens:
+            tl = t.lower().strip(".,?!:;\"'")
+            prefix_punc = ""
+            suffix_punc = ""
+            if t and not t[0].isalnum():
+                prefix_punc = t[0]
+            if t and not t[-1].isalnum():
+                suffix_punc = t[-1]
+            if tl in HUMAN_SHORTHAND:
+                rep = HUMAN_SHORTHAND[tl]
+                expanded_tokens.append(f"{prefix_punc}{rep}{suffix_punc}")
+            else:
+                expanded_tokens.append(t)
+        return " ".join(expanded_tokens)
 
     def _is_greeting(self, ql: str) -> bool:
         clean = _CLEAN_RE.sub(' ', ql).strip()
@@ -218,6 +327,12 @@ class Nexus226Agent:
 
         if any(target in clean for target in ["who created", "who made", "who invented", "when was", "history of"]):
             return False
+
+        if any(clean.startswith(p) for p in [
+            "algo for", "algo to", "algo of", "algo ", "func to", "func for", "fn to", "fn for",
+            "impl of", "impl for", "write a func", "write func", "write fn", "dev a", "pr for"
+        ]):
+            return True
 
         if any(p in clean for p in [
             "write code", "write a code", "write me code", "write me a code",
@@ -314,6 +429,55 @@ class Nexus226Agent:
         norm_q = self._normalize_query(q)
         norm_ql = norm_q.lower()
 
+        if ql.startswith("py ") or ql.startswith("eval ") or cmd_text.startswith("py ") or cmd_text.startswith("eval "):
+            code_str = q.split(" ", 1)[1].strip()
+            res = self.grok.execute_python_code(code_str)
+            if res.get("success"):
+                return f"Output:\n{res.get('output')}"
+            return f"Error:\n{res.get('error')}"
+
+        if ql.startswith("eli5 ") or ql.startswith("eli5:") or norm_ql.startswith("explain simply like i am five "):
+            raw_top = q[5:].strip().lstrip(":").strip() if (ql.startswith("eli5 ") or ql.startswith("eli5:")) else norm_ql[len("explain simply like i am five "):].strip()
+            topic_norm = self._normalize_query(raw_top)
+            matched_omni = self.omni.search(topic_norm) or self.omni.search(raw_top)
+            if matched_omni:
+                concept = matched_omni.get("concept", "")
+                name = matched_omni.get("name", raw_top.title())
+                res = f"### 💡 {name} (ELI5 - Simple Mental Model)\n\nThink of it like this: {concept}\n\nIn simple everyday terms: it takes complex mechanics and breaks them down into intuitive building blocks that work harmoniously together."
+                self._cache_set(ql, res)
+                return res
+            matched_k = self.knowledge.query(topic_norm, top_k=1) or self.knowledge.query(raw_top, top_k=1)
+            if matched_k:
+                top_d = matched_k[0]
+                res = f"### 💡 {top_d.get('name')} (ELI5 - Simple Mental Model)\n\nThink of it like this: {top_d.get('concept')}\n\nCore intuition: {top_d.get('obscure_insights', '')}"
+                self._cache_set(ql, res)
+                return res
+            prompt_eli5 = f"Explain {raw_top} in simple, accessible terms using an intuitive real-world analogy as if explaining to a curious five-year-old or beginner. Keep it clear, vivid, and memorable."
+            ans = self.llm.generate(prompt_eli5, system_prompt="You are Lyra, explaining complex scientific and technical topics with vivid everyday analogies, simple language, and zero jargon.", max_tokens=300)
+            clean = _CLEAN_ANSWER_RE.sub('', ans).strip()
+            self._cache_set(ql, clean)
+            return clean
+
+        if ql.startswith("tldr ") or ql.startswith("tldr:") or ql.startswith("tl;dr ") or ql.startswith("tl;dr:") or norm_ql.startswith("too long did not read summary "):
+            raw_top = re.sub(r'^(tldr|tl;dr)(\s+of|:)?\s+', '', q, flags=re.IGNORECASE).strip() if (ql.startswith("tldr") or ql.startswith("tl;dr")) else norm_ql[len("too long did not read summary "):].strip()
+            topic_norm = self._normalize_query(raw_top)
+            matched_omni = self.omni.search(topic_norm) or self.omni.search(raw_top)
+            if matched_omni:
+                res = f"**TL;DR ({matched_omni.get('name', raw_top.title())}):**\n{matched_omni.get('concept', '')}"
+                self._cache_set(ql, res)
+                return res
+            matched_k = self.knowledge.query(topic_norm, top_k=1) or self.knowledge.query(raw_top, top_k=1)
+            if matched_k:
+                top_d = matched_k[0]
+                res = f"**TL;DR ({top_d.get('name')}):**\n{top_d.get('concept', '')}"
+                self._cache_set(ql, res)
+                return res
+            prompt_tldr = f"Provide a crisp 2-to-3 sentence executive summary of {raw_top} with direct high-signal insight."
+            ans = self.llm.generate(prompt_tldr, system_prompt="You are Lyra, providing high-density, crystal-clear 2-sentence executive summaries.", max_tokens=200)
+            clean = _CLEAN_ANSWER_RE.sub('', ans).strip()
+            self._cache_set(ql, clean)
+            return clean
+
         math_res = self._solve_math(q) or self._solve_math(norm_q)
         if math_res is not None:
             ans = f"{math_res}"
@@ -358,31 +522,31 @@ class Nexus226Agent:
         is_coding = self._is_coding_request(q, ql) or self._is_coding_request(norm_q, norm_ql)
 
         if not is_coding:
-            if any(w in cmd_text or w in ql for w in ["mute", "silence audio", "unmute", "shut up", "turn off sound", "silence sound", "kill the sound"]):
+            if ql in ["m", "mute", "unmute", "shh", "silence"] or any(w in cmd_text or w in ql for w in ["mute", "silence audio", "unmute", "shut up", "turn off sound", "silence sound", "kill the sound"]):
                 res = self.sys_controller.toggle_mute()
                 return res.get("message", "Mute toggled.")
 
-            if any(w in cmd_text or w in ql for w in ["volume up", "increase volume", "louder", "turn up sound", "turn up the volume", "crank up the volume", "make it louder"]):
+            if ql in ["v+", "vol+", "louder"] or any(w in cmd_text or w in ql for w in ["volume up", "increase volume", "louder", "turn up sound", "turn up the volume", "crank up the volume", "make it louder"]):
                 res = self.sys_controller.volume_up(steps=5)
                 return res.get("message", "Volume increased.")
 
-            if any(w in cmd_text or w in ql for w in ["volume down", "decrease volume", "lower volume", "quieter", "turn down sound", "turn down the volume", "turn down the noise", "lower the sound", "make it quieter"]):
+            if ql in ["v-", "vol-", "quieter"] or any(w in cmd_text or w in ql for w in ["volume down", "decrease volume", "lower volume", "quieter", "turn down sound", "turn down the volume", "turn down the noise", "lower the sound", "make it quieter"]):
                 res = self.sys_controller.volume_down(steps=5)
                 return res.get("message", "Volume decreased.")
 
-            if any(w in cmd_text or w in ql for w in ["lock computer", "lock pc", "lock screen", "lock workstation"]):
+            if ql in ["lock", "lock pc"] or any(w in cmd_text or w in ql for w in ["lock computer", "lock pc", "lock screen", "lock workstation"]):
                 res = self.sys_controller.lock_workstation()
                 return res.get("message", "Workstation locked.")
 
-            if any(w in cmd_text or w in ql for w in ["minimize windows", "minimize all", "show desktop", "show my desktop", "hide all windows"]):
+            if ql in ["min", "minimize"] or any(w in cmd_text or w in ql for w in ["minimize windows", "minimize all", "show desktop", "show my desktop", "hide all windows"]):
                 res = self.sys_controller.minimize_all_windows()
                 return res.get("message", "Showing desktop.")
 
-            if any(w in cmd_text or w in ql for w in ["empty recycle bin", "clean recycle bin", "clear recycle bin"]):
+            if ql in ["bin", "trash", "clean bin", "empty bin"] or any(w in cmd_text or w in ql for w in ["empty recycle bin", "clean recycle bin", "clear recycle bin"]):
                 res = self.sys_controller.empty_recycle_bin()
                 return res.get("message", "Recycle bin emptied.")
 
-            if any(w in ql for w in ["what is my ip", "my ip", "ip address", "network info", "network status", "show ip"]):
+            if ql in ["ip", "net", "my ip", "network"] or any(w in ql for w in ["what is my ip", "my ip", "ip address", "network info", "network status", "show ip"]):
                 net = self.sys_controller.get_network_info()
                 return f"Host: {net['hostname']} | IPs: {', '.join(net['ip_addresses'])}"
 
@@ -447,7 +611,7 @@ class Nexus226Agent:
                 "system load", "check memory", "check hardware", "is my pc lagging",
                 "computer specs", "machine specs", "system specs"
             ]
-            if "opentelemetry" not in ql and (any(w in cmd_text or w in ql for w in telemetry_triggers) or "telemetry" in ql.split()):
+            if "opentelemetry" not in ql and (ql in ["specs", "hw", "stat", "stats", "telemetry"] or any(w in cmd_text or w in ql for w in telemetry_triggers) or "telemetry" in ql.split()):
                 t = self.sys_controller.get_telemetry()
                 return f"Hardware: CPU {t['cpu_usage_percent']}% | RAM {t['ram_available_gb']}GB free of {t['ram_total_gb']}GB ({t['ram_used_percent']}% used) | Battery {t['battery']['percent']}%"
 
@@ -456,7 +620,7 @@ class Nexus226Agent:
                 "snap the screen", "snap screen", "grab my screen", "grab the screen",
                 "take a picture of my screen", "take a pic of my screen", "pic of my screen"
             ]
-            if any(w in cmd_text or w in ql for w in screenshot_triggers):
+            if ql in ["ss", "snap", "shot", "scr"] or any(w in cmd_text or w in ql for w in screenshot_triggers):
                 path = "screenshot.png"
                 res = self.sys_controller.capture_screenshot(path)
                 if res.get("success"):
@@ -488,10 +652,14 @@ class Nexus226Agent:
                 "pull up files": "explorer.exe",
                 "pull up my files": "explorer.exe",
                 "pull up file": "explorer.exe",
+                "fl": "explorer.exe",
                 "vscode": "code",
                 "vs code": "code",
+                "vsc": "code",
+                "vs": "code",
                 "open vscode": "code",
                 "open code": "code",
+                "open vsc": "code",
                 "pull up vscode": "code",
                 "pull up code": "code",
                 "pop open vscode": "code",
@@ -500,10 +668,16 @@ class Nexus226Agent:
                 "editor": "code",
                 "code editor": "code",
                 "browser": "chrome.exe",
+                "chrome": "chrome.exe",
+                "web": "chrome.exe",
                 "open browser": "chrome.exe",
                 "pop open browser": "chrome.exe",
                 "pop open chrome": "chrome.exe",
                 "terminal": "powershell.exe",
+                "term": "powershell.exe",
+                "shell": "powershell.exe",
+                "cli": "powershell.exe",
+                "ps": "powershell.exe",
                 "open terminal": "powershell.exe",
                 "fire up terminal": "powershell.exe",
                 "notepad": "notepad.exe",
@@ -513,6 +687,9 @@ class Nexus226Agent:
                 "calc": "calc.exe",
                 "open calc": "calc.exe",
                 "task manager": "taskmgr.exe",
+                "taskmgr": "taskmgr.exe",
+                "tasks": "taskmgr.exe",
+                "task": "taskmgr.exe",
                 "open task manager": "taskmgr.exe"
             }
             if ql in app_shorthand_exact or cmd_text in app_shorthand_exact:
@@ -556,16 +733,16 @@ class Nexus226Agent:
                 res = self.sys_controller.create_directory(d_path)
                 return res.get("message", str(res))
 
-            if ql.startswith("list files") or ql == "dir":
+            if ql in ["ls", "dir", "list files"] or ql.startswith("list files") or ql.startswith("ls "):
                 res = self.sys_controller.list_dir(".")
                 items = ", ".join(res.get("items", [])[:15])
                 return f"Files: {items}"
 
-            if "list processes" in ql:
+            if ql in ["top", "procs", "ps aux", "list processes"] or "list processes" in ql:
                 procs = self.sys_controller.list_processes(limit=6)
                 return "\n".join([f"- PID {p['pid']}: {p['name']} ({p['memory_mb']} MB)" for p in procs])
 
-            if any(w in ql for w in ["wallet", "balance", "crypto balance", "my address"]):
+            if ql in ["bal", "wal", "wallet", "balance"] or any(w in ql for w in ["wallet", "balance", "crypto balance", "my address"]):
                 b = self.blockchain.get_balance()
                 return f"Treasury: Address {b['address']} | Balance {b['balance']} AETH | Ledger: {len(self.blockchain.ledger)} blocks"
 
@@ -581,7 +758,7 @@ class Nexus226Agent:
                     return f"Transaction Failed: {tx_res.get('error')}"
                 return "Specify amount and 0x address."
 
-            if "transaction history" in ql or "ledger" in ql:
+            if ql in ["tx", "hist", "history", "txs", "ledger"] or "transaction history" in ql or "ledger" in ql:
                 txs = self.blockchain.get_transaction_history(limit=4)
                 if not txs:
                     return "No transactions in ledger."
@@ -594,7 +771,7 @@ class Nexus226Agent:
                 status = "live MongoDB database" if self.mongo.is_connected else "MongoDB export collections"
                 return f"Synced {r1.get('count', 0)} project files, {r2.get('count', 0)} AI knowledge domains, and {r3.get('count', 0)} blockchain blocks into {status}."
 
-            if "mongodb status" in ql or "check mongodb" in ql:
+            if ql in ["db", "mongo", "mongodb"] or "mongodb status" in ql or "check mongodb" in ql:
                 st = self.mongo.get_status()
                 c_status = "Connected" if st.get("connected") else "Disconnected (using offline export)"
                 return f"MongoDB: {c_status} | URI: {st.get('uri')} | Collections: {list(st.get('collections', {}).keys()) or ['project_files', 'ai_knowledge_226', 'blockchain_ledger']}"
@@ -716,6 +893,11 @@ class Nexus226Agent:
         norm_q = self._normalize_query(q)
         norm_ql = norm_q.lower()
 
+        if ql.startswith("py ") or ql.startswith("eval ") or ql.startswith("eli5") or ql.startswith("tldr") or ql.startswith("tl;dr") or norm_ql.startswith("explain simply like i am five") or norm_ql.startswith("too long did not read summary"):
+            ans = self.process_request(user_query, history)
+            yield ans
+            return
+
         cmd_text = ql
         for prefix in [
             "can you please ", "could you please ", "would you please ",
@@ -812,9 +994,13 @@ class Nexus226Agent:
                 "human comprehension", "teach it", "teach human", "language comprehension", "pragmatics",
                 "pull up", "pop open", "fire up", "how much juice", "battery level", "how much ram",
                 "how much memory", "cpu usage", "snap screen", "snap the screen", "grab my screen",
-                "pic of my screen", "what about", "how about"
+                "pic of my screen", "what about", "how about",
+                "ss", "v+", "v-", "vol+", "vol-", "m", "lock", "min", "bin", "trash", "specs", "hw",
+                "stat", "stats", "ls", "top", "procs", "bal", "wal", "tx", "hist", "db", "mongo",
+                "vsc", "vs", "fl", "calc", "term", "cli", "shell", "eli5", "tldr", "tl;dr",
+                "short versions", "abbreviations", "shorthand"
             ]
-            if any(w in ql or w in cmd_text for w in fast_keywords):
+            if ql in ["ss", "v+", "v-", "vol+", "vol-", "m", "lock", "min", "bin", "trash", "specs", "hw", "stat", "stats", "ls", "top", "procs", "bal", "wal", "tx", "hist", "db", "mongo", "vsc", "vs", "fl", "calc", "term", "cli", "shell", "ip", "net"] or any(w in ql or w in cmd_text for w in fast_keywords):
                 yield self.process_request(user_query, history)
                 return
 
