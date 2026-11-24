@@ -22,28 +22,12 @@ st.set_page_config(
     initial_sidebar_state="auto"
 )
 
-@st.cache_data
-def get_cached_bg():
-    b64_p = os.path.join(root_dir, "assets", "lyra_hud_bg.b64")
-    if os.path.exists(b64_p):
-        try:
-            with open(b64_p, "r", encoding="utf-8") as f:
-                return f.read().strip()
-        except Exception:
-            pass
-    p = os.path.join(root_dir, "assets", "lyra_hud_bg.png")
-    if not os.path.exists(p):
-        p = os.path.join(root_dir, "assets", "jarvis_hud_bg.png")
-    if os.path.exists(p):
-        with open(p, "rb") as f:
-            return base64.b64encode(f.read()).decode()
-    return ""
-
-bg_b64 = get_cached_bg()
+bg_static_path = os.path.join(root_dir, "static", "lyra_hud_bg.png")
+bg_url = "app/static/lyra_hud_bg.png" if os.path.exists(bg_static_path) else ""
 
 bg_style = f"""
     .stApp, [data-testid="stAppViewContainer"], body {{
-        background-image: linear-gradient(135deg, rgba(3, 7, 18, 0.42) 0%, rgba(6, 12, 28, 0.58) 100%), url("data:image/png;base64,{bg_b64}");
+        background-image: linear-gradient(135deg, rgba(3, 7, 18, 0.42) 0%, rgba(6, 12, 28, 0.58) 100%), url("{bg_url}");
         background-size: cover;
         background-position: center center;
         background-repeat: no-repeat;
@@ -62,7 +46,7 @@ bg_style = f"""
     [data-testid="stBottom"] {{
         background: transparent !important;
     }}
-""" if bg_b64 else """
+""" if bg_url else """
     .stApp, [data-testid="stAppViewContainer"], body {
         background-color: #050814;
         color: #F3F4F6;
@@ -358,24 +342,23 @@ if not st.session_state.ai_open:
 
 lyra_sphere_html = """
 <style>
-body { margin:0; background:transparent; display:flex; justify-content:center; align-items:center; overflow:hidden; font-family:'Segoe UI',sans-serif; }
-.lyra-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:230px; }
+.lyra-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:230px; margin:0 auto; overflow:hidden; font-family:'Segoe UI',sans-serif; }
 .lyra-core { position:relative; width:144px; height:144px; display:flex; align-items:center; justify-content:center; }
-.ring { position:absolute; border-radius:50%; box-sizing:border-box; }
+.ring { position:absolute; border-radius:50%; box-sizing:border-box; will-change:transform; }
 .outer-ring { width:142px; height:142px; border:1px dashed rgba(0,240,255,0.45); animation:rotCW 18s linear infinite; }
 .tracker-ring { width:126px; height:126px; border:2px solid transparent; border-top:2px solid #00f0ff; border-bottom:2px solid #00f0ff; filter:drop-shadow(0 0 8px #00f0ff); animation:rotCCW 9s linear infinite; }
 .middle-ring { width:106px; height:106px; border:1px solid rgba(0,200,255,0.4); border-left:3px solid #00f0ff; border-right:3px solid #00f0ff; animation:rotCW 5s linear infinite; }
 .dashed-ring { width:84px; height:84px; border:2px dotted rgba(0,240,255,0.7); animation:rotCCW 7s linear infinite; }
-.core-orb { position:absolute; width:56px; height:56px; border-radius:50%; background:radial-gradient(circle, #00f0ff 0%, #0088ff 55%, rgba(0,20,60,0.85) 100%); box-shadow:0 0 25px #00f0ff, inset 0 0 16px #ffffff; animation:pulseOrb 2.2s ease-in-out infinite; }
-.core-center { position:absolute; width:24px; height:24px; border-radius:50%; background:#ffffff; box-shadow:0 0 16px #00f0ff, 0 0 32px #00f0ff; animation:pulseCenter 2.2s ease-in-out infinite; }
-.pulse-wave { position:absolute; width:60px; height:60px; border-radius:50%; border:1px solid #00f0ff; opacity:0; animation:waveOut 2.2s ease-out infinite; }
+.core-orb { position:absolute; width:56px; height:56px; border-radius:50%; background:radial-gradient(circle, #00f0ff 0%, #0088ff 55%, rgba(0,20,60,0.85) 100%); box-shadow:0 0 25px #00f0ff, inset 0 0 16px #ffffff; animation:pulseOrb 2.2s ease-in-out infinite; will-change:transform,filter; }
+.core-center { position:absolute; width:24px; height:24px; border-radius:50%; background:#ffffff; box-shadow:0 0 16px #00f0ff, 0 0 32px #00f0ff; animation:pulseCenter 2.2s ease-in-out infinite; will-change:transform; }
+.pulse-wave { position:absolute; width:60px; height:60px; border-radius:50%; border:1px solid #00f0ff; opacity:0; animation:waveOut 2.2s ease-out infinite; will-change:width,height,opacity; }
 @keyframes rotCW { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
 @keyframes rotCCW { 0% { transform:rotate(360deg); } 100% { transform:rotate(0deg); } }
 @keyframes pulseOrb { 0%,100% { transform:scale(0.92); opacity:0.85; filter:drop-shadow(0 0 12px #00f0ff); } 50% { transform:scale(1.08); opacity:1; filter:drop-shadow(0 0 28px #00f0ff); } }
 @keyframes pulseCenter { 0%,100% { transform:scale(0.85); opacity:0.9; } 50% { transform:scale(1.15); opacity:1; } }
 @keyframes waveOut { 0% { width:50px; height:50px; opacity:0.85; } 100% { width:155px; height:155px; opacity:0; } }
 .hud-equalizer { display:flex; align-items:flex-end; gap:3px; height:24px; margin-top:10px; }
-.bar { width:3px; background:linear-gradient(180deg, #00f0ff, #3b82f6); border-radius:2px; animation:bounceBar 1.2s ease-in-out infinite alternate; }
+.bar { width:3px; background:linear-gradient(180deg, #00f0ff, #3b82f6); border-radius:2px; animation:bounceBar 1.2s ease-in-out infinite alternate; will-change:transform; }
 .b1 { height:6px; animation-delay:0.1s; }
 .b2 { height:14px; animation-delay:0.3s; }
 .b3 { height:22px; animation-delay:0.2s; }
@@ -417,7 +400,7 @@ body { margin:0; background:transparent; display:flex; justify-content:center; a
 </div>
 </div>
 """
-components.html(lyra_sphere_html, height=235)
+st.markdown(lyra_sphere_html, unsafe_allow_html=True)
 
 @st.cache_data(ttl=2)
 def get_cached_telemetry():
@@ -653,13 +636,25 @@ with st.expander("🛠️ Advanced Machine, WoL Power & Blockchain Operations"):
                     st.info(f"Offline Export Ready: {r_files.get('count')} files, {r_kb.get('count')} AI domains, {r_bc.get('count')} blocks saved to data/mongodb_export/.")
                     voice.speak("Files exported to MongoDB collections.", block=False)
 
+@st.cache_data
+def get_cached_categories():
+    return ["All Categories"] + list(agent.knowledge.categories)
+
+@st.cache_data
+def get_all_dom_titles():
+    return [d.get("name") for d in agent.knowledge.domains]
+
+@st.cache_data
+def get_cached_deep_research(name: str):
+    return agent.knowledge.deep_research(name)
+
 st.markdown('<div id="research-anchor"></div>', unsafe_allow_html=True)
 with st.expander("🔬 Offline Research Lab & 325+ Scientific Dossiers", expanded=False):
     r_tab1, r_tab2 = st.tabs(["📚 Paradigm Dossier", "⚖️ Compare Paradigms"])
     with r_tab1:
         rc1, rc2 = st.columns([1, 2])
         with rc1:
-            cats = ["All Categories"] + agent.knowledge.get_all_categories()
+            cats = get_cached_categories()
             chosen_cat = st.selectbox("Category Filter:", cats)
             search_kw = st.text_input("Instant Keyword / Math Search:", "")
             if search_kw.strip():
@@ -675,13 +670,13 @@ with st.expander("🔬 Offline Research Lab & 325+ Scientific Dossiers", expande
                 dom_id = int(selected_dom_name.split()[0].replace("#", ""))
                 dossier = agent.knowledge.get_by_id(dom_id)
                 if dossier:
-                    res_obj = agent.knowledge.deep_research(dossier.get("name", ""))
+                    res_obj = get_cached_deep_research(dossier.get("name", ""))
                     st.markdown(res_obj.get("markdown", ""))
                     if st.button("🔊 Read Research Aloud", key="btn_read_res"):
                         voice.speak(res_obj.get("short_summary", ""), block=False)
     with r_tab2:
         cmp1, cmp2 = st.columns(2)
-        all_dom_titles = [d.get("name") for d in agent.knowledge.domains]
+        all_dom_titles = get_all_dom_titles()
         with cmp1:
             p1 = st.selectbox("Paradigm A:", all_dom_titles, index=0)
         with cmp2:

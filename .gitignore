@@ -17,3 +17,5 @@ data/vosk-model*/
 *.zip
 !assets/*.png
 !assets/*.jpg
+!static/*.png
+!static/*.jpg

@@ -88,8 +88,8 @@ class LyraControlPanelApp:
                 sys.executable, '-m', 'streamlit', 'run', script_path,
                 '--server.port', '8501',
                 '--server.address', '127.0.0.1',
-                '--server.headless', 'false',
-                '--browser.serverAddress', 'localhost',
+                '--server.headless', 'true',
+                '--browser.serverAddress', '127.0.0.1',
                 '--browser.gatherUsageStats', 'false',
                 '--server.fileWatcherType', 'none',
                 '--server.runOnSave', 'false',
@@ -106,8 +106,8 @@ class LyraControlPanelApp:
                     time.sleep(0.04)
             self.is_running = True
             self.lbl_status.config(text='● ONLINE / RUNNING (Port 8501)', fg='#10B981')
-            self.log_message('Lyra Online: Web Cockpit accessible at http://localhost:8501')
-            webbrowser.open('http://localhost:8501')
+            self.log_message('Lyra Online: Web Cockpit accessible at http://127.0.0.1:8501')
+            webbrowser.open('http://127.0.0.1:8501')
         threading.Thread(target=_runner, daemon=True).start()
 
     def stop_system(self):
@@ -138,7 +138,7 @@ class LyraControlPanelApp:
     def open_browser(self):
         if not self.is_running:
             self.log_message("Warning: System is offline. Click 'START SYSTEM' first.")
-        webbrowser.open('http://localhost:8501')
+        webbrowser.open('http://127.0.0.1:8501')
 
     def start_voice_call(self):
         self.log_message('Launching Always-On Voice Call Console in dedicated window...')

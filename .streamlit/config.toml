@@ -1,6 +1,6 @@
 [browser]
 gatherUsageStats = false
-serverAddress = "localhost"
+serverAddress = "127.0.0.1"
 
 [server]
 fileWatcherType = "none"
@@ -10,9 +10,9 @@ port = 8501
 address = "127.0.0.1"
 enableCORS = false
 enableXsrfProtection = false
-fastReruns = true
+enableStaticServing = true
+enableWebsocketCompression = true
 
 [client]
 toolbarMode = "minimal"
 showErrorDetails = "none"
-showSidebarNav = false
