@@ -106,24 +106,24 @@ class OfflineLLMEngine:
         if self.active_backend == "ollama":
             url = f"{self.ollama_url}/api/generate"
             threads = max(1, min(4, os.cpu_count() or 4))
-            dynamic_ctx = 1024 if (len(prompt.split()) * 2 + max_tokens) > 512 else 512
             payload = {
                 "model": chosen_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Lyra, an elite autonomous AI companion and polyglot software engineer. You possess deep human comprehension: you understand human shorthand (e.g. 'file' means File Explorer, 'code' means VS Code), idioms, metaphors, emotional nuance, and pragmatic intent. Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
                 "stream": True,
                 "keep_alive": -1,
                 "options": {
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
                     "num_thread": threads,
-                    "num_ctx": dynamic_ctx,
+                    "num_ctx": 512,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,
-                    "stop": ["User:", "\nUser:", "Question:"]
+                    "stop": ["User:", "\nUser:", "Question:", "\n\n\n"]
                 }
             }
+            if system_prompt:
+                payload["system"] = system_prompt
             full_response = []
             try:
                 with self.session.post(url, json=payload, stream=True, timeout=(5.0, 90.0)) as resp:
@@ -149,24 +149,24 @@ class OfflineLLMEngine:
             chosen_model = model or self.ollama_model
             url = f"{self.ollama_url}/api/generate"
             threads = max(1, min(4, os.cpu_count() or 4))
-            dynamic_ctx = 1024 if (len(prompt.split()) * 2 + max_tokens) > 512 else 512
             payload = {
                 "model": chosen_model,
                 "prompt": prompt,
-                "system": system_prompt or "You are Lyra, an elite autonomous AI companion and polyglot software engineer. You possess deep human comprehension: you understand human shorthand (e.g. 'file' means File Explorer, 'code' means VS Code), idioms, metaphors, emotional nuance, and pragmatic intent. Answer naturally, clearly, and thoroughly with depth, warmth, and exact code.",
                 "stream": False,
                 "keep_alive": -1,
                 "options": {
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
                     "num_thread": threads,
-                    "num_ctx": dynamic_ctx,
+                    "num_ctx": 512,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,
-                    "stop": ["User:", "\nUser:", "Question:"]
+                    "stop": ["User:", "\nUser:", "Question:", "\n\n\n"]
                 }
             }
+            if system_prompt:
+                payload["system"] = system_prompt
             res = self.session.post(url, json=payload, timeout=(5.0, 90.0))
             if res.status_code == 200:
                 return res.json().get("response", "").strip()

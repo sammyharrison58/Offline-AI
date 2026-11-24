@@ -833,29 +833,17 @@ class Nexus226Agent:
                 self._cache_set(ql, res)
                 return res
 
-        if is_coding:
-            system_instruction = (
-                "You are an expert polyglot software engineer and principal systems architect. "
-                "Write clean, elegant, production-grade code in the requested programming language. "
-                "Explain the architecture, design choices, edge cases, and time/space complexity with clarity and precision."
-            )
-        else:
-            system_instruction = (
-                "You are Lyra, an elite autonomous AI companion, voice assistant, and scientific polymath. "
-                "Communicate with the warmth, intellectual depth, sharp wit, and clarity of a world-class human collaborator. "
-                "Explain concepts using first-principles reasoning and intuitive mental models. "
-                "Never use robotic corporate filler or disclaimers. Answer directly, thoroughly, and engagingly."
-            )
+        system_instruction = "Write clean, optimal code with complexity analysis." if is_coding else "Answer directly and thoughtfully with clear mental models and zero filler."
 
         prompt_with_history = q
         hist_to_use = history if history is not None else self.session_history
         if hist_to_use:
             prev_turns = []
-            for msg in hist_to_use[-6:]:
+            for msg in hist_to_use[-2:]:
                 role = "User" if msg.get("role") == "user" else "Assistant"
                 content = msg.get("content", "").strip()
                 if content and content != q:
-                    prev_turns.append(f"{role}: {content[:300]}")
+                    prev_turns.append(f"{role}: {content[:120]}")
             if prev_turns:
                 prev_turns.append(f"User: {q}")
                 prompt_with_history = "\n".join(prev_turns)
@@ -866,7 +854,7 @@ class Nexus226Agent:
         elif hasattr(self.llm, "pro_model") and self.llm.pro_model and any(w in ql for w in ["deep pro", "pro model", "use pro"]):
             target_model = self.llm.pro_model
 
-        token_limit = 512 if is_coding else 350
+        token_limit = 260 if is_coding else 160
         res = self.llm.generate(prompt_with_history, system_prompt=system_instruction, max_tokens=token_limit, model=target_model)
         if res and not res.startswith("[Ollama Connection Error") and not res.startswith("[Offline"):
             clean = _CLEAN_ANSWER_RE.sub('', res).strip()
@@ -1054,29 +1042,17 @@ class Nexus226Agent:
                 yield res
                 return
 
-        if is_coding:
-            system_instruction = (
-                "You are an expert polyglot software engineer and principal systems architect. "
-                "Write clean, elegant, production-grade code in the requested programming language. "
-                "Explain the architecture, design choices, edge cases, and time/space complexity with clarity and precision."
-            )
-        else:
-            system_instruction = (
-                "You are Lyra, an elite autonomous AI companion, voice assistant, and scientific polymath. "
-                "Communicate with the warmth, intellectual depth, sharp wit, and clarity of a world-class human collaborator. "
-                "Explain concepts using first-principles reasoning and intuitive mental models. "
-                "Never use robotic corporate filler or disclaimers. Answer directly, thoroughly, and engagingly."
-            )
+        system_instruction = "Write clean, optimal code with complexity analysis." if is_coding else "Answer directly and thoughtfully with clear mental models and zero filler."
 
         prompt_with_history = q
         hist_to_use = history if history is not None else self.session_history
         if hist_to_use:
             prev_turns = []
-            for msg in hist_to_use[-6:]:
+            for msg in hist_to_use[-2:]:
                 role = "User" if msg.get("role") == "user" else "Assistant"
                 content = msg.get("content", "").strip()
                 if content and content != q:
-                    prev_turns.append(f"{role}: {content[:300]}")
+                    prev_turns.append(f"{role}: {content[:120]}")
             if prev_turns:
                 prev_turns.append(f"User: {q}")
                 prompt_with_history = "\n".join(prev_turns)
@@ -1090,13 +1066,13 @@ class Nexus226Agent:
         elif hasattr(self.llm, "pro_model") and self.llm.pro_model and any(w in ql for w in ["deep pro", "pro model", "use pro"]):
             target_model = self.llm.pro_model
 
-        token_limit = 512 if is_coding else 350
+        token_limit = 260 if is_coding else 160
         for chunk in self.llm.generate_stream(prompt_with_history, system_prompt=system_instruction, max_tokens=token_limit, model=target_model):
             full_tokens.append(chunk)
             if not prefix_cleared:
                 prefix_buffer.append(chunk)
                 buffered_text = "".join(prefix_buffer)
-                if len(buffered_text) >= 10 or ":" in buffered_text or "\n" in buffered_text:
+                if len(buffered_text) >= 4 or ":" in buffered_text or "\n" in buffered_text:
                     cleaned_start = _CLEAN_ANSWER_RE.sub('', buffered_text)
                     prefix_cleared = True
                     if cleaned_start:
