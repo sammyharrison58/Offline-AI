@@ -10,6 +10,9 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
+from core.hardware_adapter import HardwareAdapter
+HardwareAdapter.auto_initialize(root_dir)
+
 from core.agent import Nexus226Agent
 from core.voice_loop import OfflineVoiceEngine, ConversationalCallLoop
 from core.call_server import CallBridgeServer
@@ -407,10 +410,12 @@ def get_cached_telemetry():
     return agent.sys_controller.get_telemetry()
 
 telemetry = get_cached_telemetry()
+hw_profile = HardwareAdapter.get_profile()
 cpu_val = f"{telemetry['cpu_usage_percent']}%"
 ram_val = f"{telemetry['ram_available_gb']} GB Free"
 battery_val = f"{telemetry['battery']['percent']}%" if telemetry['battery']['percent'] != 'N/A' else "AC Power"
 domain_count_val = f"{len(agent.knowledge.domains)} DOMAINS"
+tier_val = f"{hw_profile.get('os_platform', 'OS').upper()} | {hw_profile.get('hardware_tier', 'STANDARD').upper()}"
 
 st.markdown(f"""
 <div class="hud-metrics-bar">
@@ -421,6 +426,10 @@ st.markdown(f"""
     <div class="hud-card">
         <div class="hud-card-lbl">RAM STATUS</div>
         <div class="hud-card-val">{ram_val}</div>
+    </div>
+    <div class="hud-card">
+        <div class="hud-card-lbl">HOST & TIER</div>
+        <div class="hud-card-val">{tier_val}</div>
     </div>
     <div class="hud-card">
         <div class="hud-card-lbl">POWER SOURCE</div>

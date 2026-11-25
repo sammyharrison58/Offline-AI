@@ -1,7 +1,9 @@
 import sys
 import os
 
-sys.path.insert(0, r"F:\vscode projects\offline AI")
+root_dir = os.path.dirname(os.path.abspath(__file__))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
 from core.agent import Nexus226Agent
 
 def run_nlu_suite():

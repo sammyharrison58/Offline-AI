@@ -5,6 +5,8 @@ import subprocess
 root_dir = os.path.dirname(os.path.abspath(__file__))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
+from core.hardware_adapter import HardwareAdapter
+HardwareAdapter.auto_initialize(root_dir)
 from core.agent import Nexus226Agent
 from core.voice_loop import ConversationalCallLoop
 

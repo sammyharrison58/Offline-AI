@@ -3,6 +3,7 @@ import json
 import threading
 import requests
 from typing import Dict, Any, Optional, Generator, List
+from core.hardware_adapter import HardwareAdapter
 
 class OfflineLLMEngine:
 
@@ -53,12 +54,15 @@ class OfflineLLMEngine:
                         self.ollama_model = next((m for m in models if "1b" in m.lower()))
                     else:
                         self.ollama_model = models[0]
+                prof = HardwareAdapter.get_profile()
+                th = prof.get("cpu", {}).get("optimal_threads", 3)
+                ctx = prof.get("memory", {}).get("recommended_ctx", 512)
                 self.session.post(
                     f"{self.ollama_url}/api/generate",
                     json={
                         "model": self.ollama_model,
                         "prompt": "ok",
-                        "options": {"num_predict": 1, "num_thread": min(4, os.cpu_count() or 4), "num_ctx": 512},
+                        "options": {"num_predict": 1, "num_thread": th, "num_ctx": ctx},
                         "keep_alive": -1,
                         "stream": False
                     },
@@ -105,7 +109,9 @@ class OfflineLLMEngine:
 
         if self.active_backend == "ollama":
             url = f"{self.ollama_url}/api/generate"
-            threads = max(1, min(4, os.cpu_count() or 4))
+            prof = HardwareAdapter.get_profile()
+            threads = prof.get("cpu", {}).get("optimal_threads", max(1, min(4, os.cpu_count() or 4)))
+            num_ctx = prof.get("memory", {}).get("recommended_ctx", 512)
             payload = {
                 "model": chosen_model,
                 "prompt": prompt,
@@ -115,7 +121,7 @@ class OfflineLLMEngine:
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
                     "num_thread": threads,
-                    "num_ctx": 512,
+                    "num_ctx": num_ctx,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,
@@ -148,7 +154,9 @@ class OfflineLLMEngine:
         try:
             chosen_model = model or self.ollama_model
             url = f"{self.ollama_url}/api/generate"
-            threads = max(1, min(4, os.cpu_count() or 4))
+            prof = HardwareAdapter.get_profile()
+            threads = prof.get("cpu", {}).get("optimal_threads", max(1, min(4, os.cpu_count() or 4)))
+            num_ctx = prof.get("memory", {}).get("recommended_ctx", 512)
             payload = {
                 "model": chosen_model,
                 "prompt": prompt,
@@ -158,7 +166,7 @@ class OfflineLLMEngine:
                     "num_predict": max_tokens,
                     "repeat_penalty": 1.15,
                     "num_thread": threads,
-                    "num_ctx": 512,
+                    "num_ctx": num_ctx,
                     "temperature": temperature,
                     "top_k": 40,
                     "top_p": 0.90,

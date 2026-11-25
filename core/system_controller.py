@@ -6,6 +6,7 @@ import struct
 import subprocess
 import ctypes
 import psutil
+import shutil
 from typing import Dict, Any, List, Optional
 
 try:
@@ -135,53 +136,93 @@ class SystemController:
 
         try:
             if cmd == 'code':
-                vscode_user = os.path.expandvars(r'%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe')
-                vscode_sys = r'C:\Program Files\Microsoft VS Code\Code.exe'
-                if os.path.exists(vscode_user):
-                    subprocess.Popen([vscode_user, '.'], cwd=self.workspace_root)
+                code_bin = shutil.which('code')
+                if code_bin:
+                    subprocess.Popen([code_bin, '.'], cwd=self.workspace_root)
                     return {'success': True, 'message': 'Opening Visual Studio Code for you now.'}
-                elif os.path.exists(vscode_sys):
-                    subprocess.Popen([vscode_sys, '.'], cwd=self.workspace_root)
-                    return {'success': True, 'message': 'Opening Visual Studio Code for you now.'}
-                else:
-                    subprocess.Popen('code .', shell=True, cwd=self.workspace_root)
-                    return {'success': True, 'message': 'Opening Visual Studio Code for you now.'}
+                if sys.platform.startswith('win'):
+                    vscode_user = os.path.expandvars(r'%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe')
+                    vscode_sys = r'C:\Program Files\Microsoft VS Code\Code.exe'
+                    if os.path.exists(vscode_user):
+                        subprocess.Popen([vscode_user, '.'], cwd=self.workspace_root)
+                        return {'success': True, 'message': 'Opening Visual Studio Code for you now.'}
+                    elif os.path.exists(vscode_sys):
+                        subprocess.Popen([vscode_sys, '.'], cwd=self.workspace_root)
+                        return {'success': True, 'message': 'Opening Visual Studio Code for you now.'}
+                subprocess.Popen('code .', shell=True, cwd=self.workspace_root)
+                return {'success': True, 'message': 'Opening Visual Studio Code for you now.'}
 
             if cmd == 'explorer.exe':
-                subprocess.Popen(['explorer.exe', self.workspace_root])
+                if sys.platform.startswith('win'):
+                    subprocess.Popen(['explorer.exe', self.workspace_root])
+                elif sys.platform == 'darwin':
+                    subprocess.Popen(['open', self.workspace_root])
+                else:
+                    subprocess.Popen(['xdg-open', self.workspace_root])
                 return {'success': True, 'message': 'Opening File Explorer for you now.'}
 
             if cmd == 'chrome.exe':
-                chrome_paths = [
-                    r'C:\Program Files\Google\Chrome\Application\chrome.exe',
-                    r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
-                    os.path.expandvars(r'%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe')
-                ]
-                for cp in chrome_paths:
-                    if os.path.exists(cp):
-                        subprocess.Popen([cp])
-                        return {'success': True, 'message': 'Opening Google Chrome for you now.'}
-                subprocess.Popen('start msedge', shell=True)
+                chrome_bin = shutil.which('chrome') or shutil.which('google-chrome')
+                if chrome_bin:
+                    subprocess.Popen([chrome_bin])
+                    return {'success': True, 'message': 'Opening Google Chrome for you now.'}
+                if sys.platform.startswith('win'):
+                    chrome_paths = [
+                        r'C:\Program Files\Google\Chrome\Application\chrome.exe',
+                        r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
+                        os.path.expandvars(r'%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe')
+                    ]
+                    for cp in chrome_paths:
+                        if os.path.exists(cp):
+                            subprocess.Popen([cp])
+                            return {'success': True, 'message': 'Opening Google Chrome for you now.'}
+                    subprocess.Popen('start msedge', shell=True)
+                    return {'success': True, 'message': 'Opening web browser for you now.'}
+                import webbrowser
+                webbrowser.open('https://google.com')
                 return {'success': True, 'message': 'Opening web browser for you now.'}
 
             if cmd == 'powershell.exe':
-                subprocess.Popen('start powershell', shell=True)
+                if sys.platform.startswith('win'):
+                    subprocess.Popen('start powershell', shell=True)
+                else:
+                    term_bin = shutil.which('x-terminal-emulator') or shutil.which('gnome-terminal') or shutil.which('bash')
+                    if term_bin:
+                        subprocess.Popen([term_bin])
                 return {'success': True, 'message': 'Opening PowerShell Terminal for you now.'}
 
             if cmd == 'cmd.exe':
-                subprocess.Popen('start cmd', shell=True)
+                if sys.platform.startswith('win'):
+                    subprocess.Popen('start cmd', shell=True)
+                else:
+                    subprocess.Popen(['sh'])
                 return {'success': True, 'message': 'Opening Command Prompt for you now.'}
 
             if cmd == 'notepad.exe':
-                subprocess.Popen('notepad.exe', shell=True)
+                if sys.platform.startswith('win'):
+                    subprocess.Popen('notepad.exe', shell=True)
+                else:
+                    ed = shutil.which('gedit') or shutil.which('nano') or shutil.which('vim')
+                    if ed:
+                        subprocess.Popen([ed])
                 return {'success': True, 'message': 'Opening Notepad for you now.'}
 
             if cmd == 'calc.exe':
-                subprocess.Popen('calc.exe', shell=True)
+                if sys.platform.startswith('win'):
+                    subprocess.Popen('calc.exe', shell=True)
+                elif sys.platform == 'darwin':
+                    subprocess.Popen(['open', '-a', 'Calculator'])
+                else:
+                    calc_bin = shutil.which('gnome-calculator') or shutil.which('kcalc') or shutil.which('bc')
+                    if calc_bin:
+                        subprocess.Popen([calc_bin])
                 return {'success': True, 'message': 'Opening Calculator for you now.'}
 
             if os.path.exists(cmd):
-                os.startfile(cmd)
+                if hasattr(os, 'startfile'):
+                    os.startfile(cmd)
+                else:
+                    subprocess.Popen(['xdg-open' if sys.platform != 'darwin' else 'open', cmd])
                 return {'success': True, 'message': f'Opening {label} for you now.'}
             else:
                 proc = subprocess.Popen(cmd, shell=True)
@@ -213,16 +254,37 @@ class SystemController:
             return {'success': False, 'error': str(e)}
 
     def toggle_mute(self) -> Dict[str, Any]:
-        res = self.run_powershell('(New-Object -ComObject WScript.Shell).SendKeys([char]173)')
-        return {'success': res.get('success', False), 'message': 'Audio mute toggled.'}
+        if sys.platform.startswith('win'):
+            res = self.run_powershell('(New-Object -ComObject WScript.Shell).SendKeys([char]173)')
+            return {'success': res.get('success', False), 'message': 'Audio mute toggled.'}
+        elif sys.platform == 'darwin':
+            res = subprocess.run(['osascript', '-e', 'set volume output muted not (output muted of (get volume settings))'], capture_output=True)
+            return {'success': res.returncode == 0, 'message': 'Audio mute toggled.'}
+        else:
+            res = subprocess.run(['pactl', 'set-sink-mute', '@DEFAULT_SINK@', 'toggle'], capture_output=True)
+            return {'success': res.returncode == 0, 'message': 'Audio mute toggled.'}
 
     def volume_up(self, steps: int = 5) -> Dict[str, Any]:
-        res = self.run_powershell(f'for ($i=0; $i -lt {steps}; $i++) {{ (New-Object -ComObject WScript.Shell).SendKeys([char]175) }}')
-        return {'success': res.get('success', False), 'message': f'Volume increased by {steps*2}%.'}
+        if sys.platform.startswith('win'):
+            res = self.run_powershell(f'for ($i=0; $i -lt {steps}; $i++) {{ (New-Object -ComObject WScript.Shell).SendKeys([char]175) }}')
+            return {'success': res.get('success', False), 'message': f'Volume increased by {steps*2}%.'}
+        elif sys.platform == 'darwin':
+            res = subprocess.run(['osascript', '-e', 'set volume output volume ((output volume of (get volume settings)) + 10)'], capture_output=True)
+            return {'success': res.returncode == 0, 'message': 'Volume increased.'}
+        else:
+            res = subprocess.run(['pactl', 'set-sink-volume', '@DEFAULT_SINK@', '+10%'], capture_output=True)
+            return {'success': res.returncode == 0, 'message': 'Volume increased.'}
 
     def volume_down(self, steps: int = 5) -> Dict[str, Any]:
-        res = self.run_powershell(f'for ($i=0; $i -lt {steps}; $i++) {{ (New-Object -ComObject WScript.Shell).SendKeys([char]174) }}')
-        return {'success': res.get('success', False), 'message': f'Volume decreased by {steps*2}%.'}
+        if sys.platform.startswith('win'):
+            res = self.run_powershell(f'for ($i=0; $i -lt {steps}; $i++) {{ (New-Object -ComObject WScript.Shell).SendKeys([char]174) }}')
+            return {'success': res.get('success', False), 'message': f'Volume decreased by {steps*2}%.'}
+        elif sys.platform == 'darwin':
+            res = subprocess.run(['osascript', '-e', 'set volume output volume ((output volume of (get volume settings)) - 10)'], capture_output=True)
+            return {'success': res.returncode == 0, 'message': 'Volume decreased.'}
+        else:
+            res = subprocess.run(['pactl', 'set-sink-volume', '@DEFAULT_SINK@', '-10%'], capture_output=True)
+            return {'success': res.returncode == 0, 'message': 'Volume decreased.'}
 
     def minimize_all_windows(self) -> Dict[str, Any]:
         if PYAUTOGUI_AVAILABLE:
@@ -232,11 +294,18 @@ class SystemController:
         return {'success': res.get('success', False), 'message': 'Minimized all windows.'}
 
     def lock_workstation(self) -> Dict[str, Any]:
-        try:
-            ctypes.windll.user32.LockWorkStation()
-            return {'success': True, 'message': 'Workstation locked successfully.'}
-        except Exception as e:
-            return self.run_powershell('rundll32.exe user32.dll,LockWorkStation')
+        if sys.platform.startswith('win'):
+            try:
+                ctypes.windll.user32.LockWorkStation()
+                return {'success': True, 'message': 'Workstation locked successfully.'}
+            except Exception as e:
+                return self.run_powershell('rundll32.exe user32.dll,LockWorkStation')
+        elif sys.platform == 'darwin':
+            res = subprocess.run(['pmset', 'displaysleepnow'], capture_output=True)
+            return {'success': res.returncode == 0, 'message': 'Screen locked.'}
+        else:
+            res = subprocess.run(['xdg-screensaver', 'lock'], capture_output=True)
+            return {'success': res.returncode == 0, 'message': 'Screen locked.'}
 
     def empty_recycle_bin(self) -> Dict[str, Any]:
         res = self.run_powershell('Clear-RecycleBin -Force -ErrorAction SilentlyContinue')

@@ -14,6 +14,7 @@ from core.knowledge_base import AIKnowledgeEngine
 from core.omni_knowledge import OmniKnowledgeEngine
 from core.code_engine import CodeKnowledgeEngine
 from core.human_engine import HumanPersonaEngine
+from core.hardware_adapter import HardwareAdapter
 
 _CLEAN_RE = re.compile(r'[^a-z0-9\s]')
 _MATH_PREFIX_RE = re.compile(r'^(what is|calculate|evaluate|solve|compute)\s+')
@@ -198,6 +199,7 @@ CODING_INDICATORS = [
 class Nexus226Agent:
 
     def __init__(self):
+        self.hardware_profile = HardwareAdapter.get_profile()
         self.knowledge = AIKnowledgeEngine()
         self.omni = OmniKnowledgeEngine()
         self.code_engine = CodeKnowledgeEngine()
@@ -854,7 +856,7 @@ class Nexus226Agent:
         elif hasattr(self.llm, "pro_model") and self.llm.pro_model and any(w in ql for w in ["deep pro", "pro model", "use pro"]):
             target_model = self.llm.pro_model
 
-        token_limit = 260 if is_coding else 160
+        token_limit = self.hardware_profile.get("memory", {}).get("recommended_predict_code", 260) if is_coding else self.hardware_profile.get("memory", {}).get("recommended_predict_general", 160)
         res = self.llm.generate(prompt_with_history, system_prompt=system_instruction, max_tokens=token_limit, model=target_model)
         if res and not res.startswith("[Ollama Connection Error") and not res.startswith("[Offline"):
             clean = _CLEAN_ANSWER_RE.sub('', res).strip()
@@ -1066,7 +1068,7 @@ class Nexus226Agent:
         elif hasattr(self.llm, "pro_model") and self.llm.pro_model and any(w in ql for w in ["deep pro", "pro model", "use pro"]):
             target_model = self.llm.pro_model
 
-        token_limit = 260 if is_coding else 160
+        token_limit = self.hardware_profile.get("memory", {}).get("recommended_predict_code", 260) if is_coding else self.hardware_profile.get("memory", {}).get("recommended_predict_general", 160)
         for chunk in self.llm.generate_stream(prompt_with_history, system_prompt=system_instruction, max_tokens=token_limit, model=target_model):
             full_tokens.append(chunk)
             if not prefix_cleared:
