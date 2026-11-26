@@ -207,7 +207,11 @@ class Nexus226Agent:
         self.session_history: List[Dict[str, str]] = []
         self._sys_controller = None
         self._blockchain = None
-        self._llm = None
+        try:
+            from core.llm_engine import OfflineLLMEngine
+            self._llm = OfflineLLMEngine()
+        except Exception:
+            self._llm = None
         self._grok = None
         self._mongo = None
         self.cache_path = os.path.join(root_dir, "data", "response_cache.json")
@@ -835,7 +839,7 @@ class Nexus226Agent:
                 self._cache_set(ql, res)
                 return res
 
-        system_instruction = "Write clean, optimal code with complexity analysis." if is_coding else "Answer directly and thoughtfully with clear mental models and zero filler."
+        system_instruction = "Write clean, optimal code with complexity analysis." if is_coding else ""
 
         prompt_with_history = q
         hist_to_use = history if history is not None else self.session_history
@@ -1044,7 +1048,7 @@ class Nexus226Agent:
                 yield res
                 return
 
-        system_instruction = "Write clean, optimal code with complexity analysis." if is_coding else "Answer directly and thoughtfully with clear mental models and zero filler."
+        system_instruction = "Write clean, optimal code with complexity analysis." if is_coding else ""
 
         prompt_with_history = q
         hist_to_use = history if history is not None else self.session_history

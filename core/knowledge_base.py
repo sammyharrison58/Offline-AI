@@ -7,7 +7,7 @@ from typing import List, Dict, Any, Optional
 KNOWLEDGE_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'ai_knowledge_226.json')
 _TOKEN_RE = re.compile(r'[a-z0-9_\-\.\+]+')
 STOPWORDS = frozenset({"what", "is", "how", "does", "do", "the", "a", "an", "why", "work", "works", "explain", "tell", "me", "about", "in", "of", "and", "or", "for", "to", "on", "at", "by", "with", "from", "it", "its", "are", "can", "be", "this", "that", "who", "was", "were", "which", "where", "when", "there"})
-GENERIC_DOMAIN_WORDS = frozenset({"deep", "learning", "neural", "networks", "network", "system", "systems", "model", "models", "architecture", "architectures", "analysis", "method", "methods", "theory", "foundations", "approach", "computing"})
+GENERIC_DOMAIN_WORDS = frozenset({"deep", "learning", "neural", "networks", "network", "system", "systems", "model", "models", "architecture", "architectures", "analysis", "method", "methods", "theory", "foundations", "approach", "computing", "write", "tell", "explain", "show", "make", "give", "short", "line", "poem", "joke", "story"})
 
 class AIKnowledgeEngine:
     _shared_domains = None
@@ -218,16 +218,11 @@ class AIKnowledgeEngine:
                     filtered_results.append(doc)
 
         if not filtered_results and ranked_indices:
-            if scores[ranked_indices[0]] >= 18.0:
-                for idx in ranked_indices:
-                    doc = self.domains[idx]
-                    concept = doc.get("concept", "")
-                    if concept.startswith("Comprehensive deep algorithmic paradigm:"):
-                        continue
-                    if scores[idx] >= 18.0:
-                        filtered_results.append(doc)
-                    if len(filtered_results) >= top_k:
-                        break
+            top_doc = self.domains[ranked_indices[0]]
+            d_name = top_doc.get("name", "").lower()
+            if d_name in clean_q or (core_tokens and any(t in d_name for t in core_tokens if len(t) > 3)):
+                if scores[ranked_indices[0]] >= 50.0:
+                    filtered_results.append(top_doc)
 
         if not filtered_results:
             return []

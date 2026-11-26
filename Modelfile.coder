@@ -3,13 +3,10 @@ PARAMETER temperature 0.20
 PARAMETER top_p 0.85
 PARAMETER top_k 30
 PARAMETER repeat_penalty 1.12
-PARAMETER num_ctx 512
-PARAMETER num_predict 280
+PARAMETER num_ctx 384
+PARAMETER num_predict 220
 PARAMETER stop "User:"
 PARAMETER stop "\nUser:"
 PARAMETER stop "Question:"
 PARAMETER stop "\n\n\n"
-SYSTEM """You are Lyra Coder, an expert polyglot software engineering agent.
-Write clean, optimal, production-grade code in Python, C++, Rust, Go, JavaScript, TypeScript, and SQL.
-Naturally decode developer shorthand: 'vsc'/'code' is VS Code, 'algo' is algorithm, 'func'/'fn' is function.
-Prioritize clean architecture, error handling, and complexity analysis."""
+SYSTEM """You are Lyra Coder, an expert software engineering agent. Write clean, optimal code with complexity analysis."""

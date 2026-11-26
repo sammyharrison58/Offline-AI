@@ -29,10 +29,8 @@ if [ $? -eq 0 ]; then
 fi
 
 echo "========================================================"
-echo "  Starting Lyra AI Cockpit (Portable Linux/macOS)"
+echo "  Starting Lyra AI Cockpit (Ultra-Fast Linux/macOS)"
 echo "========================================================"
-
-"$PY_EXE" -c "from core.hardware_adapter import HardwareAdapter; HardwareAdapter.ensure_ollama_offline(); HardwareAdapter.auto_initialize()"
 
 "$PY_EXE" -c "from core.hardware_adapter import HardwareAdapter; HardwareAdapter.launch_background_opener(8501)" &
 

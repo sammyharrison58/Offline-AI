@@ -54,15 +54,14 @@ class OfflineLLMEngine:
                         self.ollama_model = next((m for m in models if "1b" in m.lower()))
                     else:
                         self.ollama_model = models[0]
-                prof = HardwareAdapter.get_profile()
-                th = prof.get("cpu", {}).get("optimal_threads", 3)
-                ctx = prof.get("memory", {}).get("recommended_ctx", 512)
+                opts = HardwareAdapter.get_optimal_llm_options(is_coding=False)
+                opts["num_predict"] = 1
                 self.session.post(
                     f"{self.ollama_url}/api/generate",
                     json={
                         "model": self.ollama_model,
-                        "prompt": "ok",
-                        "options": {"num_predict": 1, "num_thread": th, "num_ctx": ctx},
+                        "prompt": "hi",
+                        "options": opts,
                         "keep_alive": -1,
                         "stream": False
                     },
@@ -109,24 +108,17 @@ class OfflineLLMEngine:
 
         if self.active_backend == "ollama":
             url = f"{self.ollama_url}/api/generate"
-            prof = HardwareAdapter.get_profile()
-            threads = prof.get("cpu", {}).get("optimal_threads", max(1, min(4, os.cpu_count() or 4)))
-            num_ctx = prof.get("memory", {}).get("recommended_ctx", 512)
+            opts = HardwareAdapter.get_optimal_llm_options(is_coding="coder" in chosen_model.lower())
+            if max_tokens:
+                opts["num_predict"] = max_tokens
+            if temperature:
+                opts["temperature"] = temperature
             payload = {
                 "model": chosen_model,
                 "prompt": prompt,
                 "stream": True,
                 "keep_alive": -1,
-                "options": {
-                    "num_predict": max_tokens,
-                    "repeat_penalty": 1.15,
-                    "num_thread": threads,
-                    "num_ctx": num_ctx,
-                    "temperature": temperature,
-                    "top_k": 40,
-                    "top_p": 0.90,
-                    "stop": ["User:", "\nUser:", "Question:", "\n\n\n"]
-                }
+                "options": opts
             }
             if system_prompt:
                 payload["system"] = system_prompt
@@ -154,24 +146,17 @@ class OfflineLLMEngine:
         try:
             chosen_model = model or self.ollama_model
             url = f"{self.ollama_url}/api/generate"
-            prof = HardwareAdapter.get_profile()
-            threads = prof.get("cpu", {}).get("optimal_threads", max(1, min(4, os.cpu_count() or 4)))
-            num_ctx = prof.get("memory", {}).get("recommended_ctx", 512)
+            opts = HardwareAdapter.get_optimal_llm_options(is_coding="coder" in chosen_model.lower())
+            if max_tokens:
+                opts["num_predict"] = max_tokens
+            if temperature:
+                opts["temperature"] = temperature
             payload = {
                 "model": chosen_model,
                 "prompt": prompt,
                 "stream": False,
                 "keep_alive": -1,
-                "options": {
-                    "num_predict": max_tokens,
-                    "repeat_penalty": 1.15,
-                    "num_thread": threads,
-                    "num_ctx": num_ctx,
-                    "temperature": temperature,
-                    "top_k": 40,
-                    "top_p": 0.90,
-                    "stop": ["User:", "\nUser:", "Question:", "\n\n\n"]
-                }
+                "options": opts
             }
             if system_prompt:
                 payload["system"] = system_prompt

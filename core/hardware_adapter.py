@@ -260,7 +260,7 @@ class HardwareAdapter:
             except Exception:
                 pass
 
-        profile = cls.save_profile(ws)
+        profile = cls.get_profile(ws)
 
         return {
             "status": "ready",
@@ -268,6 +268,31 @@ class HardwareAdapter:
             "created_dirs": created_dirs,
             "kb_initialized": kb_initialized,
             "profile": profile
+        }
+
+    @classmethod
+    def get_optimal_llm_options(cls, is_coding: bool = False) -> Dict[str, Any]:
+        prof = cls.get_profile()
+        th = prof.get("cpu", {}).get("optimal_threads", 3)
+        tier = prof.get("memory", {}).get("tier", "standard")
+        if tier == "ultra_low":
+            ctx = 256
+            predict = 160 if is_coding else 90
+        elif tier == "standard":
+            ctx = 384
+            predict = 220 if is_coding else 120
+        else:
+            ctx = 512
+            predict = 260 if is_coding else 150
+        return {
+            "num_predict": predict,
+            "num_thread": th,
+            "num_ctx": ctx,
+            "temperature": 0.2 if is_coding else 0.35,
+            "top_k": 30 if is_coding else 40,
+            "top_p": 0.85 if is_coding else 0.90,
+            "repeat_penalty": 1.15,
+            "stop": ["User:", "\nUser:", "Question:", "\n\n\n"]
         }
 
     @classmethod
@@ -313,12 +338,17 @@ class HardwareAdapter:
         import threading
         import urllib.request
 
+        cls.ensure_ollama_offline()
+
         def _warmup():
             try:
+                opts = cls.get_optimal_llm_options(is_coding=False)
+                opts["num_predict"] = 1
                 payload = json.dumps({
                     'model': 'lyra:1b',
+                    'prompt': 'hi',
                     'keep_alive': -1,
-                    'options': {'num_predict': 1, 'num_ctx': 512}
+                    'options': opts
                 }).encode('utf-8')
                 req = urllib.request.Request(
                     'http://127.0.0.1:11434/api/generate',
@@ -332,11 +362,11 @@ class HardwareAdapter:
         threading.Thread(target=_warmup, daemon=True).start()
 
         target_url = f'http://127.0.0.1:{port}'
-        for _ in range(400):
+        for _ in range(500):
             try:
                 with socket.create_connection(('127.0.0.1', port), timeout=0.04):
                     webbrowser.open(target_url)
                     break
             except Exception:
-                time.sleep(0.025)
+                time.sleep(0.02)
 
