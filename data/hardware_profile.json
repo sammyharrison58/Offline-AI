@@ -4,9 +4,9 @@
   "os_release": "10",
   "os_version": "10.0.22621",
   "architecture": "AMD64",
-  "python_executable": "F:\\vscode projects\\offline AI\\.venv\\Scripts\\python.exe",
+  "python_executable": "f:\\vscode projects\\offline AI\\.venv\\Scripts\\python.exe",
   "python_version": "3.11.9",
-  "workspace_root": "F:\\vscode projects\\offline AI",
+  "workspace_root": "f:\\vscode projects\\offline AI",
   "cpu": {
     "logical_cores": 4,
     "physical_cores": 2,
@@ -14,7 +14,7 @@
   },
   "memory": {
     "total_gb": 7.82,
-    "available_gb": 1.23,
+    "available_gb": 1.1,
     "tier": "standard",
     "recommended_ctx": 512,
     "recommended_predict_general": 180,

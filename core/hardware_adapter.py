@@ -269,3 +269,74 @@ class HardwareAdapter:
             "kb_initialized": kb_initialized,
             "profile": profile
         }
+
+    @classmethod
+    def ensure_ollama_offline(cls) -> bool:
+        import socket
+        import time
+        try:
+            with socket.create_connection(('127.0.0.1', 11434), timeout=0.2):
+                return True
+        except Exception:
+            pass
+        ollama_bin = shutil.which('ollama')
+        if not ollama_bin:
+            common_paths = [
+                os.path.expandvars(r'%LOCALAPPDATA%\Programs\Ollama\ollama.exe'),
+                r'F:\Ollama\app\ollama.exe',
+                r'C:\Program Files\Ollama\ollama.exe'
+            ]
+            for p in common_paths:
+                if os.path.exists(p):
+                    ollama_bin = p
+                    break
+        if ollama_bin:
+            try:
+                flags = 0x08000000 if sys.platform == 'win32' else 0
+                subprocess.Popen([ollama_bin, 'serve'], creationflags=flags, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                for _ in range(30):
+                    time.sleep(0.1)
+                    try:
+                        with socket.create_connection(('127.0.0.1', 11434), timeout=0.2):
+                            return True
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        return False
+
+    @classmethod
+    def launch_background_opener(cls, port: int = 8501):
+        import socket
+        import time
+        import webbrowser
+        import threading
+        import urllib.request
+
+        def _warmup():
+            try:
+                payload = json.dumps({
+                    'model': 'lyra:1b',
+                    'keep_alive': -1,
+                    'options': {'num_predict': 1, 'num_ctx': 512}
+                }).encode('utf-8')
+                req = urllib.request.Request(
+                    'http://127.0.0.1:11434/api/generate',
+                    data=payload,
+                    headers={'Content-Type': 'application/json'}
+                )
+                urllib.request.urlopen(req, timeout=120)
+            except Exception:
+                pass
+
+        threading.Thread(target=_warmup, daemon=True).start()
+
+        target_url = f'http://127.0.0.1:{port}'
+        for _ in range(400):
+            try:
+                with socket.create_connection(('127.0.0.1', port), timeout=0.04):
+                    webbrowser.open(target_url)
+                    break
+            except Exception:
+                time.sleep(0.025)
+

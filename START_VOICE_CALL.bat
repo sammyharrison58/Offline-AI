@@ -1,13 +1,38 @@
 @echo off
 title Lyra Real-Time Voice Call
 cd /d "%~dp0"
+
+set "PY_EXE="
+if exist "%~dp0.venv\Scripts\python.exe" (
+    set "PY_EXE=%~dp0.venv\Scripts\python.exe"
+) else if exist "%~dp0venv\Scripts\python.exe" (
+    set "PY_EXE=%~dp0venv\Scripts\python.exe"
+) else if exist "%~dp0env\Scripts\python.exe" (
+    set "PY_EXE=%~dp0env\Scripts\python.exe"
+) else (
+    where python >nul 2>&1
+    if not errorlevel 1 (
+        set "PY_EXE=python"
+    ) else (
+        where py >nul 2>&1
+        if not errorlevel 1 (
+            set "PY_EXE=py"
+        )
+    )
+)
+
+if not defined PY_EXE (
+    echo [ERROR] No Python runtime found. Please install Python 3.9+ or create a virtual environment in .venv.
+    pause
+    exit /b 1
+)
+
 echo ========================================================
 echo   Connecting Live Phone Call Discussion with Lyra
 echo ========================================================
 echo.
-start /b powershell -WindowStyle Hidden -Command "try { Invoke-RestMethod -Uri 'http://localhost:11434/api/generate' -Method Post -ContentType 'application/json' -Body '{\"model\":\"grok-offline:1b\",\"prompt\":\"hi\",\"stream\":false,\"keep_alive\":-1}' -TimeoutSec 15 } catch {}"
-"%~dp0.venv\Scripts\python.exe" "%~dp0main.py" --mode voice
-if %ERRORLEVEL% NEQ 0 (
-    python "%~dp0main.py" --mode voice
-)
+
+"%PY_EXE%" -c "from core.hardware_adapter import HardwareAdapter; HardwareAdapter.ensure_ollama_offline(); HardwareAdapter.auto_initialize()"
+echo [Lyra] Starting Real-Time Voice Duplex Line...
+"%PY_EXE%" "%~dp0main.py" --mode voice
 pause
